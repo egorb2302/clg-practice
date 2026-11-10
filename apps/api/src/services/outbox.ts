@@ -66,16 +66,17 @@ const backoffSec = (attempt: number) => Math.min(3600, 30 * 2 ** Math.max(0, att
 async function claimOne(db: Db, ids?: string[]) {
   const onlyIds = ids && ids.length > 0;
   await db`
-    update outbox set status = 'failed', lease_until = null, lease_token = null,
-      last_error = coalesce(last_error, 'lease expired too many times')
-    where status = 'processing' and lease_until < now() and attempts >= max_attempts`;
-  await db`
     update outbox set status = 'needs_review', lease_until = null, lease_token = null,
       last_error = 'interrupted campaign send, outcome unknown'
     where status = 'processing' and lease_until < now() and topic = 'campaign'`;
   await db`
-    update campaign_deliveries d set status = 'needs_review', updated_at = now()
-    from outbox o where o.id = d.outbox_id and o.status = 'needs_review' and d.status = 'queued'`;
+    update outbox set status = 'failed', lease_until = null, lease_token = null,
+      last_error = coalesce(last_error, 'lease expired too many times')
+    where status = 'processing' and lease_until < now() and attempts >= max_attempts`;
+  await db`
+    update campaign_deliveries d
+    set status = case when o.status = 'failed' then 'rejected' else 'needs_review' end, updated_at = now()
+    from outbox o where o.id = d.outbox_id and o.status in ('needs_review', 'failed') and d.status = 'queued'`;
   const [row] = await db<Row[]>`
     update outbox set status = 'processing', attempts = attempts + 1,
       lease_until = now() + make_interval(secs => ${LEASE_SEC}), lease_token = gen_random_uuid()
