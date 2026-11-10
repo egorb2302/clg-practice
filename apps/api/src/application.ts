@@ -58,9 +58,15 @@ export function createApp(deps: Deps) {
   const adminDir = join(import.meta.dirname, "..", "public", "admin");
   if (existsSync(join(adminDir, "index.html"))) {
     app.use("/admin", express.static(adminDir, { index: false, maxAge: "1h" }));
-    app.get(/^\/admin(\/.*)?$/, (_req, res) => {
+    app.get(/^\/admin(\/.*)?$/, (req, res) => {
+      if (/\.[a-z0-9]+$/i.test(req.path)) {
+        res.status(404).end();
+        return;
+      }
       res.set("Cache-Control", "no-store").sendFile(join(adminDir, "index.html"));
     });
+  } else if (process.env.VERCEL) {
+    console.error(JSON.stringify({ level: "error", event: "admin.missing", dir: adminDir }));
   }
 
   if (deps.storage instanceof LocalStorage) {
