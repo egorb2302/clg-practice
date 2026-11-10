@@ -1,0 +1,114 @@
+/* ARMORIX tokens: global → semantic → component (UX-4)
+   Matrix point: Modern, base grotesques, next to the horizontal axis (strict, technical)
+   One family: IBM Plex Sans 700 for headings, 400 for text and labels (Keelsy, 2026-11-10) */
+
+@font-face {
+  font-family: "IBM Plex Sans";
+  src: url("/fonts/ibm-plex-sans-700.woff") format("woff");
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Sans";
+  src: url("/fonts/ibm-plex-sans-400.woff") format("woff");
+  font-weight: 400;
+  font-display: swap;
+}
+
+:root {
+  /* ── Global: colour ramps (thought in OKLCH, hue ≈ 155 for pine, 250 for steel) ── */
+  --obsidian-950: #0b0d0c;  /* page ground, near-black tinted 2% to pine, never #000 */
+  --obsidian-900: #121514;  /* surface */
+  --obsidian-850: #171b19;  /* raised surface */
+  --obsidian-800: #1e2321;  /* plate */
+
+  --graphite-700: #2e3337;
+  --graphite-600: #3c4146;
+  --graphite-500: #4a4f56;  /* kit Graphite */
+  --graphite-400: #6b7178;
+
+  --steel-300: #8e949b;
+  --steel-200: #a9aeb4;     /* kit Steel */
+  --steel-100: #c9cdd1;
+
+  --sand-200: #d6d2c8;      /* kit Sand: text on dark */
+  --sand-100: #e8e5de;
+
+  --pine-50:  #eef3ef;
+  --pine-100: #d8e4db;
+  --pine-200: #b3c8b9;
+  --pine-300: #8aa995;
+  --pine-400: #648a71;
+  --pine-500: #4b6f57;
+  --pine-600: #3a5a45;      /* the accent: replaces Bronze #7A6A4A */
+  --pine-700: #2e4837;
+  --pine-800: #23382b;
+  --pine-900: #1a2a20;
+  --pine-950: #101a14;
+
+  --red-500: #c25a4a;       /* error only */
+
+  /* ── Semantic ── */
+  --bg: var(--obsidian-950);
+  --surface: var(--obsidian-900);
+  --raised: var(--obsidian-850);
+  --plate: var(--obsidian-800);
+  --line: rgb(169 174 180 / .16);     /* 1px hairline */
+  --line-strong: rgb(169 174 180 / .32);
+  --text: var(--sand-200);
+  --text-2: rgb(214 210 200 / .74);
+  --text-3: rgb(214 210 200 / .56);
+  --metal: var(--steel-200);
+  --action: var(--pine-600);
+  --action-hover: var(--pine-500);
+  --action-text: var(--sand-100);
+  --link: var(--pine-300);
+  --focus: var(--steel-100);
+  --success: var(--pine-400);
+  --error: var(--red-500);
+
+  /* polished steel: the one light comes from the top left (IMG-6) */
+  --mirror: linear-gradient(160deg, #eef0f2 0%, #a9aeb4 28%, #4a4f56 52%, #c9cdd1 70%, #6b7178 100%);
+  --powder: linear-gradient(160deg, #2e3337 0%, #1e2321 60%, #171b19 100%);
+
+  /* ── Type: one viewport base, everything in rem, ratio 1.25 (TYPE-5) ── */
+  --font-display: "IBM Plex Sans", system-ui, sans-serif;
+  --font-text: "IBM Plex Sans", system-ui, sans-serif;
+  --t-label: .8rem;     /* 12.8, caps labels only, tracked */
+  --t-small: .875rem;
+  --t-body: 1rem;
+  --t-lead: 1.25rem;
+  --t-h4: 1.563rem;
+  --t-h3: 1.953rem;
+  --t-h2: 3.052rem;
+  --t-h1: 4.768rem;
+  --t-mega: 7.451rem;
+
+  /* ── Spacing: 8pt, 4 only for micro gaps (GRID-2) ── */
+  --s-1: 4px;  --s-2: 8px;  --s-3: 16px; --s-4: 24px; --s-5: 32px;
+  --s-6: 48px; --s-7: 64px; --s-8: 96px; --s-9: 128px; --s-10: 192px;
+
+  /* ── Grid: 10 columns, plates span whole columns ── */
+  --cols: 10;
+  --gutter: 24px;
+  --edge: 48px;
+
+  /* ── Shape: chamfer, not radius (the shield's cut corner) ── */
+  --cut-s: 8px;
+  --cut-m: 16px;
+  --cut-l: 32px;
+
+  /* ── Motion: weight and inertia (MOT-1) ── */
+  --ease-forge: cubic-bezier(.76, 0, .24, 1);   /* heavy moves, 900 ms */
+  --ease-settle: cubic-bezier(.16, .84, .24, 1); /* entrances, 1100 ms, blur 14 → 0 */
+  --ease-press: cubic-bezier(.3, .7, .2, 1);    /* hover and press, 90–240 ms */
+  --d-press: 90ms;
+  --d-hover: 240ms;
+  --d-move: 900ms;
+  --d-enter: 1100ms;
+}
+
+html { font-size: clamp(15px, calc(10px + .42vw), 18px); }
+
+@media (max-width: 1023px) { :root { --cols: 8; --gutter: 16px; --edge: 32px; } }
+@media (max-width: 599px)  { :root { --cols: 4; --gutter: 16px; --edge: 16px; --t-h1: 3.052rem; --t-mega: 4.768rem; --t-h2: 2.441rem; } }
