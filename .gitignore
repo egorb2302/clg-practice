@@ -6,3 +6,4 @@ dist/
 .vercel/
 coverage/
 apps/api/public/
+apps/admin/dist/

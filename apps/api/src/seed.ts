@@ -103,9 +103,9 @@ export async function seed(db: Db) {
     const [row] = await db<{ id: string }[]>`
       insert into products (slug, code, title, position, description, composition, material, installation, status, published_at)
       values (${p.slug}, ${p.code}, ${p.title}, ${p.position},
-        ${"Демонстрационная позиция для стенда. Реальные характеристики подтвердит менеджер."},
+        ${"Демонстрационная позиция для стенда, реальные характеристики подтвердит менеджер"},
         ${["Основная труба", "Кронштейны", "Крепёж"]}, ${p.material},
-        ${"Монтаж в штатные точки, без сверления (демо)."}, 'published', now())
+        ${"Монтаж в штатные точки, без сверления (демо)"}, 'published', now())
       on conflict (slug) do nothing returning id`;
     if (!row) continue;
     for (const slug of p.vehicles) {

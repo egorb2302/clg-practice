@@ -17,12 +17,13 @@ const inviteBody = z.object({
   roles: rolesSchema,
 });
 
+const blankToUndefined = (v: unknown) => (typeof v === "string" && v.trim() === "" ? undefined : v);
 const contactsBody = z.object({
-  phone: z.string().trim().max(40).optional(),
-  email: z.email().max(254).optional(),
-  telegram: z.url({ protocol: /^https$/ }).max(200).optional(),
-  address: z.string().trim().max(300).optional(),
-  hours: z.string().trim().max(200).optional(),
+  phone: z.preprocess(blankToUndefined, z.string().trim().max(40).optional()),
+  email: z.preprocess(blankToUndefined, z.email().max(254).optional()),
+  telegram: z.preprocess(blankToUndefined, z.url({ protocol: /^https$/ }).max(200).optional()),
+  address: z.preprocess(blankToUndefined, z.string().trim().max(300).optional()),
+  hours: z.preprocess(blankToUndefined, z.string().trim().max(200).optional()),
 });
 
 export function adminSystemRoutes(deps: Deps) {

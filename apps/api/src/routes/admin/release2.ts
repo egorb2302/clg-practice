@@ -47,7 +47,14 @@ const postPatch = z.object({
   coverUrl: z.url({ protocol: /^https?$/ }).max(500).nullable().optional(),
   startsAt: z.iso.datetime({ offset: true }).nullable().optional(),
   endsAt: z.iso.datetime({ offset: true }).nullable().optional(),
-  offer: postFields.offer,
+  offer: z
+    .object({
+      minPurchases: z.number().int().min(1).max(1000).nullable().optional(),
+      productIds: z.array(z.uuid()).max(200).optional(),
+      combinable: z.boolean().optional(),
+      benefit: z.string().trim().max(500).optional(),
+    })
+    .optional(),
 });
 const postStatus = z.object({ version: z.number().int().positive(), status: z.enum(["draft", "published", "archived"]) });
 
@@ -150,6 +157,25 @@ export function adminRelease2Routes(deps: Deps) {
     res.json({ items });
   });
 
+  r.get("/admin/posts/:id", posts, requireStaff("catalog_edit"), async (req, res) => {
+    const id = uuidParam(req.params.id);
+    const [p] = await deps.sql`
+      select p.id, p.type, p.slug, p.title, p.summary, p.body, p.cover_url as "coverUrl", p.status,
+        p.starts_at as "startsAt", p.ends_at as "endsAt", p.version,
+        o.min_purchases as "minPurchases", o.product_ids as "productIds", o.combinable, o.benefit, o.rule_version as "ruleVersion"
+      from posts p left join offer_rules o on o.post_id = p.id where p.id = ${id}`;
+    if (!p) throw notFound();
+    res.json({ post: p });
+  });
+
+  r.get("/admin/campaigns/:id", campaigns, requireStaff("catalog_edit"), async (req, res) => {
+    const id = uuidParam(req.params.id);
+    const [c] = await deps.sql`
+      select id, subject, body_text as "bodyText", status, scheduled_at as "scheduledAt", version from campaigns where id = ${id}`;
+    if (!c) throw notFound();
+    res.json({ campaign: c });
+  });
+
   r.post("/admin/posts", posts, requireStaff("catalog_edit"), async (req, res) => {
     const b = parse(postCreate, req.body);
     const actor = authOf(res).user.id;
@@ -191,8 +217,13 @@ export function adminRelease2Routes(deps: Deps) {
         where id = ${id} and version = ${b.version} returning version, type`;
       if (rows.length === 0) throw versionConflict();
       if (b.offer && rows[0]!.type === "offer") {
-        await tx`update offer_rules set min_purchases = ${b.offer.minPurchases}, product_ids = ${b.offer.productIds},
-          combinable = ${b.offer.combinable}, benefit = ${b.offer.benefit}, rule_version = rule_version + 1
+        const o = b.offer;
+        await tx`update offer_rules set
+          min_purchases = ${o.minPurchases === undefined ? tx`min_purchases` : o.minPurchases},
+          product_ids = ${o.productIds === undefined ? tx`product_ids` : o.productIds},
+          combinable = ${o.combinable === undefined ? tx`combinable` : o.combinable},
+          benefit = ${o.benefit === undefined ? tx`benefit` : o.benefit},
+          rule_version = rule_version + 1
           where post_id = ${id}`;
       } else if ((b.startsAt !== undefined || b.endsAt !== undefined) && rows[0]!.type === "offer") {
         await tx`update offer_rules set rule_version = rule_version + 1 where post_id = ${id}`;

@@ -34,3 +34,4 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm -r typecheck
       - run: pnpm --filter @armorix/api test
+      - run: pnpm --filter @armorix/admin build
