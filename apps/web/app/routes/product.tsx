@@ -14,7 +14,10 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   const vehicle = new URL(request.url).searchParams.get("vehicle") ?? undefined;
   const res = await api.product(params.slug, vehicle);
   if (!res) throw data(null, { status: 404 });
-  if ("redirect" in res) throw redirect(res.redirect, 301);
+  if ("redirect" in res) {
+    const to = res.redirect.startsWith("/") ? res.redirect : `/catalog/${encodeURIComponent(res.redirect)}`;
+    throw redirect(vehicle ? `${to}?vehicle=${encodeURIComponent(vehicle)}` : to, 301);
+  }
   const p = res.product;
   const related = (await api.catalog(new URLSearchParams({ vehicle: p.vehicle.slug }))).items.filter((x) => x.slug !== p.slug).slice(0, 3);
   return data({ product: p, related }, { headers: { "Cache-Control": PUBLIC_CACHE } });
@@ -38,9 +41,11 @@ export default function Product({ loaderData }: Route.ComponentProps) {
   const back = (loc.state as { back?: string } | null)?.back ?? `/catalog?vehicle=${p.vehicle.slug}`;
   const gallery = p.gallery.length ? p.gallery : p.image ? [p.image] : [];
   const [shot, setShot] = useState(0);
-  const firstOk = p.variants.find((v) => v.available) ?? p.variants[0];
+  const own = p.variants.filter((v) => v.vehicleSlug === p.vehicle.slug);
+  const firstOk = own.find((v) => v.available) ?? own[0];
   const [vid, setVid] = useState(firstOk?.id ?? "");
-  const variant = p.variants.find((v) => v.id === vid) ?? firstOk;
+  const variant = own.find((v) => v.id === vid) ?? firstOk;
+  const [askPrice, setAskPrice] = useState<{ id: string; priceFrom: number | null; available: boolean } | null>(null);
   const sel = useSelection();
   const inSel = variant ? sel.some((i) => i.variantId === variant.id) : false;
   const dlg = useRef<HTMLDialogElement>(null);
@@ -86,10 +91,10 @@ export default function Product({ loaderData }: Route.ComponentProps) {
             <h1 className="pd__t">{p.title}</h1>
             <p className="pd__car"><Icon name="truck" />Для {p.compatibility.map((c) => c.label).join(", ") || p.vehicle.label}</p>
 
-            {p.variants.length > 1 ? (
+            {own.length > 1 ? (
               <fieldset className="vars">
                 <legend>Вариант</legend>
-                {p.variants.map((v) => (
+                {own.map((v) => (
                   <label key={v.id} className={`var${v.available ? "" : " is-off"}`}>
                     <input type="radio" name="variant" value={v.id} checked={v.id === variant?.id} disabled={!v.available} onChange={() => setVid(v.id)} />
                     <span className="var__t">{v.title}</span>
@@ -145,8 +150,24 @@ export default function Product({ loaderData }: Route.ComponentProps) {
           <button className="dlg__x" type="button" aria-label="Закрыть" onClick={() => dlg.current?.close()}><Icon name="close" /></button>
           <h2 id="ask-t" className="dlg__t">Уточнить комплектацию</h2>
           <p className="dlg__p">{p.title}, {p.vehicle.label}{variant ? `, ${variant.title}` : ""}</p>
-          {askItem ? (
-            <LeadForm key={variant?.id} type="catalog" items={[{ ...askItem, quantity: 1 }]} deliveryMethods={root?.meta.deliveryMethods ?? []} submitLabel="Отправить вопрос" />
+          {askPrice && askPrice.id === askItem?.variantId ? (
+            <p className="dlg__p" role="status">
+              {askPrice.available ? `Цена обновилась: ${priceFrom(askPrice.priceFrom)}. Отправьте вопрос ещё раз` : "Этот вариант сейчас недоступен, выберите другой"}
+            </p>
+          ) : null}
+          {askItem && !(askPrice && askPrice.id === askItem.variantId && !askPrice.available) ? (
+            <LeadForm
+              key={variant?.id}
+              type="catalog"
+              items={[{ ...askItem, quantity: 1, snapshot: { ...askItem.snapshot, priceFrom: askPrice && askPrice.id === askItem.variantId ? askPrice.priceFrom : askItem.snapshot.priceFrom } }]}
+              deliveryMethods={root?.meta.deliveryMethods ?? []}
+              submitLabel="Отправить вопрос"
+              changedMessage="Пока вы смотрели товар, цена изменилась"
+              onCatalogChanged={(changes) => {
+                const c = changes.find((x) => x.variantId === askItem.variantId);
+                if (c) setAskPrice({ id: c.variantId, priceFrom: c.priceFrom, available: c.available });
+              }}
+            />
           ) : null}
         </div>
       </dialog>

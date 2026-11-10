@@ -17,10 +17,10 @@ export function ProductCard({ p, back }: { p: Card; back?: string }) {
   async function add() {
     setState("busy");
     try {
-      const res = await fetch(`${API_PREFIX}/catalog/${encodeURIComponent(p.slug)}`);
+      const res = await fetch(`${API_PREFIX}/catalog/${encodeURIComponent(p.slug)}?vehicle=${encodeURIComponent(p.vehicle.slug)}`);
       const data = (await res.json()) as ProductResponse;
       if (!res.ok || !("product" in data)) throw new Error("load");
-      const vs = data.product.variants.filter((v) => v.available);
+      const vs = data.product.variants.filter((v) => v.available && v.vehicleSlug === p.vehicle.slug);
       const v = vs.find((x) => x.priceFrom === p.priceFrom) ?? vs[0];
       if (!v) throw new Error("none");
       selection.add({

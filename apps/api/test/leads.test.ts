@@ -241,6 +241,20 @@ describe("POST /leads", () => {
     expect(admin.status).toBe(403);
   });
 
+  it("trusts the visitor IP from the site proxy only with the shared secret", async () => {
+    const proxied = makeDeps({ LEAD_LIMIT_IP_PER_HOUR: "1", SITE_PROXY_SECRET: "proxy-secret-for-tests-0123456789" });
+    const send = (ip: string, secret: string) =>
+      proxied.http().post("/api/v1/leads").set("Idempotency-Key", key())
+        .set("X-Forwarded-For", "10.0.0.1").set("x-armorix-client-ip", ip).set("x-armorix-proxy-secret", secret)
+        .send(leadBody([{ variantId: v1, quantity: 1 }], { contact: { preferred: "email", email: `${ip}@example.test` } }));
+    expect((await send("198.51.100.1", "proxy-secret-for-tests-0123456789")).status).toBe(201);
+    expect((await send("198.51.100.2", "proxy-secret-for-tests-0123456789")).status).toBe(201);
+    expect((await send("198.51.100.3", "wrong-secret-wrong-secret-000000")).status).toBe(201);
+    expect((await send("198.51.100.4", "wrong-secret-wrong-secret-000000")).status).toBe(429);
+    await proxied.settle();
+    await proxied.sql.end();
+  });
+
   it("rejects foreign origins", async () => {
     const res = await ctx.http().post("/api/v1/leads").set("Origin", "https://evil.test").set("Idempotency-Key", key())
       .send(leadBody([{ variantId: v1, quantity: 1 }]));

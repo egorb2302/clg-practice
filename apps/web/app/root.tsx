@@ -30,8 +30,12 @@ const FALLBACK_META: MetaResponse = {
 };
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const meta = await api.meta().catch(() => FALLBACK_META);
-  return data({ meta, origin: siteOrigin(request) }, { headers: { "Cache-Control": PUBLIC_CACHE } });
+  let fresh = true;
+  const meta = await api.meta().catch(() => {
+    fresh = false;
+    return FALLBACK_META;
+  });
+  return data({ meta, origin: siteOrigin(request) }, { headers: { "Cache-Control": fresh ? PUBLIC_CACHE : "no-store" } });
 }
 
 /* preloader once per session, skipped before first paint when already seen or motion is off */

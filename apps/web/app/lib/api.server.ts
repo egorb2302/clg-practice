@@ -12,7 +12,8 @@ import { mockApi } from "./mock.server";
 
 export const PUBLIC_CACHE = "public, s-maxage=60, stale-while-revalidate=300";
 
-export const isMock = () => process.env.API_MOCK === "1";
+export const isMock = () =>
+  process.env.API_MOCK === "1" && (process.env.NODE_ENV !== "production" || process.env.ALLOW_MOCK === "1");
 const origin = () => (process.env.API_ORIGIN ?? "http://localhost:3350").replace(/\/+$/, "");
 
 export class ApiFailure extends Error {

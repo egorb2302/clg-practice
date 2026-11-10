@@ -47,7 +47,7 @@ export function Header({ features }: { features: Features }) {
 
   return (
     <header className={`bar${open ? " is-open" : ""}`}>
-      <Link className="bar__logo" to="/" aria-label="ARMORIX — на главную"><Logo /></Link>
+      <Link className="bar__logo" to="/" aria-label="ARMORIX, на главную"><Logo /></Link>
       <nav aria-label="Основное меню"><ul className="bar__links">{links}</ul></nav>
       <div className="bar__end">
         <Link className="bar__bag" to="/selection" aria-label={`Подборка: ${count}`}>

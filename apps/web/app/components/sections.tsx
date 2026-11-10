@@ -1,7 +1,7 @@
 import type { MetaResponse } from "@armorix/contracts";
 import type { ReactNode } from "react";
 import { Link } from "react-router";
-import { nb } from "../lib/format";
+import { nb, telegramLink } from "../lib/format";
 import { LeadForm, type LeadType } from "./LeadForm";
 import { Chip, Icon, Img, Sbtn, Tt } from "./ui";
 
@@ -143,7 +143,7 @@ export function ContactPlate({ meta, chip, title, img, type = "general", id = "c
         <Chip n={chip[0]}>{chip[1]}</Chip>
         <ul className="cta__ch">
           {c.phone ? <li><Icon name="phone" /><span>Телефон</span><a className="num" href={`tel:${c.phone.replace(/[^\d+]/g, "")}`}>{c.phone}</a></li> : null}
-          {c.telegram ? <li><Icon name="tg" /><span>Телеграм</span><a href={`https://t.me/${c.telegram}`} rel="noopener">@{c.telegram}</a></li> : null}
+          {c.telegram ? <li><Icon name="tg" /><span>Телеграм</span><a href={telegramLink(c.telegram).href} rel="noopener">{telegramLink(c.telegram).label}</a></li> : null}
           {c.email ? <li><Icon name="mail" /><span>Почта</span><a href={`mailto:${c.email}`}>{c.email}</a></li> : null}
           {c.hours ? <li><Icon name="clock" /><span>Часы</span><em>{c.hours}</em></li> : null}
           {c.address ? <li><Icon name="pin" /><span>Мастерская</span><em>{c.address}</em></li> : null}

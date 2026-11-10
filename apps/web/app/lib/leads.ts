@@ -8,6 +8,7 @@ export type LeadResult =
   | { kind: "changed"; changes: CatalogChange[] }
   | { kind: "mismatch" }
   | { kind: "limited"; retryAfterSec: number }
+  | { kind: "busy" }
   | { kind: "failed" };
 
 export async function postLead(body: LeadRequest, key: string): Promise<LeadResult> {
@@ -29,7 +30,8 @@ export async function postLead(body: LeadRequest, key: string): Promise<LeadResu
   if (res.status === 201 && data) return { kind: "ok", data: data as unknown as LeadCreatedResponse };
   if (res.status === 422) return { kind: "invalid", fieldErrors: (data?.fieldErrors as Record<string, string>) ?? {} };
   if (res.status === 409 && data?.code === "CATALOG_CHANGED") return { kind: "changed", changes: (data.changes as CatalogChange[]) ?? [] };
-  if (res.status === 409) return { kind: "mismatch" };
+  if (res.status === 409 && data?.code === "IDEMPOTENCY_MISMATCH") return { kind: "mismatch" };
+  if (res.status === 409) return { kind: "busy" };
   if (res.status === 429) return { kind: "limited", retryAfterSec: Number(data?.retryAfterSec) || 60 };
   return { kind: "failed" };
 }

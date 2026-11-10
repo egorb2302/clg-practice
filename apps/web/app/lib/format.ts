@@ -8,6 +8,13 @@ export function priceFrom(kopecks: number | null | undefined): string {
   return `от ${rub.format(Math.round(kopecks / 100))} ₽`;
 }
 
+export function telegramLink(value: string): { href: string; label: string } {
+  const v = value.trim();
+  if (/^https:\/\//i.test(v)) return { href: v, label: v.replace(/^https:\/\/(www\.)?(t\.me\/)?/i, "@").replace(/\/+$/, "") };
+  const handle = v.replace(/^@/, "");
+  return { href: `https://t.me/${encodeURIComponent(handle)}`, label: `@${handle}` };
+}
+
 export function rubles(kopecks: number): string {
   return `${rub.format(Math.round(kopecks / 100))} ₽`;
 }

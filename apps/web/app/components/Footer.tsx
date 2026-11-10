@@ -1,5 +1,6 @@
 import type { MetaResponse } from "@armorix/contracts";
 import { Link } from "react-router";
+import { telegramLink } from "../lib/format";
 
 export function Footer({ meta }: { meta: MetaResponse }) {
   const c = meta.contacts;
@@ -13,7 +14,7 @@ export function Footer({ meta }: { meta: MetaResponse }) {
           </div>
           <div>
             {c.phone ? <><small>Телефон</small><a className="big num" href={`tel:${c.phone.replace(/[^\d+]/g, "")}`}>{c.phone}</a></> : null}
-            {c.telegram ? <><small className="sub">Телеграм</small><a className="big" href={`https://t.me/${c.telegram}`} rel="noopener">@{c.telegram}</a></> : null}
+            {c.telegram ? <><small className="sub">Телеграм</small><a className="big" href={telegramLink(c.telegram).href} rel="noopener">{telegramLink(c.telegram).label}</a></> : null}
             {c.hours ? <><small className="sub">Часы работы</small><p className="big">{c.hours}</p></> : null}
           </div>
           <div>

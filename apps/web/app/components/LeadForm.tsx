@@ -17,6 +17,7 @@ type Props = {
   onSuccess?: (reference: string, submittedIds: string[]) => void;
   onCatalogChanged?: (changes: CatalogChange[]) => void;
   submitLabel?: string;
+  changedMessage?: string;
   className?: string;
 };
 type Status =
@@ -26,9 +27,10 @@ type Status =
   | { s: "invalid" }
   | { s: "changed" }
   | { s: "limited"; min: number }
+  | { s: "busy" }
   | { s: "failed" };
 
-export function LeadForm({ type: initialType, switchable, items = [], deliveryMethods = [], prefill = {}, onSuccess, onCatalogChanged, submitLabel = "Отправить заявку", className = "" }: Props) {
+export function LeadForm({ type: initialType, switchable, items = [], deliveryMethods = [], prefill = {}, onSuccess, onCatalogChanged, submitLabel = "Отправить заявку", changedMessage, className = "" }: Props) {
   const id = useId();
   const form = useRef<HTMLFormElement>(null);
   const [type, setType] = useState<LeadType>(initialType);
@@ -91,6 +93,7 @@ export function LeadForm({ type: initialType, switchable, items = [], deliveryMe
     } else if (r.kind === "invalid") showErrors(r.fieldErrors);
     else if (r.kind === "changed") { key.current = null; setStatus({ s: "changed" }); onCatalogChanged?.(r.changes); }
     else if (r.kind === "mismatch") { key.current = null; setStatus({ s: "failed" }); }
+    else if (r.kind === "busy") setStatus({ s: "busy" });
     else if (r.kind === "limited") setStatus({ s: "limited", min: Math.max(1, Math.ceil(r.retryAfterSec / 60)) });
     else setStatus({ s: "failed" });
   }
@@ -216,7 +219,8 @@ export function LeadForm({ type: initialType, switchable, items = [], deliveryMe
       <p className={`lead__status${status.s === "idle" || status.s === "sending" ? "" : " is-shown"}`} role="status" aria-live="polite">
         {status.s === "sending" ? "Отправляем заявку…" : null}
         {status.s === "invalid" ? "Проверьте отмеченные поля" : null}
-        {status.s === "changed" ? "Пока вы выбирали, в каталоге изменились позиции: проверьте подборку выше и отправьте снова" : null}
+        {status.s === "changed" ? (changedMessage ?? "Пока вы выбирали, в каталоге изменились позиции: проверьте подборку выше и отправьте снова") : null}
+        {status.s === "busy" ? "Заявка уже обрабатывается, нажмите «Повторить» через несколько секунд" : null}
         {status.s === "limited" ? `Слишком много попыток, попробуйте через ${status.min} мин` : null}
         {status.s === "failed" ? "Не удалось отправить, данные сохранены: нажмите «Повторить»" : null}
       </p>

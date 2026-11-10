@@ -10,8 +10,14 @@ export function initMotion(): () => void {
   /* reveals */
   $$("[data-stagger]").forEach((g) => $$<HTMLElement>("[data-in]", g).forEach((el, i) => el.style.setProperty("--i", String(i))));
   const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("is-in"); io.unobserve(e.target); } }), { rootMargin: "0px 0px -8% 0px" });
-  $$("[data-in]:not(.is-in)").forEach((el) => io.observe(el));
-  off.push(() => io.disconnect());
+  const watch = () => {
+    $$("[data-stagger]").forEach((g) => $$<HTMLElement>("[data-in]", g).forEach((el, i) => el.style.setProperty("--i", String(i))));
+    $$("[data-in]:not(.is-in)").forEach((el) => io.observe(el));
+  };
+  watch();
+  const mo = new MutationObserver(watch);
+  mo.observe(d.body, { childList: true, subtree: true });
+  off.push(() => io.disconnect(), () => mo.disconnect());
 
   /* counters */
   const cio = new IntersectionObserver((es) => es.forEach((e) => {

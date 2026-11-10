@@ -57,7 +57,7 @@ export function Tt({ a, b, as: As = "h2", className = "" }: { a: ReactNode; b?: 
 }
 
 export function Img({ src, alt, w, h, className, eager, sizes }: { src: string; alt: string; w?: number; h?: number; className?: string; eager?: boolean; sizes?: string }) {
-  const small = src.endsWith(".webp") ? src.replace(/\.webp$/, "-s.webp") : null;
+  const small = src.startsWith("/img/") && src.endsWith(".webp") ? src.replace(/\.webp$/, "-s.webp") : null;
   return (
     <img
       className={className}
