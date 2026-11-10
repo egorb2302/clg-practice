@@ -1,0 +1,34 @@
+{
+  "name": "@armorix/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=../../.env.local --env-file-if-exists=.env src/dev.ts",
+    "migrate": "tsx --env-file-if-exists=../../.env.local --env-file-if-exists=.env src/scripts/migrate.ts",
+    "seed": "tsx --env-file-if-exists=../../.env.local --env-file-if-exists=.env src/scripts/seed.ts",
+    "create-admin": "tsx --env-file-if-exists=../../.env.local --env-file-if-exists=.env src/scripts/create-admin.ts",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@armorix/contracts": "workspace:*",
+    "@supabase/storage-js": "2.118.0",
+    "@vercel/functions": "3.10.3",
+    "express": "5.3.0",
+    "nodemailer": "10.2.1",
+    "postgres": "3.4.9",
+    "sharp": "0.35.5",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/express": "5.0.6",
+    "@types/node": "24.19.2",
+    "@types/nodemailer": "8.0.2",
+    "@types/supertest": "7.2.1",
+    "supertest": "7.3.1",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3",
+    "vitest": "4.1.12"
+  }
+}

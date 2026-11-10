@@ -1,0 +1,74 @@
+import { randomUUID } from "node:crypto";
+import { API_PREFIX } from "@armorix/contracts";
+import express, { type NextFunction, type Request, type Response } from "express";
+import { LocalStorage } from "./adapters/storage";
+import type { Deps } from "./deps";
+import { errorHandler, notFound } from "./http/errors";
+import { adminRoutes } from "./routes/admin";
+import { authRoutes } from "./routes/auth";
+import { internalRoutes } from "./routes/internal";
+import { leadRoutes } from "./routes/leads";
+import { publicRoutes } from "./routes/public";
+import { telegramRoutes } from "./routes/telegram";
+import { originGuard, sessionMiddleware } from "./security/session";
+
+export function createApp(deps: Deps) {
+  const app = express();
+  app.disable("x-powered-by");
+  app.set("etag", false);
+  app.set("query parser", "simple");
+
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    const incoming = req.header("x-request-id");
+    res.locals.requestId = incoming && /^[\w-]{8,64}$/.test(incoming) ? incoming : randomUUID();
+    res.set("X-Request-Id", res.locals.requestId);
+    res.set("X-Content-Type-Options", "nosniff");
+    const started = Date.now();
+    res.on("finish", () => {
+      console.log(
+        JSON.stringify({
+          level: "info",
+          requestId: res.locals.requestId,
+          method: req.method,
+          path: req.path,
+          status: res.statusCode,
+          ms: Date.now() - started,
+        }),
+      );
+    });
+    next();
+  });
+
+  app.get("/health", async (_req, res) => {
+    await deps.sql`select 1`;
+    res.json({ ok: true });
+  });
+
+  if (deps.storage instanceof LocalStorage) {
+    app.use("/media", express.static(deps.storage.publicDir(), { maxAge: "1d", fallthrough: false }));
+    app.use(`${API_PREFIX}/admin/media/local-upload`, express.raw({ type: () => true, limit: "25mb" }));
+  }
+
+  app.use(express.json({ limit: "256kb" }));
+  app.use(sessionMiddleware(deps));
+  app.use(originGuard(deps));
+
+  const api = express.Router();
+  api.use(publicRoutes(deps));
+  api.use(leadRoutes(deps));
+  api.use(authRoutes(deps));
+  api.use(telegramRoutes(deps));
+  api.use(internalRoutes(deps));
+  api.use("/admin", (_req, res, next) => {
+    res.set("Cache-Control", "no-store");
+    next();
+  });
+  api.use(adminRoutes(deps));
+  app.use(API_PREFIX, api);
+
+  app.use(() => {
+    throw notFound();
+  });
+  app.use(errorHandler);
+  return app;
+}
