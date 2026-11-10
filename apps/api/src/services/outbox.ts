@@ -33,6 +33,19 @@ export async function releaseEmail(sql: Sql) {
   await sql`update email_budget set used = greatest(used - 1, 0) where day = current_date`;
 }
 
+export const authEmailReserve = (limit: number) => Math.min(50, Math.floor(limit / 5));
+export const queueEmailLimit = (limit: number) => limit - authEmailReserve(limit);
+
+const SEND_DEADLINE_MS = 60_000;
+
+function withDeadline<T>(p: Promise<T>, ms: number): Promise<T> {
+  let timer: NodeJS.Timeout | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error("send deadline exceeded")), ms);
+  });
+  return Promise.race([p, timeout]).finally(() => clearTimeout(timer));
+}
+
 type Row = {
   id: string;
   channel: "email" | "telegram";
@@ -98,17 +111,17 @@ export async function runJobs(deps: Deps, opts: { ids?: string[]; budgetMs?: num
     const job = await claimOne(sql, opts.ids);
     if (!job) break;
     processed++;
-    if (job.channel === "email" && !(await reserveEmail(sql, deps.cfg.EMAIL_DAILY_LIMIT))) {
+    if (job.channel === "email" && !(await reserveEmail(sql, queueEmailLimit(deps.cfg.EMAIL_DAILY_LIMIT)))) {
       await finish(sql, job, { status: "pending", error: "daily email limit", delaySec: 3600, refundAttempt: true });
       result.deferred++;
       continue;
     }
     try {
       if (job.channel === "email") {
-        await deps.email.send(job.payload as EmailMessage);
+        await withDeadline(deps.email.send(job.payload as EmailMessage), SEND_DEADLINE_MS);
       } else {
         const p = job.payload as { method: string; params: Record<string, unknown> };
-        await deps.telegram.call(p.method, p.params);
+        await withDeadline(deps.telegram.call(p.method, p.params), SEND_DEADLINE_MS);
       }
       await finish(sql, job, { status: "sent" });
       result.sent++;

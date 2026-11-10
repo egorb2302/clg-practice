@@ -43,7 +43,7 @@ Three types share one component: `catalog` (from `/selection`), `custom`, `gener
 
 - Fields: name; preferred contact radio «Позвонить» / «Написать на email» — the chosen one is required (phone mask for RU numbers, email validation); comment (optional). `custom` adds make, model, year (optional), «Что нужно изготовить» (required). `general` adds message (required).
 - Hidden honeypot field `website` (visually hidden, `tabindex=-1`, `autocomplete=off`) and `fillMs`: milliseconds between the form becoming visible and submit, measured with `performance.now()` (never wall-clock time; client clocks drift).
-- Every item sends `seenPriceFrom`: the price «от» the user saw (kopecks), or `null` if they saw «Уточнить цену». The server answers `409 CATALOG_CHANGED` when it differs.
+- Every item sends `seenPriceFrom`: the selected variant's own `priceFrom` as shown to the user (kopecks, from `variants[].priceFrom` of the product response), or `null` if it showed «Уточнить цену». It is not the card's minimum price. The server answers `409 CATALOG_CHANGED` when it differs.
 - Submit flow:
   1. Generate `Idempotency-Key` (UUID) when the user presses submit; **reuse the same key** on retry after timeout/network error; generate a new key only after the user changes the selection or form.
   2. Button shows loading, form stays filled, double submit blocked.

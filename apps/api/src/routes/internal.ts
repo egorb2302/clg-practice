@@ -12,7 +12,10 @@ export function internalRoutes(deps: Deps) {
     const auth = req.header("authorization") ?? "";
     const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
     if (!token || !safeEqual(token, deps.cfg.JOBS_SECRET)) throw notFound();
-    const monitor = await runDailyMonitor(deps);
+    const monitor = await runDailyMonitor(deps).catch((e) => {
+      console.error(JSON.stringify({ level: "error", event: "monitor.failed", error: String((e as Error).message) }));
+      return { error: true };
+    });
     const result = { ...(await runJobs(deps, { budgetMs: 45_000 })), monitor };
     await deps.sql`delete from rate_limits where window_start < now() - interval '1 day'`;
     await deps.sql`delete from idempotency_keys where expires_at < now()`;

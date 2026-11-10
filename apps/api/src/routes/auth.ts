@@ -12,7 +12,7 @@ import { HttpError, parse } from "../http/errors";
 import { decrypt, encrypt, hmac, randomDigits, randomToken, safeEqual, sha256 } from "../security/crypto";
 import { enforce, hit } from "../security/rateLimit";
 import { audit as writeAudit } from "../services/audit";
-import { reserveEmail } from "../services/outbox";
+import { releaseEmail, reserveEmail } from "../services/outbox";
 import {
   clearSessionCookie,
   createSession,
@@ -28,7 +28,6 @@ import { clientIp } from "./leads";
 
 const CODE_TTL_MIN = 10;
 const MAX_ATTEMPTS = 5;
-const OTP_RESERVE = 50;
 const badCode = () => new HttpError(400, "VALIDATION", "Код неверный или истёк", { fieldErrors: { code: "Код неверный или истёк" } });
 
 export const codeHmac = (deps: Deps, challengeId: string, code: string) => hmac(deps.cfg.APP_SECRET, `otp:${challengeId}:${code}`);
@@ -82,7 +81,7 @@ export function authRoutes(deps: Deps) {
       insert into login_challenges (id, purpose, email, user_id, code_hmac, expires_at)
       values (${id}, 'login', ${email}, ${user?.id ?? null}, ${codeHmac(deps, id, code)},
         now() + make_interval(mins => ${CODE_TTL_MIN}))`;
-    if (!(await reserveEmail(deps.sql, deps.cfg.EMAIL_DAILY_LIMIT + OTP_RESERVE))) {
+    if (!(await reserveEmail(deps.sql, deps.cfg.EMAIL_DAILY_LIMIT))) {
       console.error(JSON.stringify({ level: "error", event: "otp.daily_limit" }));
       res.status(202).json({ challengeId: id, expiresInSec: CODE_TTL_MIN * 60 });
       return;
@@ -94,7 +93,10 @@ export function authRoutes(deps: Deps) {
           subject: `Код входа ARMORIX: ${code}`,
           text: `Ваш код для входа: ${code}\nКод действует ${CODE_TTL_MIN} минут. Если вы не запрашивали вход, просто проигнорируйте письмо.`,
         })
-        .catch((e) => console.error(JSON.stringify({ level: "error", event: "otp.send", error: String((e as Error).message) }))),
+        .catch(async (e) => {
+          console.error(JSON.stringify({ level: "error", event: "otp.send", error: String((e as Error).message) }));
+          await releaseEmail(deps.sql).catch(() => {});
+        }),
     );
     res.status(202).json({ challengeId: id, expiresInSec: CODE_TTL_MIN * 60 });
   });

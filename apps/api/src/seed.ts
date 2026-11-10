@@ -92,7 +92,7 @@ export async function seed(db: Db) {
     insert into site_settings (key, value) values ('contacts', ${db.json({
       phone: "+7 900 000-00-00 (тест)",
       email: "hello@armorix.test",
-      hours: "Пн–Пт 9:00–18:00 (тест)",
+      hours: "по будням с 9:00 до 18:00 (тест)",
     })})
     on conflict (key) do nothing`;
 

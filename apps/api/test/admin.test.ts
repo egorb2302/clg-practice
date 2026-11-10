@@ -90,6 +90,8 @@ describe("admin leads", () => {
     expect(r1.status).toBe(201);
     expect(r2.status).toBe(200);
     expect(r2.body.refunded).toBe(800_000);
+    const otherAmount = await as(ctx, manager).post(`/api/v1/admin/sales/${id}/refunds`).set("Idempotency-Key", k).send({ amountKopecks: 100, reason: "Другая сумма" });
+    expect(otherAmount.status).toBe(409);
     const tooMuch = await as(ctx, manager).post(`/api/v1/admin/sales/${id}/refunds`).set("Idempotency-Key", key()).send({ amountKopecks: 4_100_000, reason: "Слишком много" });
     expect(tooMuch.status).toBe(422);
   });
@@ -212,6 +214,23 @@ describe("admin system", () => {
     await ctx.settle();
     expect(ctx.email.sent.some((m) => m.to === "new@armorix.test")).toBe(true);
     expect((await as(ctx, manager).post("/api/v1/admin/users").send({ email: "n2@armorix.test", name: "N", roles: ["admin"] })).status).toBe(403);
+  });
+
+  it("accepts only https links for the Telegram contact", async () => {
+    const bad = await as(ctx, admin).put("/api/v1/admin/settings/contacts").send({ telegram: "javascript:alert(1)" });
+    expect(bad.status).toBe(422);
+    const ok = await as(ctx, admin).put("/api/v1/admin/settings/contacts").send({ telegram: "https://t.me/armorix_test" });
+    expect(ok.status).toBe(200);
+  });
+
+  it("filters leads by business-day dates", async () => {
+    const [row] = await ctx.sql<{ day: string }[]>`
+      select to_char(created_at at time zone 'Europe/Moscow', 'YYYY-MM-DD') as day from app.leads where reference = ${ref}`;
+    const hit = await as(ctx, manager).get(`/api/v1/admin/leads?from=${row!.day}&to=${row!.day}`);
+    expect(hit.status).toBe(200);
+    expect(hit.body.total).toBe(1);
+    const miss = await as(ctx, manager).get("/api/v1/admin/leads?from=2020-01-01&to=2020-01-02");
+    expect(miss.body.total).toBe(0);
   });
 
   it("records an audit trail", async () => {

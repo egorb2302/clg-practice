@@ -81,13 +81,26 @@ describe("outbox", () => {
 
   it("shares one daily email budget across concurrent runners", async () => {
     const limited = makeDeps({ EMAIL_DAILY_LIMIT: "1" });
-    await enqueue(limited.sql, [
+    const [c1] = await enqueue(limited.sql, [
       { channel: "email", topic: "t", dedupeKey: "c1", payload: { to: "a@x.test", subject: "1", text: "1" } },
+    ]);
+    const [c2] = await enqueue(limited.sql, [
       { channel: "email", topic: "t", dedupeKey: "c2", payload: { to: "b@x.test", subject: "2", text: "2" } },
     ]);
-    await Promise.all([runJobs(limited.deps), runJobs(limited.deps)]);
+    await Promise.all([runJobs(limited.deps, { ids: [c1!] }), runJobs(limited.deps, { ids: [c2!] })]);
     expect(limited.email.sent).toHaveLength(1);
     await limited.sql.end();
+  });
+
+  it("alerts staff once a day when jobs failed", async () => {
+    await enqueue(ctx.sql, [tgJob("broken")]);
+    await ctx.sql`update app.outbox set status = 'failed'`;
+    const { runDailyMonitor } = await import("../src/services/monitor");
+    const first = await runDailyMonitor(ctx.deps);
+    expect(first!.issues.join()).toContain("неотправленных");
+    expect(await runDailyMonitor(ctx.deps)).toBeNull();
+    await ctx.settle();
+    expect(ctx.telegram.calls.some((c) => String(c.params.text).includes("ежедневная проверка"))).toBe(true);
   });
 
   it("refuses dev adapters in production", async () => {

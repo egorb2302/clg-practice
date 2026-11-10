@@ -51,7 +51,6 @@ create table compatibilities (
   product_id uuid not null references products(id) on delete cascade,
   vehicle_model_id uuid not null references vehicle_models(id),
   note text,
-  active boolean not null default true,
   primary key (product_id, vehicle_model_id)
 );
 
@@ -271,7 +270,6 @@ create table outbox (
   max_attempts int not null default 6,
   run_after timestamptz not null default now(),
   lease_until timestamptz,
-  lease_token uuid,
   last_error text,
   created_at timestamptz not null default now(),
   sent_at timestamptz
@@ -308,16 +306,6 @@ create table audit_events (
 );
 create index audit_events_entity_idx on audit_events(entity, entity_id, created_at desc);
 create index audit_events_created_idx on audit_events(created_at desc);
-
-create table email_budget (
-  day date primary key,
-  used int not null default 0 check (used >= 0)
-);
-
-create table monitor_runs (
-  day date primary key,
-  ran_at timestamptz not null default now()
-);
 
 create table telegram_updates (
   update_id bigint primary key,

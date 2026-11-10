@@ -14,7 +14,17 @@ const list = z
 const schema = z.object({
   NODE_ENV: z.string().default("development"),
   ALLOW_DEV_ADAPTERS: bool(false),
-  BUSINESS_TZ: z.string().default("Europe/Moscow"),
+  BUSINESS_TZ: z
+    .string()
+    .default("Europe/Moscow")
+    .refine((tz) => {
+      try {
+        new Intl.DateTimeFormat("en-US", { timeZone: tz });
+        return true;
+      } catch {
+        return false;
+      }
+    }),
   PORT: z.coerce.number().int().default(3350),
   DATABASE_URL: z.string().min(1),
   SITE_URL: z.url(),

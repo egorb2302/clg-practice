@@ -300,13 +300,16 @@ export function adminCatalogRoutes(deps: Deps) {
     const p = await loadProduct(String(req.params.id));
     const [check] = await deps.sql<{ title: string; description: string; variants: number; photos: number; no_alt: number }[]>`
       select p.title, p.description,
-        (select count(*)::int from variants x where x.product_id = p.id and x.status = 'active') as variants,
+        (select count(*)::int from variants x
+          join compatibilities c on c.product_id = x.product_id and c.vehicle_model_id = x.vehicle_model_id and c.active
+          join vehicle_models v on v.id = x.vehicle_model_id and v.published
+          where x.product_id = p.id and x.status = 'active') as variants,
         (select count(*)::int from media m where m.product_id = p.id and m.status = 'ready') as photos,
         (select count(*)::int from media m where m.product_id = p.id and m.status = 'ready' and m.alt = '') as no_alt
       from products p where p.id = ${p.id}`;
     const problems: Record<string, string> = {};
     if (!check!.description) problems.description = "Добавьте описание";
-    if (check!.variants === 0) problems.variants = "Нужен хотя бы один активный вариант";
+    if (check!.variants === 0) problems.variants = "Нужен хотя бы один активный вариант для опубликованной модели";
     if (check!.photos === 0) problems.media = "Нужна хотя бы одна обработанная фотография";
     if (check!.no_alt > 0) problems.alt = "У всех фото должно быть описание";
     if (Object.keys(problems).length) {
