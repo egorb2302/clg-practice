@@ -76,6 +76,7 @@ export function contentRoutes(deps: Deps) {
   r.get("/me/offers", feature(deps.cfg, "FEATURE_ACCOUNT"), feature(deps.cfg, "FEATURE_OFFERS"), async (_req, res) => {
     const auth = res.locals.auth as AuthContext | null;
     if (!auth) throw new HttpError(401, "UNAUTHORIZED", "Войдите в кабинет");
+    if (auth.user.isStaff) throw new HttpError(403, "FORBIDDEN", "Кабинет недоступен для учётных записей сотрудников");
     const purchases = await priorPurchases(deps.sql, auth.user.id, null);
     const rows = await deps.sql<PostRow[]>`
       select p.*, o.min_purchases, o.benefit, o.combinable from posts p join offer_rules o on o.post_id = p.id
@@ -163,6 +164,7 @@ export function contentRoutes(deps: Deps) {
   r.get("/me/subscription", feature(deps.cfg, "FEATURE_ACCOUNT"), campaigns, async (_req, res) => {
     const auth = res.locals.auth as AuthContext | null;
     if (!auth) throw new HttpError(401, "UNAUTHORIZED", "Войдите в кабинет");
+    if (auth.user.isStaff) throw new HttpError(403, "FORBIDDEN", "Кабинет недоступен для учётных записей сотрудников");
     const [s] = await deps.sql<{ id: string; status: string; email: string }[]>`
       select s.id, s.status, s.email from subscriptions s join users u on u.id = ${auth.user.id}
       where s.user_id = u.id or (u.email_verified_at is not null and s.email = u.email)

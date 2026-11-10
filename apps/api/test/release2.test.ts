@@ -212,6 +212,28 @@ describe("customer cabinet and welcome bonus", () => {
     expect((await as(ctx, c).get("/api/v1/me")).body.profile.email).toBe("new@example.test");
   });
 
+  it("reverses the whole bonus on spam even when it was spent, and refuses a confirm replay with other points", async () => {
+    const c = await clientLogin("spent@example.test");
+    const lead = await submit(c);
+    const sale = await confirmSale(lead.body.reference, { redeemPoints: 400 });
+    expect(sale.res.status).toBe(200);
+    const [row] = await ctx.sql<{ version: number; external_id: string }[]>`select version, external_id from app.sales where id = ${sale.saleId}`;
+    const replay = await as(ctx, manager).post(`/api/v1/admin/sales/${sale.saleId}/confirm`)
+      .send({ version: row!.version, amountKopecks: 4_590_000, soldOn: "2026-11-10", externalId: row!.external_id, redeemPoints: 100 });
+    expect(replay.status).toBe(409);
+    const [award] = await ctx.sql<{ id: string }[]>`select id from app.loyalty_awards where user_id = ${c.userId} and status = 'credited'`;
+    await as(ctx, admin).post(`/api/v1/admin/loyalty/awards/${award!.id}/reverse`).send({ reason: "Подтверждённое злоупотребление" });
+    expect((await as(ctx, c).get("/api/v1/me/loyalty")).body.balance).toBe(-400);
+    await as(ctx, manager).post(`/api/v1/admin/sales/${sale.saleId}/refunds`).set("Idempotency-Key", key()).send({ amountKopecks: 4_590_000, reason: "Полный возврат" });
+    expect((await as(ctx, c).get("/api/v1/me/loyalty")).body.balance).toBe(0);
+  });
+
+  it("keeps staff accounts out of the customer cabinet", async () => {
+    const res = await as(ctx, manager).post("/api/v1/me/email/request").send({ email: "takeover@example.test" });
+    expect(res.status).toBe(403);
+    expect((await as(ctx, manager).get("/api/v1/me")).status).toBe(403);
+  });
+
   it("reverses the bonus when the lead is closed as spam", async () => {
     const c = await clientLogin("spam@example.test");
     const lead = await submit(c);

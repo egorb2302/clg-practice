@@ -69,7 +69,9 @@ export async function dispatchCampaigns(deps: Deps) {
           where campaign_id = ${c.id} and subscription_id = ${d.subscription_id}`;
         if (jobId) n++;
       }
-      if (batch.length < BATCH) await tx`update campaigns set status = 'done', updated_at = now() where id = ${c.id}`;
+      const [left] = await tx<{ n: number }[]>`
+        select count(*)::int as n from campaign_deliveries where campaign_id = ${c.id} and status = 'queued'`;
+      if (left!.n === 0) await tx`update campaigns set status = 'done', updated_at = now() where id = ${c.id}`;
       return n;
     });
   }

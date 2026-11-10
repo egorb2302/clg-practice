@@ -50,6 +50,8 @@ type SaleRow = {
   version: number;
   contact_phone: string | null;
   contact_email: string | null;
+  redeemed_points: number;
+  offer_id: string | null;
 };
 
 export function adminSaleRoutes(deps: Deps) {
@@ -153,7 +155,12 @@ export function adminSaleRoutes(deps: Deps) {
     const id = String(req.params.id);
     const actor = authOf(res).user.id;
     const alreadyDone = (s: SaleRow) => {
-      const same = s.external_id === body.externalId && s.source === body.source && s.amount_kopecks === body.amountKopecks;
+      const same =
+        s.external_id === body.externalId &&
+        s.source === body.source &&
+        s.amount_kopecks === body.amountKopecks &&
+        s.redeemed_points === (body.redeemPoints ?? 0) &&
+        (s.offer_id ?? null) === (body.offerId ?? null);
       if (!same) throw new HttpError(409, "INVALID_TRANSITION", "Сделка уже подтверждена с другими данными");
       res.json({ saleId: s.id, status: s.status, alreadyConfirmed: true });
     };

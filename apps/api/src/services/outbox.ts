@@ -69,6 +69,13 @@ async function claimOne(db: Db, ids?: string[]) {
     update outbox set status = 'failed', lease_until = null, lease_token = null,
       last_error = coalesce(last_error, 'lease expired too many times')
     where status = 'processing' and lease_until < now() and attempts >= max_attempts`;
+  await db`
+    update outbox set status = 'needs_review', lease_until = null, lease_token = null,
+      last_error = 'interrupted campaign send, outcome unknown'
+    where status = 'processing' and lease_until < now() and topic = 'campaign'`;
+  await db`
+    update campaign_deliveries d set status = 'needs_review', updated_at = now()
+    from outbox o where o.id = d.outbox_id and o.status = 'needs_review' and d.status = 'queued'`;
   const [row] = await db<Row[]>`
     update outbox set status = 'processing', attempts = attempts + 1,
       lease_until = now() + make_interval(secs => ${LEASE_SEC}), lease_token = gen_random_uuid()
@@ -148,7 +155,7 @@ export async function runJobs(deps: Deps, opts: { ids?: string[]; budgetMs?: num
       result.sent++;
     } catch (e) {
       const error = (e as Error).message.slice(0, 300);
-      if (e instanceof UnknownOutcomeError) {
+      if (e instanceof UnknownOutcomeError || (campaign && !(e instanceof PermanentError) && !(e instanceof RetryLaterError))) {
         await finish(sql, job, { status: "needs_review", error });
         await delivery("needs_review");
         result.review++;

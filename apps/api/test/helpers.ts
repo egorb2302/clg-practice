@@ -64,6 +64,7 @@ export function makeDeps(env: Record<string, string> = {}) {
 export type Ctx = ReturnType<typeof makeDeps>;
 
 export async function resetData(ctx: Ctx) {
+  await ctx.settle();
   await ctx.sql`
     truncate app.audit_events, app.outbox, app.idempotency_keys, app.rate_limits, app.telegram_updates,
       app.email_budget, app.monitor_runs, app.campaign_deliveries, app.campaigns, app.consent_events, app.subscriptions,

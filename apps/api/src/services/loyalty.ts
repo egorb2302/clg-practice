@@ -140,8 +140,11 @@ export async function reverseAward(tx: Tx, awardId: string, reason: string, acto
     select user_id, points, status from loyalty_awards where id = ${awardId}`;
   if (!a || a.status !== "credited" || !a.user_id) return false;
   await lockUser(tx, a.user_id);
-  const { remaining } = await earnRemaining(tx, a.user_id);
-  const amount = Math.min(a.points, remaining);
+  const [exp] = await tx<{ expired: number }[]>`
+    select coalesce(-sum(x.points), 0)::int as expired
+    from loyalty_ledger e join loyalty_ledger x on x.op_key = 'expire:' || e.id
+    where e.award_id = ${awardId} and e.type = 'earn'`;
+  const amount = a.points - (exp?.expired ?? 0);
   if (amount <= 0) return false;
   const rows = await tx`
     insert into loyalty_ledger (user_id, type, points, award_id, op_key, reason, actor_user_id)

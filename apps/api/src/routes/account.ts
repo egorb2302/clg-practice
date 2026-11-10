@@ -30,6 +30,7 @@ export const publicLeadStatus: Record<string, string> = {
 function requireLogin(res: Response) {
   const auth = res.locals.auth as AuthContext | null;
   if (!auth) throw new HttpError(401, "UNAUTHORIZED", "Войдите в кабинет");
+  if (auth.user.isStaff) throw new HttpError(403, "FORBIDDEN", "Кабинет недоступен для учётных записей сотрудников");
   return auth;
 }
 

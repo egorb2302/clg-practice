@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 import type { Config } from "../config";
-import { PermanentError } from "./errors";
+import { PermanentError, RetryLaterError } from "./errors";
 
 export type EmailMessage = {
   to: string;
@@ -46,6 +46,7 @@ export class SmtpEmail implements EmailAdapter {
     } catch (e) {
       const code = (e as { responseCode?: number }).responseCode;
       if (code && code >= 500 && code < 600 && code !== 530 && code !== 535) throw new PermanentError(`smtp ${code}`);
+      if (code && code >= 400 && code < 600) throw new RetryLaterError(`smtp ${code}`, 300);
       throw new Error(`smtp ${code ?? (e as { code?: string }).code ?? "error"}`);
     }
   }
