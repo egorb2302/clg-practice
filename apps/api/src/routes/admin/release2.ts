@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
+import type { Tx } from "../../db";
 import type { Deps } from "../../deps";
 import { HttpError, notFound, parse, versionConflict } from "../../http/errors";
 import { feature } from "../../http/features";
@@ -32,7 +33,7 @@ const postFields = {
   offer: z
     .object({
       minPurchases: z.number().int().min(1).max(1000).nullable().default(null),
-      productIds: z.array(z.uuid()).max(200).default([]),
+      variantIds: z.array(z.uuid()).max(500).default([]),
       combinable: z.boolean().default(false),
       benefit: z.string().trim().max(500).default(""),
     })
@@ -50,7 +51,7 @@ const postPatch = z.object({
   offer: z
     .object({
       minPurchases: z.number().int().min(1).max(1000).nullable().optional(),
-      productIds: z.array(z.uuid()).max(200).optional(),
+      variantIds: z.array(z.uuid()).max(500).optional(),
       combinable: z.boolean().optional(),
       benefit: z.string().trim().max(500).optional(),
     })
@@ -68,8 +69,19 @@ const uuidParam = (v: unknown) => {
   return id;
 };
 
+async function checkVariants(tx: Tx, ids: string[] | undefined) {
+  if (!ids?.length) return ids;
+  const unique = [...new Set(ids)];
+  const [r] = await tx<{ n: number }[]>`select count(*)::int as n from variants where id in ${tx(unique)}`;
+  if (r!.n !== unique.length) {
+    throw new HttpError(422, "VALIDATION", "Некоторые варианты не найдены", { fieldErrors: { variantIds: "Некоторые варианты не найдены" } });
+  }
+  return unique;
+}
+
 export function adminRelease2Routes(deps: Deps) {
   const r = Router();
+  const offers = feature(deps.cfg, "FEATURE_OFFERS");
   const loyalty = feature(deps.cfg, "FEATURE_LOYALTY");
   const posts = (req: import("express").Request, _res: import("express").Response, next: import("express").NextFunction) => {
     if (!deps.cfg.FEATURE_OFFERS && !deps.cfg.FEATURE_NEWS) throw notFound();
@@ -157,12 +169,22 @@ export function adminRelease2Routes(deps: Deps) {
     res.json({ items });
   });
 
+  r.get("/admin/offer-variants", offers, requireStaff("catalog_edit"), async (_req, res) => {
+    const items = await deps.sql`
+      select v.id, v.title, v.status, p.title as "productTitle", p.code as "productCode",
+        m.make || ' ' || m.model as "vehicle"
+      from variants v join products p on p.id = v.product_id join vehicle_models m on m.id = v.vehicle_model_id
+      where v.status <> 'archived' and p.status <> 'archived'
+      order by p.title, m.make, m.model, v.sort, v.title limit 1000`;
+    res.json({ items });
+  });
+
   r.get("/admin/posts/:id", posts, requireStaff("catalog_edit"), async (req, res) => {
     const id = uuidParam(req.params.id);
     const [p] = await deps.sql`
       select p.id, p.type, p.slug, p.title, p.summary, p.body, p.cover_url as "coverUrl", p.status,
         p.starts_at as "startsAt", p.ends_at as "endsAt", p.version,
-        o.min_purchases as "minPurchases", o.product_ids as "productIds", o.combinable, o.benefit, o.rule_version as "ruleVersion"
+        o.min_purchases as "minPurchases", o.variant_ids as "variantIds", o.combinable, o.benefit, o.rule_version as "ruleVersion"
       from posts p left join offer_rules o on o.post_id = p.id where p.id = ${id}`;
     if (!p) throw notFound();
     res.json({ post: p });
@@ -186,9 +208,10 @@ export function adminRelease2Routes(deps: Deps) {
           values (${b.type}, ${b.slug}, ${b.title}, ${b.summary}, ${b.body}, ${b.coverUrl}, ${b.startsAt}, ${b.endsAt})
           returning id, version`;
         if (b.type === "offer") {
-          const o = b.offer ?? { minPurchases: null, productIds: [], combinable: false, benefit: "" };
-          await tx`insert into offer_rules (post_id, min_purchases, product_ids, combinable, benefit)
-            values (${p!.id}, ${o.minPurchases}, ${o.productIds}, ${o.combinable}, ${o.benefit})`;
+          const o = b.offer ?? { minPurchases: null, variantIds: [], combinable: false, benefit: "" };
+          o.variantIds = (await checkVariants(tx, o.variantIds))!;
+          await tx`insert into offer_rules (post_id, min_purchases, variant_ids, combinable, benefit)
+            values (${p!.id}, ${o.minPurchases}, ${o.variantIds}, ${o.combinable}, ${o.benefit})`;
         }
         await audit(tx, actor, "post.create", "post", p!.id, { type: b.type, slug: b.slug });
         return p!;
@@ -217,10 +240,10 @@ export function adminRelease2Routes(deps: Deps) {
         where id = ${id} and version = ${b.version} returning version, type`;
       if (rows.length === 0) throw versionConflict();
       if (b.offer && rows[0]!.type === "offer") {
-        const o = b.offer;
+        const o = { ...b.offer, variantIds: await checkVariants(tx, b.offer.variantIds) };
         await tx`update offer_rules set
           min_purchases = ${o.minPurchases === undefined ? tx`min_purchases` : o.minPurchases},
-          product_ids = ${o.productIds === undefined ? tx`product_ids` : o.productIds},
+          variant_ids = ${o.variantIds === undefined ? tx`variant_ids` : o.variantIds},
           combinable = ${o.combinable === undefined ? tx`combinable` : o.combinable},
           benefit = ${o.benefit === undefined ? tx`benefit` : o.benefit},
           rule_version = rule_version + 1

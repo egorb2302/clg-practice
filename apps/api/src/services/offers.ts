@@ -12,9 +12,9 @@ export async function priorPurchases(db: Db, userId: string, excludeSaleId: stri
 }
 
 export async function checkOffer(tx: Tx, offerId: string, saleId: string, clientId: string | null) {
-  const [o] = await tx<{ status: string; active: boolean; min_purchases: number | null; product_ids: string[]; rule_version: number }[]>`
+  const [o] = await tx<{ status: string; active: boolean; min_purchases: number | null; variant_ids: string[]; rule_version: number }[]>`
     select p.status, (coalesce(p.starts_at <= now(), true) and coalesce(p.ends_at > now(), true)) as active,
-      r.min_purchases, r.product_ids, r.rule_version
+      r.min_purchases, r.variant_ids, r.rule_version
     from posts p join offer_rules r on r.post_id = p.id
     where p.id = ${offerId} and p.type = 'offer'`;
   if (!o || o.status !== "published") throw bad("Акция не найдена или не опубликована");
@@ -24,10 +24,10 @@ export async function checkOffer(tx: Tx, offerId: string, saleId: string, client
     const n = await priorPurchases(tx, clientId, saleId);
     if (n < o.min_purchases) throw bad(`Нужно подтверждённых покупок: ${o.min_purchases}, у клиента ${n}`);
   }
-  if (o.product_ids.length) {
+  if (o.variant_ids.length) {
     const [hit] = await tx`
-      select 1 from sale_items i join variants v on v.id = i.variant_id
-      where i.sale_id = ${saleId} and v.product_id in ${tx(o.product_ids)} limit 1`;
+      select 1 from sale_items i
+      where i.sale_id = ${saleId} and i.variant_id in ${tx(o.variant_ids)} limit 1`;
     if (!hit) throw bad("В покупке нет товаров, на которые действует акция");
   }
   return o.rule_version;

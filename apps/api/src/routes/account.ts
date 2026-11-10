@@ -8,7 +8,7 @@ import { feature } from "../http/features";
 import { hmac, randomDigits, randomToken, safeEqual, sha256 } from "../security/crypto";
 import { fetchTelegramJwks, refetchTelegramJwks, TokenError, verifyTelegramIdToken, type TelegramClaims } from "../security/oidc";
 import { enforce } from "../security/rateLimit";
-import { createSession, csrfFor, loadAuthByToken, revokeSession, setSessionCookie, type AuthContext } from "../security/session";
+import { createSession, csrfFor, loadAuthByToken, readCookie, revokeSession, setSessionCookie, type AuthContext } from "../security/session";
 import { audit } from "../services/audit";
 import { balance, creditAward } from "../services/loyalty";
 import { releaseEmail, reserveEmail } from "../services/outbox";
@@ -47,11 +47,20 @@ export function accountRoutes(deps: Deps) {
   const account = feature(deps.cfg, "FEATURE_ACCOUNT");
   const jwks = () => (deps.telegramJwks ?? fetchTelegramJwks)();
 
-  async function consumeNonce(nonce: string, purpose: "login" | "link", sessionId: string | null) {
+  const binderCookie = deps.cfg.COOKIE_SECURE ? "__Host-ax_tg_login" : "ax_tg_login";
+  const setBinder = (res: Response, value: string, maxAge: number) => {
+    const parts = [`${binderCookie}=${value}`, "Path=/", "HttpOnly", "SameSite=Lax", `Max-Age=${maxAge}`];
+    if (deps.cfg.COOKIE_SECURE) parts.push("Secure");
+    res.append("Set-Cookie", parts.join("; "));
+  };
+
+  async function consumeNonce(nonce: string, purpose: "login" | "link", sessionId: string | null, binder?: string) {
+    if (purpose === "login" && !binder) throw badToken();
     const rows = await deps.sql`
       update oidc_nonces set used_at = now()
       where nonce_hash = ${sha256(nonce)} and purpose = ${purpose} and used_at is null and expires_at > now()
         and ${sessionId ? deps.sql`session_id = ${sessionId}` : deps.sql`session_id is null`}
+        and ${binder ? deps.sql`binder_hash = ${sha256(binder)}` : deps.sql`true`}
       returning nonce_hash`;
     if (rows.length === 0) throw badToken();
   }
@@ -84,16 +93,20 @@ export function accountRoutes(deps: Deps) {
     await enforce(deps.sql, `tg-nonce:ip:${clientIp(req)}`, 60, 3600);
     const auth = res.locals.auth as AuthContext | null;
     const nonce = randomToken(24);
+    const binder = auth ? null : randomToken(24);
     await deps.sql`
-      insert into oidc_nonces (nonce_hash, purpose, session_id, expires_at)
-      values (${sha256(nonce)}, ${auth ? "link" : "login"}, ${auth?.sessionId ?? null}, now() + interval '10 minutes')`;
+      insert into oidc_nonces (nonce_hash, purpose, session_id, binder_hash, expires_at)
+      values (${sha256(nonce)}, ${auth ? "link" : "login"}, ${auth?.sessionId ?? null}, ${binder ? sha256(binder) : null},
+        now() + interval '10 minutes')`;
+    if (binder) setBinder(res, binder, 600);
     res.set("Cache-Control", "no-store").json({ nonce, clientId: Number(deps.cfg.TELEGRAM_LOGIN_CLIENT_ID), purpose: auth ? "link" : "login" });
   });
 
   r.post("/auth/telegram", account, async (req, res) => {
     const body = parse(tokenBody, req.body);
     await enforce(deps.sql, `tg-login:ip:${clientIp(req)}`, 30, 3600);
-    await consumeNonce(body.nonce, "login", null);
+    await consumeNonce(body.nonce, "login", null, readCookie(req, binderCookie));
+    setBinder(res, "", 0);
     const claims = await verifyToken(body.idToken, body.nonce);
     const user = await deps.sql.begin(async (tx) => {
       const [known] = await tx<{ id: string; is_staff: boolean; status: string }[]>`

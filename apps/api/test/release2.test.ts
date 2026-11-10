@@ -60,10 +60,20 @@ async function clientLogin(email: string) {
   return { cookie: cookieFrom(v), csrf: v.body.csrfToken as string, userId: v.body.user.id as string };
 }
 
-async function telegramLogin(claims: Record<string, unknown>) {
+const binderFrom = (res: { headers: Record<string, unknown> }) =>
+  ((res.headers["set-cookie"] as string[] | undefined) ?? []).find((x) => x.startsWith("ax_tg_login="))?.split(";")[0] ?? "";
+
+async function loginNonce() {
   const n = await ctx.http().post("/api/v1/auth/telegram/nonce");
-  const res = await ctx.http().post("/api/v1/auth/telegram").send({ idToken: idToken({ nonce: n.body.nonce, ...claims }), nonce: n.body.nonce });
-  return { res, nonce: n.body.nonce as string };
+  return { nonce: n.body.nonce as string, binder: binderFrom(n) };
+}
+
+const telegramPost = (n: { binder: string }) => ctx.http().post("/api/v1/auth/telegram").set("Cookie", n.binder);
+
+async function telegramLogin(claims: Record<string, unknown>) {
+  const n = await loginNonce();
+  const res = await telegramPost(n).send({ idToken: idToken({ nonce: n.nonce, ...claims }), nonce: n.nonce });
+  return { res, nonce: n.nonce };
 }
 
 const submit = (s: { cookie: string; csrf: string } | null, extra: Record<string, unknown> = {}) => {
@@ -179,12 +189,24 @@ describe("customer cabinet and welcome bonus", () => {
     expect(r.res.status).toBe(422);
   });
 
+  it("keeps the ledger append-only in the database", async () => {
+    const c = await clientLogin("ledger-lock@example.test");
+    await as(ctx, admin).post(`/api/v1/admin/loyalty/users/${c.userId}/adjust`).set("Idempotency-Key", key()).send({ points: 50, reason: "Проверка журнала" });
+    const [row] = await ctx.sql<{ id: string }[]>`select id from app.loyalty_ledger where user_id = ${c.userId} limit 1`;
+    await expect(ctx.sql`update app.loyalty_ledger set points = 5000 where id = ${row!.id}`).rejects.toMatchObject({ code: "55000" });
+    await expect(ctx.sql`delete from app.loyalty_ledger where id = ${row!.id}`).rejects.toMatchObject({ code: "55000" });
+  });
+
   it("expires only the unspent part of the bonus and does not return points after expiry", async () => {
     const c = await clientLogin("expire@example.test");
     const lead = await submit(c);
     const sale = await confirmSale(lead.body.reference, { redeemPoints: 400 });
     expect(sale.res.status).toBe(200);
-    await ctx.sql`update app.loyalty_ledger set expires_at = now() - interval '1 minute' where user_id = ${c.userId} and type = 'earn'`;
+    await ctx.sql.begin(async (tx) => {
+      await tx`alter table app.loyalty_ledger disable trigger loyalty_ledger_append_only`;
+      await tx`update app.loyalty_ledger set expires_at = now() - interval '1 minute' where user_id = ${c.userId} and type = 'earn'`;
+      await tx`alter table app.loyalty_ledger enable trigger loyalty_ledger_append_only`;
+    });
     const { expirePoints } = await import("../src/services/loyalty");
     expect(await expirePoints(ctx.sql)).toBe(1);
     expect((await as(ctx, c).get("/api/v1/me/loyalty")).body.balance).toBe(0);
@@ -270,17 +292,29 @@ describe("telegram login", () => {
   });
 
   it("rejects a reused nonce, a foreign audience and a forged signature", async () => {
-    const n = await ctx.http().post("/api/v1/auth/telegram/nonce");
-    const token = idToken({ sub: "tg-1", nonce: n.body.nonce });
-    expect((await ctx.http().post("/api/v1/auth/telegram").send({ idToken: token, nonce: n.body.nonce })).status).toBe(200);
-    expect((await ctx.http().post("/api/v1/auth/telegram").send({ idToken: token, nonce: n.body.nonce })).status).toBe(400);
-    const n2 = await ctx.http().post("/api/v1/auth/telegram/nonce");
-    const foreign = idToken({ sub: "tg-2", nonce: n2.body.nonce, aud: "123" });
-    expect((await ctx.http().post("/api/v1/auth/telegram").send({ idToken: foreign, nonce: n2.body.nonce })).status).toBe(400);
-    const n3 = await ctx.http().post("/api/v1/auth/telegram/nonce");
-    const parts = idToken({ sub: "tg-3", nonce: n3.body.nonce }).split(".");
-    const forged = [parts[0], Buffer.from(JSON.stringify({ iss: "https://oauth.telegram.org", aud: CLIENT_ID, sub: "admin", exp: 9e9, nonce: n3.body.nonce })).toString("base64url"), parts[2]].join(".");
-    expect((await ctx.http().post("/api/v1/auth/telegram").send({ idToken: forged, nonce: n3.body.nonce })).status).toBe(400);
+    const n = await loginNonce();
+    const token = idToken({ sub: "tg-1", nonce: n.nonce });
+    expect((await telegramPost(n).send({ idToken: token, nonce: n.nonce })).status).toBe(200);
+    expect((await telegramPost(n).send({ idToken: token, nonce: n.nonce })).status).toBe(400);
+    const n2 = await loginNonce();
+    const foreign = idToken({ sub: "tg-2", nonce: n2.nonce, aud: "123" });
+    expect((await telegramPost(n2).send({ idToken: foreign, nonce: n2.nonce })).status).toBe(400);
+    const n3 = await loginNonce();
+    const parts = idToken({ sub: "tg-3", nonce: n3.nonce }).split(".");
+    const forged = [parts[0], Buffer.from(JSON.stringify({ iss: "https://oauth.telegram.org", aud: CLIENT_ID, sub: "admin", exp: 9e9, nonce: n3.nonce })).toString("base64url"), parts[2]].join(".");
+    expect((await telegramPost(n3).send({ idToken: forged, nonce: n3.nonce })).status).toBe(400);
+  });
+
+  it("accepts a login nonce only from the browser that requested it", async () => {
+    const n = await loginNonce();
+    expect(n.binder).not.toBe("");
+    const token = idToken({ sub: "tg-bound", nonce: n.nonce });
+    expect((await ctx.http().post("/api/v1/auth/telegram").send({ idToken: token, nonce: n.nonce })).status).toBe(400);
+    const other = await loginNonce();
+    expect((await telegramPost(other).send({ idToken: token, nonce: n.nonce })).status).toBe(400);
+    const ok = await telegramPost(n).send({ idToken: token, nonce: n.nonce });
+    expect(ok.status).toBe(200);
+    expect(binderFrom(ok)).toBe("ax_tg_login=");
   });
 });
 
@@ -322,8 +356,26 @@ describe("offers and news", () => {
     expect((await ctx.http().get("/api/v1/offers")).body.items).toHaveLength(0);
   });
 
+  it("applies an offer only to its variants and refuses unknown variants", async () => {
+    const other = await variantId(ctx, "jac-t9-front-tube", "С защитой картера");
+    const list = await as(ctx, editor).get("/api/v1/admin/offer-variants");
+    expect(list.status).toBe(200);
+    expect(list.body.items.map((i: { id: string }) => i.id)).toEqual(expect.arrayContaining([v1, other]));
+    const unknown = await as(ctx, editor).post("/api/v1/admin/posts").send({
+      type: "offer", slug: "offer-unknown", title: "Нет варианта", offer: { variantIds: [randomUUID()] },
+    });
+    expect(unknown.status).toBe(422);
+    const c = await clientLogin("variant-offer@example.test");
+    const wrong = await createOffer({ offer: { minPurchases: null, benefit: "Только с картером", variantIds: [other] } });
+    const lead = await submit(c);
+    expect((await confirmSale(lead.body.reference, { offerId: wrong })).res.status).toBe(422);
+    const right = await createOffer({ offer: { minPurchases: null, benefit: "Без картера", variantIds: [v1, v1] } });
+    expect((await as(ctx, editor).get(`/api/v1/admin/posts/${right}`)).body.post.variantIds).toEqual([v1]);
+    expect((await confirmSale(lead.body.reference, { offerId: right })).res.status).toBe(200);
+  });
+
   it("keeps omitted offer fields on a partial edit and returns the full post", async () => {
-    const offerId = await createOffer({ offer: { minPurchases: 2, benefit: "Старое", productIds: [] } });
+    const offerId = await createOffer({ offer: { minPurchases: 2, benefit: "Старое", variantIds: [] } });
     const [p] = await ctx.sql<{ version: number }[]>`select version from app.posts where id = ${offerId}`;
     const patch = await as(ctx, editor).patch(`/api/v1/admin/posts/${offerId}`).send({ version: p!.version, offer: { benefit: "Новое" } });
     expect(patch.status).toBe(200);

@@ -116,6 +116,8 @@ Render only when the flag from `/meta` is on; routes return 404 when off.
 
 - `/login`: email → 6-digit code step (resend timer 60 s, neutral errors), «Войти через Telegram» (Telegram Login widget; bot name from env).
 - `/account`: profile, contacts with «подтверждён / не подтверждён», «Подтвердить телефон в Telegram» (Telegram Login with scope `openid profile phone`: get `{ nonce, clientId }` from `POST /auth/telegram/nonce`, run the Telegram login library, send `{ idToken, nonce }` to `POST /me/identities/telegram`; the same flow with `POST /auth/telegram` is the login button), logout. The page must not send `Cross-Origin-Opener-Policy: same-origin` (it breaks the Telegram popup).
+- Telegram login: `POST /auth/telegram/nonce` sets an `HttpOnly` cookie bound to that nonce, so call it and `POST /auth/telegram` from the same browser through the site's `/api/v1` proxy (`credentials: "same-origin"`, the default for same-origin fetch); the API clears the cookie after use.
+- Logged-in customers: every `POST/PUT/PATCH/DELETE` sends `X-CSRF-Token` with the `csrfToken` from the login response or `GET /auth/session` (the proxy already forwards the header). Without it the API answers 403 `CSRF`, except `POST /leads` and `POST /subscriptions`, which then run as a guest (no cabinet link, no bonus).
 - `/account/leads` (list with simple public status and date, «Привязать заявку» flow by email code), `/account/purchases`, `/account/bonus` (balance + history), `/account/subscription`. Each with an empty state explaining when data appears.
 - After a guest lead with `loyaltyStatus: 'pending'`: hint «Баллы станут доступны после входа и подтверждения контакта».
 - `/offers`, `/offers/:slug`, `/news`, `/news/:slug`; offer block on the home page.

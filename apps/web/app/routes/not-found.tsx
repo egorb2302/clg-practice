@@ -1,5 +1,6 @@
 import { data } from "react-router";
 import { NotFoundView } from "../components/NotFoundView";
+export { pageHeaders as headers } from "../lib/headers";
 
 /** unknown URLs: real HTTP 404 with the branded page */
 export function loader() {

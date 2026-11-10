@@ -33,11 +33,51 @@ type FullPost = {
   endsAt: string | null;
   version: number;
   minPurchases: number | null;
-  productIds: string[] | null;
+  variantIds: string[] | null;
   combinable: boolean | null;
   benefit: string | null;
   ruleVersion: number | null;
 };
+
+type VariantOption = { id: string; title: string; status: string; productTitle: string; productCode: string; vehicle: string };
+
+function VariantPicker({ value, onChange, error }: { value: string[]; onChange: (ids: string[]) => void; error?: string }) {
+  const list = useLoad((signal) => api<{ items: VariantOption[] }>("/admin/offer-variants", { signal }), []);
+  if (list.loading && !list.data) return <Loading />;
+  if (!list.data) return <ErrorBox error={list.error} onRetry={list.reload} />;
+  const groups = new Map<string, VariantOption[]>();
+  for (const v of list.data.items) groups.set(v.productTitle, [...(groups.get(v.productTitle) ?? []), v]);
+  const known = new Set(list.data.items.map((v) => v.id));
+  const missing = value.filter((id) => !known.has(id)).length;
+  const toggle = (id: string, on: boolean) => onChange(on ? [...value, id] : value.filter((x) => x !== id));
+  return (
+    <fieldset className="roles variant-picker">
+      <legend>Варианты, на которые действует акция</legend>
+      <p className="muted">Если ничего не выбрать, акция действует на любой товар</p>
+      {missing > 0 && <p className="muted">Ещё выбрано в архиве: {missing}</p>}
+      {list.data.items.length === 0 && <Empty>Вариантов пока нет</Empty>}
+      {[...groups].map(([product, items]) => (
+        <div key={product} className="variant-group">
+          <strong>{product}</strong>
+          {items.map((v) => (
+            <label key={v.id} className="check">
+              <input type="checkbox" checked={value.includes(v.id)} onChange={(e) => toggle(v.id, e.target.checked)} />
+              <span>
+                {v.vehicle} · {v.title}
+                {v.status !== "active" && <span className="muted"> (скрыт)</span>}
+              </span>
+            </label>
+          ))}
+        </div>
+      ))}
+      {error && (
+        <span className="err" role="alert">
+          {error}
+        </span>
+      )}
+    </fieldset>
+  );
+}
 
 function PostForm({ row, onDone, onCancel }: { row: PostRow | null; onDone: () => void; onCancel: () => void }) {
   const full = useLoad((signal) => (row ? api<{ post: FullPost }>(`/admin/posts/${row.id}`, { signal }) : Promise.resolve(null)), [row?.id]);
@@ -73,6 +113,7 @@ function PostFormInner({ post, onDone, onCancel }: { post: FullPost | null; onDo
     benefit: post?.benefit ?? "",
     combinable: post?.combinable ?? false,
   });
+  const [variantIds, setVariantIds] = useState<string[]>(post?.variantIds ?? []);
   const fe = fieldsOf(act.error);
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF((s) => ({ ...s, [k]: e.target.value }));
   const editing = !!post;
@@ -85,7 +126,7 @@ function PostFormInner({ post, onDone, onCancel }: { post: FullPost | null; onDo
       minPurchases,
       benefit: f.benefit.trim(),
       combinable: f.combinable,
-      productIds: [] as string[],
+      variantIds,
     };
     let body: Record<string, unknown>;
     let path: string;
@@ -105,6 +146,8 @@ function PostFormInner({ post, onDone, onCancel }: { post: FullPost | null; onDo
         if (minPurchases !== post.minPurchases) o.minPurchases = minPurchases;
         if (offer.benefit !== (post.benefit ?? "")) o.benefit = offer.benefit;
         if (f.combinable !== (post.combinable ?? false)) o.combinable = f.combinable;
+        const before = [...(post.variantIds ?? [])].sort().join();
+        if ([...variantIds].sort().join() !== before) o.variantIds = variantIds;
         body.offer = o;
       }
     } else {
@@ -180,6 +223,7 @@ function PostFormInner({ post, onDone, onCancel }: { post: FullPost | null; onDo
             <input type="checkbox" checked={f.combinable} onChange={(e) => setF((s) => ({ ...s, combinable: e.target.checked }))} />
             <span>Совмещается с другими акциями</span>
           </label>
+          <VariantPicker value={variantIds} onChange={setVariantIds} error={fe.variantIds} />
         </fieldset>
       )}
       <ErrorBox error={act.error} />
