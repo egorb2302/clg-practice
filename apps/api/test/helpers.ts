@@ -6,7 +6,7 @@ import request from "supertest";
 import { MemoryEmail } from "../src/adapters/email";
 import { LocalStorage } from "../src/adapters/storage";
 import { MemoryTelegram } from "../src/adapters/telegram";
-import { createApp } from "../src/app";
+import { createApp } from "../src/application";
 import { loadConfig } from "../src/config";
 import { createDb } from "../src/db";
 import type { Deps } from "../src/deps";
