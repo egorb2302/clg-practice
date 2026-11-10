@@ -11,7 +11,7 @@ import { rootOrigin, seo } from "../lib/seo";
 import type { loader as rootLoader } from "../root";
 
 export const loader = () => data({}, { headers: { "Cache-Control": PUBLIC_CACHE } });
-export const headers: Route.HeadersFunction = ({ loaderHeaders }) => loaderHeaders;
+export { pageHeaders as headers } from "../lib/headers";
 export const meta: Route.MetaFunction = ({ matches }) =>
   seo({ title: "Подборка", description: "Выбранные комплекты защиты и заявка менеджеру", path: "/selection", origin: rootOrigin(matches), noindex: true });
 

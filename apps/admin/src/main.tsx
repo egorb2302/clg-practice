@@ -83,9 +83,8 @@ createRoot(document.getElementById("root")!).render(
   </StrictMode>,
 );
 
-requestAnimationFrame(() => {
-  const pre = document.getElementById("preloader");
-  if (!pre) return;
+const pre = document.getElementById("preloader");
+if (pre) {
   pre.classList.add("done");
   setTimeout(() => pre.remove(), 400);
-});
+}

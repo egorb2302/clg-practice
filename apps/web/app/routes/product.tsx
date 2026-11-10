@@ -22,7 +22,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   const related = (await api.catalog(new URLSearchParams({ vehicle: p.vehicle.slug }))).items.filter((x) => x.slug !== p.slug).slice(0, 3);
   return data({ product: p, related }, { headers: { "Cache-Control": PUBLIC_CACHE } });
 }
-export const headers: Route.HeadersFunction = ({ loaderHeaders }) => loaderHeaders;
+export { pageHeaders as headers } from "../lib/headers";
 export const meta: Route.MetaFunction = ({ data: d, matches }) =>
   d ? seo({
     title: `${d.product.title}, ${d.product.vehicle.label}`,

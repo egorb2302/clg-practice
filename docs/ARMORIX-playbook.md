@@ -80,6 +80,8 @@ Use a Steel outline on Forest buttons because the green fill has a 1.88:1 contra
 
 ## Typography
 
+> **Decision (Egor, 2026-11-10): IBM Plex Sans everywhere**, site and admin, 700 for headings and labels, 400 for text, local files `ibm-plex-sans-400.woff` and `ibm-plex-sans-700.woff`. The Montserrat and Golos options below are kept for history only.
+
 | Direction | Headings | Body and UI | Application |
 | --- | --- | --- | --- |
 | **Recommended** | Montserrat 700, 600 for small headings | Golos Text 400 and 600 | Keeps the kit's geometric voice and gives longer Russian copy a calmer text face. |

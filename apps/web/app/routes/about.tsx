@@ -9,7 +9,7 @@ import { rootOrigin, seo } from "../lib/seo";
 import type { loader as rootLoader } from "../root";
 
 export const loader = () => data({}, { headers: { "Cache-Control": PUBLIC_CACHE } });
-export const headers: Route.HeadersFunction = ({ loaderHeaders }) => loaderHeaders;
+export { pageHeaders as headers } from "../lib/headers";
 export const meta: Route.MetaFunction = ({ matches }) =>
   seo({ title: "О компании и производстве", description: "Как ARMORIX делает защиту бамперов: сталь AISI 304, гибка и сварка в своей мастерской, установка без сверления и доставка по России", path: "/about", origin: rootOrigin(matches), image: "/img/shop-sparks.webp" });
 

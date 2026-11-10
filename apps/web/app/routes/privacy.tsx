@@ -4,7 +4,7 @@ import { PUBLIC_CACHE } from "../lib/api.server";
 import { rootOrigin, seo } from "../lib/seo";
 
 export const loader = () => data({}, { headers: { "Cache-Control": PUBLIC_CACHE } });
-export const headers: Route.HeadersFunction = ({ loaderHeaders }) => loaderHeaders;
+export { pageHeaders as headers } from "../lib/headers";
 export const meta: Route.MetaFunction = ({ matches }) =>
   seo({ title: "Обработка персональных данных", description: "Как ARMORIX обрабатывает данные из заявок и рассылки", path: "/privacy", origin: rootOrigin(matches) });
 

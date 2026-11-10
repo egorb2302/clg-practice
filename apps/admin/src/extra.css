@@ -67,7 +67,7 @@ fieldset.roles {
   min-width: 0;
 }
 fieldset.roles legend {
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.9rem;
   padding: 0 var(--space-2);
 }

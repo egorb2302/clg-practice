@@ -16,7 +16,7 @@ export async function loader() {
   const [vehicles, catalog] = await Promise.all([api.vehicles(), api.catalog(new URLSearchParams())]);
   return data({ vehicles: vehicles.items, products: catalog.items }, { headers: { "Cache-Control": PUBLIC_CACHE } });
 }
-export const headers: Route.HeadersFunction = ({ loaderHeaders }) => loaderHeaders;
+export { pageHeaders as headers } from "../lib/headers";
 export const meta: Route.MetaFunction = ({ matches }) =>
   seo({
     title: "Защита бамперов для внедорожников и пикапов | ARMORIX",

@@ -16,7 +16,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   const [vehicles, catalog] = await Promise.all([api.vehicles(), api.catalog(qs)]);
   return data({ vehicles: vehicles.items, catalog, q, search: qs.toString() }, { headers: { "Cache-Control": PUBLIC_CACHE } });
 }
-export const headers: Route.HeadersFunction = ({ loaderHeaders }) => loaderHeaders;
+export { pageHeaders as headers } from "../lib/headers";
 export const meta: Route.MetaFunction = ({ data: d, matches }) => {
   const v = d?.vehicles.find((x) => x.slug === d.q.vehicle);
   return seo({
