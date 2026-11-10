@@ -1,6 +1,6 @@
 import type { Deps } from "../deps";
 import { hmac } from "../security/crypto";
-import { enqueue } from "./outbox";
+import { enqueue, queueEmailLimit } from "./outbox";
 
 const BATCH = 500;
 
@@ -29,29 +29,33 @@ export function campaignMessage(deps: Deps, c: { subject: string; body_text: str
   };
 }
 
+export function sendingDays(deps: Deps, recipients: number) {
+  const perDay = Math.max(1, queueEmailLimit(deps.cfg.EMAIL_DAILY_LIMIT));
+  return Math.max(1, Math.ceil(recipients / perDay));
+}
+
 export async function dispatchCampaigns(deps: Deps) {
-  const due = await deps.sql<{ id: string; subject: string; body_text: string; status: string }[]>`
-    update campaigns set status = 'sending', updated_at = now()
-    where status = 'scheduled' and scheduled_at <= now()
-    returning id, subject, body_text, status`;
-  const sending = await deps.sql<{ id: string; subject: string; body_text: string }[]>`
-    select id, subject, body_text from campaigns where status = 'sending'`;
-  const ids: string[] = [];
-  for (const c of sending) {
-    const jobIds = await deps.sql.begin(async (tx) => {
-      const [locked] = await tx`select id from campaigns where id = ${c.id} and status = 'sending' for update skip locked`;
-      if (!locked) return [];
-      if (due.some((d) => d.id === c.id)) {
+  const due = await deps.sql<{ id: string }[]>`
+    select id from campaigns where status in ('scheduled', 'sending') and scheduled_at <= now() order by scheduled_at`;
+  let created = 0;
+  for (const { id } of due) {
+    created += await deps.sql.begin(async (tx) => {
+      const [c] = await tx<{ id: string; status: string; subject: string; body_text: string }[]>`
+        select id, status, subject, body_text from campaigns
+        where id = ${id} and status in ('scheduled', 'sending') for update skip locked`;
+      if (!c) return 0;
+      if (c.status === "scheduled") {
         await tx`
           insert into campaign_deliveries (campaign_id, subscription_id)
           select ${c.id}, s.id from subscriptions s where s.status = 'active'
           on conflict do nothing`;
+        await tx`update campaigns set status = 'sending', updated_at = now() where id = ${c.id}`;
       }
       const batch = await tx<{ subscription_id: string; email: string }[]>`
         select d.subscription_id, s.email from campaign_deliveries d join subscriptions s on s.id = d.subscription_id
         where d.campaign_id = ${c.id} and d.outbox_id is null and d.status = 'queued'
         limit ${BATCH}`;
-      const created: string[] = [];
+      let n = 0;
       for (const d of batch) {
         const [jobId] = await enqueue(tx, [
           {
@@ -61,16 +65,13 @@ export async function dispatchCampaigns(deps: Deps) {
             payload: { ...campaignMessage(deps, c, { id: d.subscription_id, email: d.email }), subscriptionId: d.subscription_id } as never,
           },
         ]);
-        if (jobId) {
-          await tx`update campaign_deliveries set outbox_id = ${jobId}, updated_at = now()
-            where campaign_id = ${c.id} and subscription_id = ${d.subscription_id}`;
-          created.push(jobId);
-        }
+        await tx`update campaign_deliveries set outbox_id = ${jobId ?? null}, status = ${jobId ? "queued" : "skipped"}, updated_at = now()
+          where campaign_id = ${c.id} and subscription_id = ${d.subscription_id}`;
+        if (jobId) n++;
       }
       if (batch.length < BATCH) await tx`update campaigns set status = 'done', updated_at = now() where id = ${c.id}`;
-      return created;
+      return n;
     });
-    ids.push(...jobIds);
   }
-  return ids.length;
+  return created;
 }

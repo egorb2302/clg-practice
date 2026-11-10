@@ -5,9 +5,9 @@ import { HttpError, notFound, parse, versionConflict } from "../../http/errors";
 import { feature } from "../../http/features";
 import { authOf, requireStaff } from "../../security/session";
 import { audit } from "../../services/audit";
-import { campaignMessage } from "../../services/campaigns";
+import { campaignMessage, sendingDays } from "../../services/campaigns";
 import { balance, lockUser, reverseAward } from "../../services/loyalty";
-import { enqueue, kick } from "../../services/outbox";
+import { enqueue, kick, queueEmailLimit } from "../../services/outbox";
 
 const ruleBody = z.object({
   points: z.number().int().positive().max(1_000_000),
@@ -194,6 +194,8 @@ export function adminRelease2Routes(deps: Deps) {
         await tx`update offer_rules set min_purchases = ${b.offer.minPurchases}, product_ids = ${b.offer.productIds},
           combinable = ${b.offer.combinable}, benefit = ${b.offer.benefit}, rule_version = rule_version + 1
           where post_id = ${id}`;
+      } else if ((b.startsAt !== undefined || b.endsAt !== undefined) && rows[0]!.type === "offer") {
+        await tx`update offer_rules set rule_version = rule_version + 1 where post_id = ${id}`;
       }
       await audit(tx, actor, "post.update", "post", id, { fields: Object.keys(b).filter((k) => k !== "version") });
       return rows[0]!.version;
@@ -234,8 +236,13 @@ export function adminRelease2Routes(deps: Deps) {
       select c.id, c.subject, c.status, c.scheduled_at as "scheduledAt", c.version,
         (select json_object_agg(status, n) from (select status, count(*)::int n from campaign_deliveries d where d.campaign_id = c.id group by status) x) as report
       from campaigns c order by c.created_at desc limit 200`;
-    const [subs] = await deps.sql`select count(*)::int as active from subscriptions where status = 'active'`;
-    res.json({ items, activeSubscribers: subs!.active });
+    const [subs] = await deps.sql<{ active: number }[]>`select count(*)::int as active from subscriptions where status = 'active'`;
+    res.json({
+      items,
+      activeSubscribers: subs!.active,
+      dailyLimit: queueEmailLimit(deps.cfg.EMAIL_DAILY_LIMIT),
+      estimatedDays: sendingDays(deps, subs!.active),
+    });
   });
 
   r.post("/admin/campaigns", campaigns, requireStaff("catalog_edit"), async (req, res) => {
@@ -289,7 +296,8 @@ export function adminRelease2Routes(deps: Deps) {
       await audit(tx, actor, "campaign.schedule", "campaign", id, { at: b.at });
       return rows[0]!.version;
     });
-    res.json({ status: "scheduled", version });
+    const [subs] = await deps.sql<{ active: number }[]>`select count(*)::int as active from subscriptions where status = 'active'`;
+    res.json({ status: "scheduled", version, recipients: subs!.active, estimatedDays: sendingDays(deps, subs!.active) });
   });
 
   r.post("/admin/campaigns/:id/cancel", campaigns, requireStaff("campaigns_send"), async (req, res) => {

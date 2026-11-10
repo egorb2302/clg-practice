@@ -102,7 +102,8 @@ export function contentRoutes(deps: Deps) {
         values (${email}, ${auth && !auth.user.isStaff ? auth.user.id : null}, ${deps.cfg.CONSENT_TEXT_VERSION}, ${b.source})
         on conflict (email) do update set updated_at = now(),
           status = case when subscriptions.status = 'unsubscribed' then 'pending' else subscriptions.status end,
-          consent_text_version = excluded.consent_text_version, source = excluded.source
+          consent_text_version = case when subscriptions.status = 'active' then subscriptions.consent_text_version else excluded.consent_text_version end,
+          source = case when subscriptions.status = 'active' then subscriptions.source else excluded.source end
         returning id, status`;
       if (sub!.status === "active") return [];
       await tx`insert into consent_events (subscription_id, type, text_version, source)

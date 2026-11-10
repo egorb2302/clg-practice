@@ -20,6 +20,26 @@ export async function activeRule(db: Db): Promise<Rule | null> {
   return r ?? null;
 }
 
+export async function latestRule(db: Db): Promise<Rule | null> {
+  const [r] = await db<Rule[]>`
+    select id, version, points, confirm_days, points_ttl_days, kopecks_per_point, redeem_limit_pct
+    from loyalty_rules where program = 'welcome' order by version desc limit 1`;
+  return r ?? null;
+}
+
+export async function earnRemaining(db: Db, userId: string) {
+  const [r] = await db<{ earn_id: string | null; points: number; consumed: number; expired: boolean }[]>`
+    select e.id as earn_id, e.points,
+      coalesce((select sum(l.points) from loyalty_ledger l where l.user_id = ${userId} and (
+        l.type in ('redeem', 'expire')
+        or (l.type = 'reverse' and (l.op_key like 'refund-return:%' or l.award_id = e.award_id)))), 0)::int as consumed,
+      (e.expires_at is not null and e.expires_at < now()) as expired
+    from loyalty_ledger e where e.user_id = ${userId} and e.type = 'earn'
+    order by e.created_at limit 1`;
+  if (!r?.earn_id) return { earnId: null, remaining: 0, expired: false };
+  return { earnId: r.earn_id, remaining: Math.max(0, Math.min(r.points, r.points + r.consumed)), expired: r.expired };
+}
+
 export async function hasVerifiedContact(db: Db, userId: string) {
   const [u] = await db<{ ok: boolean }[]>`
     select (email_verified_at is not null or phone_verified_at is not null
@@ -87,8 +107,8 @@ export async function redeemForSale(
 ) {
   if (input.points <= 0) return;
   await lockUser(tx, input.userId);
-  const rule = await activeRule(tx);
-  if (!rule) throw new HttpError(409, "CONFLICT", "Бонусная программа не активна");
+  const rule = await latestRule(tx);
+  if (!rule) throw new HttpError(409, "CONFLICT", "Бонусная программа не настроена");
   const available = await balance(tx, input.userId);
   if (available <= 0 || input.points > available) {
     throw new HttpError(422, "VALIDATION", "Недостаточно баллов", { fieldErrors: { redeemPoints: `Доступно ${Math.max(available, 0)}` } });
@@ -105,6 +125,9 @@ export async function redeemForSale(
 
 export async function returnRedeemed(tx: Tx, sale: { id: string; client_user_id: string | null; redeemed_points: number }, actor: string) {
   if (!sale.client_user_id || sale.redeemed_points <= 0) return;
+  await lockUser(tx, sale.client_user_id);
+  const earn = await earnRemaining(tx, sale.client_user_id);
+  if (earn.expired) return;
   await tx`
     insert into loyalty_ledger (user_id, type, points, sale_id, op_key, reason, actor_user_id)
     values (${sale.client_user_id}, 'reverse', ${sale.redeemed_points}, ${sale.id}, ${`refund-return:${sale.id}`},
@@ -116,9 +139,13 @@ export async function reverseAward(tx: Tx, awardId: string, reason: string, acto
   const [a] = await tx<{ user_id: string | null; points: number; status: string }[]>`
     select user_id, points, status from loyalty_awards where id = ${awardId}`;
   if (!a || a.status !== "credited" || !a.user_id) return false;
+  await lockUser(tx, a.user_id);
+  const { remaining } = await earnRemaining(tx, a.user_id);
+  const amount = Math.min(a.points, remaining);
+  if (amount <= 0) return false;
   const rows = await tx`
     insert into loyalty_ledger (user_id, type, points, award_id, op_key, reason, actor_user_id)
-    values (${a.user_id}, 'reverse', ${-a.points}, ${awardId}, ${`reverse:${awardId}`}, ${reason}, ${actor})
+    values (${a.user_id}, 'reverse', ${-amount}, ${awardId}, ${`reverse:${awardId}`}, ${reason}, ${actor})
     on conflict (op_key) do nothing returning id`;
   return rows.length > 0;
 }
@@ -136,7 +163,8 @@ export async function expirePoints(sql: Sql) {
       const fresh = await tx`insert into loyalty_expiry_checks (earn_id) values (${e.id}) on conflict do nothing returning earn_id`;
       if (fresh.length === 0) return;
       await lockUser(tx, e.user_id);
-      const amount = Math.min(e.points, Math.max(await balance(tx, e.user_id), 0));
+      const { remaining } = await earnRemaining(tx, e.user_id);
+      const amount = Math.min(remaining, Math.max(await balance(tx, e.user_id), 0));
       if (amount <= 0) return;
       await tx`
         insert into loyalty_ledger (user_id, type, points, op_key, reason)

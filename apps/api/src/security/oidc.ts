@@ -21,6 +21,12 @@ export type TelegramClaims = {
 
 let cache: { at: number; keys: Jwk[] } | null = null;
 
+export const refetchTelegramJwks: JwksSource = async () => {
+  if (cache && Date.now() - cache.at < 60_000) return cache.keys;
+  cache = null;
+  return fetchTelegramJwks();
+};
+
 export const fetchTelegramJwks: JwksSource = async () => {
   if (cache && Date.now() - cache.at < 3600_000) return cache.keys;
   const res = await fetch(TELEGRAM_JWKS_URL, { signal: AbortSignal.timeout(5000) });
@@ -36,7 +42,7 @@ export class TokenError extends Error {}
 
 export async function verifyTelegramIdToken(
   token: string,
-  opts: { clientId: string; nonce: string; jwks: JwksSource; nowSec?: number },
+  opts: { clientId: string; nonce: string; jwks: JwksSource; refetch?: JwksSource; nowSec?: number },
 ): Promise<TelegramClaims> {
   const parts = token.split(".");
   if (parts.length !== 3) throw new TokenError("malformed token");
@@ -55,11 +61,19 @@ export async function verifyTelegramIdToken(
   };
   const alg = header.alg ? algs[header.alg] : undefined;
   if (!alg) throw new TokenError("unsupported alg");
-  const keys = await opts.jwks();
-  const jwk = keys.find((k) => (header.kid ? k.kid === header.kid : true) && (!k.alg || k.alg === header.alg));
+  const kty = header.alg === "RS256" ? "RSA" : "EC";
+  const pick = (keys: Jwk[]) =>
+    keys.find((k) => k.kty === kty && (header.kid ? k.kid === header.kid : true) && (!k.alg || k.alg === header.alg));
+  let jwk = pick(await opts.jwks());
+  if (!jwk && opts.refetch) jwk = pick(await opts.refetch());
   if (!jwk) throw new TokenError("unknown key");
-  const key = createPublicKey({ key: jwk, format: "jwk" });
-  const ok = verify(alg.hash, Buffer.from(`${h}.${p}`), alg.dsa ? { key, dsaEncoding: alg.dsa } : key, b64(s));
+  let ok = false;
+  try {
+    const key = createPublicKey({ key: jwk, format: "jwk" });
+    ok = verify(alg.hash, Buffer.from(`${h}.${p}`), alg.dsa ? { key, dsaEncoding: alg.dsa } : key, b64(s));
+  } catch {
+    throw new TokenError("bad key");
+  }
   if (!ok) throw new TokenError("bad signature");
 
   const now = opts.nowSec ?? Math.floor(Date.now() / 1000);

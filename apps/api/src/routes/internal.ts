@@ -18,8 +18,14 @@ export function internalRoutes(deps: Deps) {
       console.error(JSON.stringify({ level: "error", event: "monitor.failed", error: String((e as Error).message) }));
       return { error: true };
     });
-    const campaignJobs = deps.cfg.FEATURE_CAMPAIGNS ? await dispatchCampaigns(deps) : 0;
-    const expired = deps.cfg.FEATURE_LOYALTY ? await expirePoints(deps.sql) : 0;
+    const guarded = <T,>(name: string, p: Promise<T>) =>
+      p.catch((e) => {
+        console.error(JSON.stringify({ level: "error", event: `${name}.failed`, error: String((e as Error).message) }));
+        return -1;
+      });
+    const campaignJobs = deps.cfg.FEATURE_CAMPAIGNS ? await guarded("campaigns", dispatchCampaigns(deps)) : 0;
+    const expired = deps.cfg.FEATURE_LOYALTY ? await guarded("expiry", expirePoints(deps.sql)) : 0;
+    await deps.sql`delete from oidc_nonces where expires_at < now() - interval '1 day'`.catch(() => {});
     const result = { ...(await runJobs(deps, { budgetMs: 40_000 })), monitor, campaignJobs, expired };
     await deps.sql`delete from rate_limits where window_start < now() - interval '1 day'`;
     await deps.sql`delete from idempotency_keys where expires_at < now()`;

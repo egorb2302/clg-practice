@@ -174,7 +174,9 @@ export function adminSaleRoutes(deps: Deps) {
         await tx`
           insert into sale_events (sale_id, type, amount_kopecks, actor_user_id)
           values (${s.id}, 'confirmed', ${body.amountKopecks}, ${actor})`;
-        const [client] = await tx<{ client_user_id: string | null }[]>`select client_user_id from sales where id = ${s.id}`;
+        const [client] = await tx<{ client_user_id: string | null }[]>`
+          update sales s set client_user_id = coalesce(s.client_user_id, (select l.owner_user_id from leads l where l.id = s.lead_id))
+          where s.id = ${s.id} returning s.client_user_id`;
         const clientId = client?.client_user_id ?? null;
         if (body.redeemPoints) {
           if (!deps.cfg.FEATURE_LOYALTY) throw new HttpError(409, "CONFLICT", "Бонусная программа выключена");

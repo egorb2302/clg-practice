@@ -14,7 +14,7 @@ const deps = {
   sql,
   email: createEmail(cfg),
   telegram: createTelegram(cfg),
-  storage: createStorage(cfg, `http://localhost:${cfg.PORT}`),
+  storage: createStorage(cfg, ""),
   waitUntil: (p: Promise<unknown>) => {
     pending.add(p);
     p.finally(() => pending.delete(p));

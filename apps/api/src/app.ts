@@ -1,4 +1,6 @@
 import { randomUUID } from "node:crypto";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { API_PREFIX } from "@armorix/contracts";
 import express, { type NextFunction, type Request, type Response } from "express";
 import { LocalStorage } from "./adapters/storage";
@@ -45,6 +47,14 @@ export function createApp(deps: Deps) {
     await deps.sql`select 1`;
     res.json({ ok: true });
   });
+
+  const adminDir = join(import.meta.dirname, "..", "public", "admin");
+  if (existsSync(join(adminDir, "index.html"))) {
+    app.use("/admin", express.static(adminDir, { index: false, maxAge: "1h" }));
+    app.get(/^\/admin(\/.*)?$/, (_req, res) => {
+      res.set("Cache-Control", "no-store").sendFile(join(adminDir, "index.html"));
+    });
+  }
 
   if (deps.storage instanceof LocalStorage) {
     app.use("/media", express.static(deps.storage.publicDir(), { maxAge: "1d", fallthrough: false }));

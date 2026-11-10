@@ -6,7 +6,7 @@ import type { Deps } from "../deps";
 import { HttpError, notFound, parse } from "../http/errors";
 import { feature } from "../http/features";
 import { hmac, randomDigits, randomToken, safeEqual, sha256 } from "../security/crypto";
-import { fetchTelegramJwks, TokenError, verifyTelegramIdToken, type TelegramClaims } from "../security/oidc";
+import { fetchTelegramJwks, refetchTelegramJwks, TokenError, verifyTelegramIdToken, type TelegramClaims } from "../security/oidc";
 import { enforce } from "../security/rateLimit";
 import { createSession, csrfFor, loadAuthByToken, revokeSession, setSessionCookie, type AuthContext } from "../security/session";
 import { audit } from "../services/audit";
@@ -59,7 +59,7 @@ export function accountRoutes(deps: Deps) {
     const clientId = deps.cfg.TELEGRAM_LOGIN_CLIENT_ID;
     if (!clientId) throw notFound();
     try {
-      return await verifyTelegramIdToken(idToken, { clientId, nonce, jwks });
+      return await verifyTelegramIdToken(idToken, { clientId, nonce, jwks, refetch: deps.telegramJwks ?? refetchTelegramJwks });
     } catch (e) {
       if (e instanceof TokenError) throw badToken();
       throw e;
@@ -73,11 +73,14 @@ export function accountRoutes(deps: Deps) {
     await deps.sql`
       update users set phone = ${phone}, phone_verified_at = now()
       where id = ${userId} and not exists (
-        select 1 from users o where o.phone = ${phone} and o.phone_verified_at is not null and o.id <> ${userId})`;
+        select 1 from users o where o.phone = ${phone} and o.phone_verified_at is not null and o.id <> ${userId})`.catch((e) => {
+      if ((e as { code?: string }).code !== "23505") throw e;
+    });
   }
 
-  r.post("/auth/telegram/nonce", account, async (_req, res) => {
+  r.post("/auth/telegram/nonce", account, async (req, res) => {
     if (!deps.cfg.TELEGRAM_LOGIN_CLIENT_ID) throw notFound();
+    await enforce(deps.sql, `tg-nonce:ip:${clientIp(req)}`, 60, 3600);
     const auth = res.locals.auth as AuthContext | null;
     const nonce = randomToken(24);
     await deps.sql`
@@ -222,13 +225,14 @@ export function accountRoutes(deps: Deps) {
 
   r.post("/me/leads/claim", account, async (req, res) => {
     const auth = requireLogin(res);
-    const { references } = parse(claimBody, req.body);
+    const references = [...new Set(parse(claimBody, req.body).references)].sort();
     const out = await deps.sql.begin(async (tx) => {
+      await tx`select id from users where id = ${auth.user.id} for update`;
       const results: { reference: string; claimed: boolean; loyaltyStatus?: string }[] = [];
       for (const ref of references) {
         const [lead] = await tx<{ id: string }[]>`
           select l.id from leads l join users u on u.id = ${auth.user.id}
-          where l.reference = ${ref} and l.owner_user_id is null
+          where l.reference = ${ref} and l.owner_user_id is null and l.created_at > now() - interval '180 days'
             and ((u.email_verified_at is not null and l.email = u.email) or (u.phone_verified_at is not null and l.phone = u.phone))
           for update of l`;
         if (!lead) {
@@ -236,6 +240,7 @@ export function accountRoutes(deps: Deps) {
           continue;
         }
         await tx`update leads set owner_user_id = ${auth.user.id}, version = version + 1, updated_at = now() where id = ${lead.id}`;
+        await tx`update sales set client_user_id = ${auth.user.id} where lead_id = ${lead.id} and client_user_id is null`;
         await tx`insert into lead_events (lead_id, actor_user_id, type, note) values (${lead.id}, ${auth.user.id}, 'claim', 'self')`;
         let loyaltyStatus: string | undefined;
         if (deps.cfg.FEATURE_LOYALTY) {
