@@ -189,6 +189,18 @@ describe("customer cabinet and welcome bonus", () => {
     expect(r.res.status).toBe(422);
   });
 
+  it("locks the customer without waiting on a foreign-key share lock held elsewhere", async () => {
+    const c = await clientLogin("fk-share@example.test");
+    const { lockUser } = await import("../src/services/loyalty");
+    await ctx.sql.begin(async (holder) => {
+      await holder`select 1 from app.users where id = ${c.userId} for key share`;
+      await ctx.sql.begin(async (tx) => {
+        await tx`set local lock_timeout = '500ms'`;
+        await lockUser(tx, c.userId);
+      });
+    });
+  });
+
   it("keeps the ledger append-only in the database", async () => {
     const c = await clientLogin("ledger-lock@example.test");
     await as(ctx, admin).post(`/api/v1/admin/loyalty/users/${c.userId}/adjust`).set("Idempotency-Key", key()).send({ points: 50, reason: "Проверка журнала" });

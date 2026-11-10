@@ -169,6 +169,9 @@ export function adminSaleRoutes(deps: Deps) {
     let raced = false;
     try {
       await deps.sql.begin(async (tx) => {
+        const [lead] = s.lead_id
+          ? await tx<{ status: string }[]>`select status from leads where id = ${s.lead_id} for update`
+          : [];
         const rows = await tx`
           update sales set status = 'confirmed', amount_kopecks = ${body.amountKopecks}, sold_on = ${body.soldOn},
             external_id = ${body.externalId}, source = ${body.source}, confirmed_by = ${actor}, confirmed_at = now(),
@@ -197,7 +200,6 @@ export function adminSaleRoutes(deps: Deps) {
           await tx`update sales set offer_id = ${body.offerId}, offer_rule_version = ${ruleVersion} where id = ${s.id}`;
         }
         if (s.lead_id) {
-          const [lead] = await tx<{ status: string }[]>`select status from leads where id = ${s.lead_id} for update`;
           if (lead && lead.status !== "sale_confirmed") {
             await tx`update leads set status = 'sale_confirmed', version = version + 1, updated_at = now() where id = ${s.lead_id}`;
             await tx`
