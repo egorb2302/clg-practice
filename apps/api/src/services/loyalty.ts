@@ -49,7 +49,7 @@ export async function hasVerifiedContact(db: Db, userId: string) {
 }
 
 export async function lockUser(tx: Tx, userId: string) {
-  await tx`select id from users where id = ${userId} for update`;
+  await tx`select id from users where id = ${userId} for no key update`;
 }
 
 export async function creditAward(tx: Tx, awardId: string, userId: string): Promise<AwardStatus> {

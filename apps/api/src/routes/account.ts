@@ -242,7 +242,7 @@ export function accountRoutes(deps: Deps) {
     const auth = requireLogin(res);
     const references = [...new Set(parse(claimBody, req.body).references)].sort();
     const out = await deps.sql.begin(async (tx) => {
-      await tx`select id from users where id = ${auth.user.id} for update`;
+      await tx`select id from users where id = ${auth.user.id} for no key update`;
       const results: { reference: string; claimed: boolean; loyaltyStatus?: string }[] = [];
       for (const ref of references) {
         const [lead] = await tx<{ id: string }[]>`
