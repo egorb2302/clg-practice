@@ -1,0 +1,144 @@
+/* ARMORIX components. Needs tokens.css */
+
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 400 var(--t-body)/1.58 var(--font-text);
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, h4 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  text-wrap: balance;
+  hyphens: none;
+}
+p { margin: 0; text-wrap: pretty; }
+img, svg { display: block; }
+a { color: inherit; }
+
+/* ── Type roles ── */
+.t-mega, .t-h1, .t-h2, .t-h3, .t-h4 { font-family: var(--font-display); font-weight: 700; }
+.t-mega { font-size: var(--t-mega); line-height: .92; letter-spacing: -.035em; }
+.t-h1 { font-size: var(--t-h1); line-height: .95; letter-spacing: -.03em; }
+.t-h2 { font-size: var(--t-h2); line-height: 1; letter-spacing: -.025em; }
+.t-h3 { font-size: var(--t-h3); line-height: 1.08; letter-spacing: -.02em; }
+.t-h4 { font-size: var(--t-h4); line-height: 1.16; letter-spacing: -.012em; }
+.t-claim { font: 400 var(--t-h4)/1.3 var(--font-text); letter-spacing: -.01em; color: var(--text); }
+.t-lead { font-size: var(--t-lead); line-height: 1.5; color: var(--text-2); max-width: 44ch; }
+.t-body { font-size: var(--t-body); line-height: 1.58; color: var(--text-2); max-width: 58ch; }
+.t-small { font-size: var(--t-small); line-height: 1.5; color: var(--text-3); }
+/* caps label: ≤ 14px, the only tracked-out text (kit: ENGINEERED TO PROTECT) */
+.label {
+  font: 400 var(--t-label)/1.2 var(--font-text);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.label--metal { color: var(--metal); }
+.label--pine { color: var(--pine-300); }
+.num { font-variant-numeric: tabular-nums; }
+
+/* ── Chamfer helpers: top-left and bottom-right cut, like the plates in the kit ── */
+.cut {
+  --c: var(--cut-m);
+  clip-path: polygon(var(--c) 0, 100% 0, 100% calc(100% - var(--c)), calc(100% - var(--c)) 100%, 0 100%, 0 var(--c));
+}
+
+/* ── Buttons: solid and hairline, chamfered (8.12: square only where the idea calls for it,
+   here the cut corner is the shield's own) ── */
+.btn {
+  --c: var(--cut-s);
+  --fill: var(--action);
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: 56px;
+  padding: 0 var(--s-4) 0 var(--s-5);
+  border: 1px solid transparent;
+  color: var(--action-text);
+  font: 400 1.0625rem/1 var(--font-text);
+  text-decoration: none;
+  cursor: pointer;
+  background:
+    linear-gradient(135deg, transparent calc(var(--c) * .7), var(--fill) 0) left / 51% 100% no-repeat padding-box,
+    linear-gradient(-45deg, transparent calc(var(--c) * .7), var(--fill) 0) right / 51% 100% no-repeat padding-box;
+  transition: transform var(--d-press) var(--ease-press), --fill var(--d-hover) var(--ease-press);
+  -webkit-tap-highlight-color: transparent;
+}
+.btn--lg { min-height: 68px; padding: 0 var(--s-5) 0 var(--s-6); font-size: 1.1875rem; --c: 12px; }
+.btn__label { position: relative; z-index: 1; }
+.btn__icon { position: relative; z-index: 1; width: 20px; height: 20px; transition: transform var(--d-hover) var(--ease-press); }
+/* mirror sheen: a band of light crosses the plate on hover, the brand motif (ID-2) */
+.btn::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: 0;
+  clip-path: polygon(var(--c) 0, 100% 0, 100% calc(100% - var(--c)), calc(100% - var(--c)) 100%, 0 100%, 0 var(--c));
+  background: linear-gradient(105deg, transparent 30%, rgb(238 240 242 / .22) 46%, rgb(238 240 242 / .05) 54%, transparent 62%) no-repeat;
+  background-size: 260% 100%;
+  background-position: 120% 0;
+  transition: background-position 700ms var(--ease-settle);
+  pointer-events: none;
+}
+.btn:hover { --fill: var(--action-hover); }
+.btn:hover::after { background-position: -40% 0; }
+.btn:hover .btn__icon { transform: translateX(4px); }
+.btn:active { transform: scale(.95); }
+.btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }
+.btn[aria-disabled="true"], .btn:disabled { --fill: var(--graphite-600); color: var(--text-3); cursor: not-allowed; }
+.btn[aria-disabled="true"]::after, .btn:disabled::after { display: none; }
+.btn.is-loading .btn__icon { animation: btn-turn 900ms linear infinite; }
+@keyframes btn-turn { to { transform: rotate(360deg); } }
+
+/* hairline: no fill, a 1 px steel edge cut along the chamfer (evenodd frame) */
+.btn--line { --fill: transparent; color: var(--text); }
+.btn--line::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: 0;
+  background: var(--line-strong);
+  clip-path: polygon(evenodd,
+    var(--c) 0, 100% 0, 100% calc(100% - var(--c)), calc(100% - var(--c)) 100%, 0 100%, 0 var(--c), var(--c) 0,
+    calc(var(--c) + .4px) 1px, calc(100% - 1px) 1px, calc(100% - 1px) calc(100% - var(--c) - .4px), calc(100% - var(--c) - .4px) calc(100% - 1px), 1px calc(100% - 1px), 1px calc(var(--c) + .4px), calc(var(--c) + .4px) 1px);
+  transition: background var(--d-hover) var(--ease-press);
+}
+.btn--line:hover { --fill: var(--obsidian-900); }
+.btn--line:hover::before { background: var(--steel-200); }
+
+/* text link with a travelling rule */
+.link {
+  color: var(--text);
+  text-decoration: none;
+  background: linear-gradient(var(--link), var(--link)) left bottom / 100% 1px no-repeat;
+  padding-bottom: 2px;
+  transition: background-size var(--d-hover) var(--ease-press), color var(--d-hover);
+}
+.link:hover { color: var(--pine-200); background-size: 0 1px; background-position: right bottom; }
+.link:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+
+/* reassurance line beside the primary action (CTA-3) */
+.assure { display: flex; align-items: center; gap: var(--s-2); color: var(--text-3); font-size: var(--t-small); }
+.assure svg { width: 16px; height: 16px; color: var(--pine-300); flex: none; }
+
+/* ── Navigation ── */
+.nav {
+  display: flex;
+  align-items: center;
+  gap: var(--s-5);
+  height: 88px;
+  padding: 0 var(--edge);
+}
+.nav__logo { width: 172px; color: var(--text); flex: none; }
+.nav__links { display: flex; gap: var(--s-5); margin: 0 0 0 auto; padding: 0; list-style: none; }
+.nav__links a { color: var(--text-2); text-decoration: none; font-size: var(--t-small); transition: color var(--d-hover); }
+.nav__links a:hover { color: var(--text); }
+.nav .btn { min-height: 48px; padding: 0 var(--s-4); font-size: var(--t-small); }
+
+@property --fill { syntax: "<color>"; inherits: true; initial-value: #3a5a45; }

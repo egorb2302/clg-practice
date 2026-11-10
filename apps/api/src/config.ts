@@ -32,6 +32,7 @@ const schema = z.object({
   APP_SECRET: z.string().min(32),
   TOTP_ENC_KEY: z.string().min(40),
   JOBS_SECRET: z.string().min(24),
+  SITE_PROXY_SECRET: z.string().min(24).optional(),
   COOKIE_SECURE: bool(true),
   SESSION_TTL_HOURS: z.coerce.number().positive().default(12),
 

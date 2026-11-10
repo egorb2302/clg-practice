@@ -95,6 +95,7 @@ export function sessionMiddleware(deps: Deps) {
 }
 
 const unsafeMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+const anonymousForms = new Set(["/api/v1/leads", "/api/v1/subscriptions"]);
 
 export function originGuard(deps: Deps) {
   const allowed = new Set([new URL(deps.cfg.SITE_URL).origin, ...deps.cfg.ALLOWED_ORIGINS]);
@@ -108,7 +109,8 @@ export function originGuard(deps: Deps) {
     if (auth) {
       const sent = req.headers["x-csrf-token"];
       if (typeof sent !== "string" || !safeEqual(sent, csrfFor(deps, auth.sessionId))) {
-        throw new HttpError(403, "CSRF", "Сессия устарела, обновите страницу");
+        if (!anonymousForms.has(req.path)) throw new HttpError(403, "CSRF", "Сессия устарела, обновите страницу");
+        res.locals.auth = null;
       }
     }
     next();

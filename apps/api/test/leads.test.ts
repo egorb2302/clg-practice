@@ -228,6 +228,19 @@ describe("POST /leads", () => {
     await limited.sql.end();
   });
 
+  it("accepts a public lead from a browser that also holds a staff session, as an anonymous lead", async () => {
+    const { createStaff, loginStaff } = await import("./helpers");
+    await createStaff(ctx, "busy@armorix.test", ["manager"]);
+    const s = await loginStaff(ctx, "busy@armorix.test");
+    const res = await ctx.http().post("/api/v1/leads").set("Cookie", s.cookie).set("Idempotency-Key", key())
+      .send(leadBody([{ variantId: v1, quantity: 1 }]));
+    expect(res.status).toBe(201);
+    const [lead] = await ctx.sql`select owner_user_id from app.leads where reference = ${res.body.reference}`;
+    expect(lead!.owner_user_id).toBeNull();
+    const admin = await ctx.http().post("/api/v1/admin/leads/AX-000001/notes").set("Cookie", s.cookie).send({ text: "x" });
+    expect(admin.status).toBe(403);
+  });
+
   it("rejects foreign origins", async () => {
     const res = await ctx.http().post("/api/v1/leads").set("Origin", "https://evil.test").set("Idempotency-Key", key())
       .send(leadBody([{ variantId: v1, quantity: 1 }]));

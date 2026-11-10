@@ -4,6 +4,8 @@ import type { AuthContext } from "../security/session";
 import { afterLead, submitLead } from "../services/leads";
 
 export function clientIp(req: Request) {
+  const trusted = req.res?.locals.trustedClientIp as string | undefined;
+  if (trusted) return trusted;
   const h = req.headers["x-vercel-forwarded-for"] ?? req.headers["x-forwarded-for"];
   const first = (Array.isArray(h) ? h[0] : h)?.split(",")[0]?.trim();
   return first || req.socket.remoteAddress || "unknown";

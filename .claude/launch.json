@@ -8,6 +8,12 @@
       "port": 3350
     },
     {
+      "name": "web",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@armorix/web", "exec", "node", "--env-file=.env", "node_modules/@react-router/dev/bin.js", "dev", "--port", "3354", "--strictPort"],
+      "port": 3354
+    },
+    {
       "name": "admin",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "@armorix/admin", "dev"],

@@ -8,7 +8,7 @@ Updated 2026-11-10.
 | --- | --- | --- |
 | Backend release 1 (API, schema, outbox, bot webhook, admin API) | built, tested locally | `apps/api` |
 | API contracts | built | `packages/contracts` |
-| Public site (`apps/web`) | in progress by the frontend teammate on branch `agent/front-web`, merged by PR | not in `main` yet |
+| Public site (`apps/web`) | release 1 by the frontend teammate (PR #1, merged 2026-11-10); proxies `/api/v1/*` and `/admin/*` to the API project; checked locally against the real API (catalog, selection, lead AX-000002, admin on the site origin) | `apps/web` |
 | Admin UI (`/admin/*` pages) | built as a Vite SPA, served by the API project at `/admin` (`pnpm --filter @armorix/admin build:api` copies it to `apps/api/public/admin`); the site project must rewrite `/admin/*` to the API project, like `/api/*` | `apps/admin` |
 | Release 2 backend (cabinet, Telegram Login with phone, guest lead claim, welcome bonus ledger, offers, news, subscriptions, campaigns) | built and tested locally; every route returns 404 while its `FEATURE_*` flag is `false` (the default) | `apps/api` |
 | Release 2 pages on the site | frontend teammate, after release 1 | — |
@@ -22,7 +22,7 @@ In production the API refuses to start with log/local adapters (`NODE_ENV=produc
 ## To verify on the first staging deploy
 
 - `search_path=app` through the Supavisor transaction pooler (port 6543); fallback: `alter role <api role> set search_path = app, public`.
-- Client IP seen by the API behind the site's `/api/*` rewrite (`x-vercel-forwarded-for`); rate limits depend on it.
+- Client IP: the site proxy sends `x-armorix-client-ip` with `SITE_PROXY_SECRET` (same value in both projects); without the secret the API falls back to `x-vercel-forwarded-for`, which behind the proxy is the site function's IP.
 - Vercel bundling of the workspace package `@armorix/contracts`.
 - Vercel serving `apps/api/public/admin` next to the Express function, and the SPA fallback rewrite in `apps/api/vercel.json`.
 

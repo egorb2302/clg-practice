@@ -14,6 +14,7 @@ import { internalRoutes } from "./routes/internal";
 import { leadRoutes } from "./routes/leads";
 import { publicRoutes } from "./routes/public";
 import { telegramRoutes } from "./routes/telegram";
+import { safeEqual } from "./security/crypto";
 import { originGuard, sessionMiddleware } from "./security/session";
 
 export function createApp(deps: Deps) {
@@ -26,6 +27,12 @@ export function createApp(deps: Deps) {
     const incoming = req.header("x-request-id");
     res.locals.requestId = incoming && /^[\w-]{8,64}$/.test(incoming) ? incoming : randomUUID();
     res.set("X-Request-Id", res.locals.requestId);
+    const proxySecret = deps.cfg.SITE_PROXY_SECRET;
+    const sentSecret = req.header("x-armorix-proxy-secret");
+    const proxiedIp = req.header("x-armorix-client-ip");
+    if (proxySecret && sentSecret && proxiedIp && safeEqual(sentSecret, proxySecret) && /^[0-9a-fA-F.:]{3,45}$/.test(proxiedIp)) {
+      res.locals.trustedClientIp = proxiedIp;
+    }
     res.set("X-Content-Type-Options", "nosniff");
     const started = Date.now();
     res.on("finish", () => {
