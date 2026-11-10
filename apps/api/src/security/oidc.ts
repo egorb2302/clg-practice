@@ -29,7 +29,11 @@ export const refetchTelegramJwks: JwksSource = async () => {
 
 export const fetchTelegramJwks: JwksSource = async () => {
   if (cache && Date.now() - cache.at < 3600_000) return cache.keys;
-  const res: Response = await fetch(TELEGRAM_JWKS_URL, { signal: AbortSignal.timeout(5000) });
+  const res = (await fetch(TELEGRAM_JWKS_URL, { signal: AbortSignal.timeout(5000) })) as unknown as {
+    ok: boolean;
+    status: number;
+    json(): Promise<unknown>;
+  };
   if (!res.ok) throw new Error(`jwks ${res.status}`);
   const body = (await res.json()) as { keys?: Jwk[] };
   cache = { at: Date.now(), keys: body.keys ?? [] };
