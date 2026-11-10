@@ -24,6 +24,7 @@ In production the API refuses to start with log/local adapters (`NODE_ENV=produc
 - `search_path=app` through the Supavisor transaction pooler (port 6543); fallback: `alter role <api role> set search_path = app, public`.
 - Client IP: the site proxy sends `x-armorix-client-ip` with `SITE_PROXY_SECRET` (same value in both projects); without the secret the API falls back to `x-vercel-forwarded-for`, which behind the proxy is the site function's IP.
 - Vercel bundling of the workspace package `@armorix/contracts`.
+- Supabase Storage with a new `sb_secret_…` key: the adapter sends it on both `apikey` and `Authorization: Bearer` (as `supabase-js` does when unauthenticated); Supabase docs recommend the `apikey` header only. If uploads return 401/403, drop the `Authorization` header in `apps/api/src/adapters/storage.ts`.
 - Vercel serving `apps/api/public/admin` next to the Express function, and the SPA fallback rewrite in `apps/api/vercel.json`.
 
 ## Deliberate deferrals
