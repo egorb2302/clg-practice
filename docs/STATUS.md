@@ -15,17 +15,28 @@ Updated 2026-11-10.
 
 ## Deployment
 
-Nothing in this repository is connected to Vercel or Supabase yet. A push to `main` runs CI only (typecheck and API tests against a throwaway Postgres); it deploys nothing and touches no real data, mailboxes or Telegram chats. The public release happens only after `apps/web`, the admin UI and the staging checks from `docs/SPEC.md` section 9 are done.
+Deployed 2026-11-10. A push to `main` deploys both Vercel projects (Git integration) and runs CI.
+
+| Piece | Where |
+| --- | --- |
+| Site | `armorix-web` → https://armorix-web.vercel.app (root `apps/web`) |
+| API and admin | `armorix-api` → https://armorix-api.vercel.app (root `apps/api`); admin also at https://armorix-web.vercel.app/admin through the site proxy |
+| Database and storage | Supabase `armorix-staging` (eu-west-1) and `armorix-prod` (eu-west-3), both migrated to 0004; staging has the demo catalog |
+| Background jobs | `pg_cron` on staging calls `POST /api/v1/internal/jobs/run` every minute (`apps/api/supabase/setup.sql`) |
+| Telegram | webhook `https://armorix-api.vercel.app/api/v1/webhooks/telegram` |
+
+Until the `/privacy` text exists and the staging checks pass, the Vercel production environment points at the **staging** database. Switching to `armorix-prod` means: seed reference data there (without demo products), run `setup.sql` against it, swap the Vercel env vars, redeploy.
 
 In production the API refuses to start with log/local adapters (`NODE_ENV=production` requires SMTP, Telegram HTTP, Supabase storage and secure cookies) unless `ALLOW_DEV_ADAPTERS=true` is set for a staging project.
 
-## To verify on the first staging deploy
+## Verified on the first deploy (2026-11-10)
 
-- `search_path=app` through the Supavisor transaction pooler (port 6543); fallback: `alter role <api role> set search_path = app, public`.
-- Client IP: the site proxy sends `x-armorix-client-ip` with `SITE_PROXY_SECRET` (same value in both projects); without the secret the API falls back to `x-vercel-forwarded-for`, which behind the proxy is the site function's IP.
-- Vercel bundling of the workspace package `@armorix/contracts`.
-- Supabase Storage with a new `sb_secret_…` key: the adapter sends it on both `apikey` and `Authorization: Bearer` (as `supabase-js` does when unauthenticated); Supabase docs recommend the `apikey` header only. If uploads return 401/403, drop the `Authorization` header in `apps/api/src/adapters/storage.ts`.
-- Vercel serving `apps/api/public/admin` next to the Express function, and the SPA fallback rewrite in `apps/api/vercel.json`.
+- `search_path=app` holds through the Supavisor transaction pooler (port 6543): `apps/api/src/scripts/db-check.ts`.
+- Client IP: lead rate-limit keys carry the visitor's IP, not the site function's (`SITE_PROXY_SECRET` set in both projects).
+- `@armorix/contracts` on Vercel: the Express runtime cannot load a workspace package from TypeScript source, so the package builds to `dist` (`default` export condition); local tools use the `development` condition. Relative imports in `apps/api/src` end in `.js` (Vercel runs the compiled files as plain Node ESM; `test/imports.test.ts` guards it). The entry is `src/index.ts`, which must import `express` itself; no `src/app.*` file may exist.
+- Supabase Storage with an `sb_secret_…` key: signed upload, read and public upload all work (HTTP 200).
+- Admin SPA: `public/admin` ships inside the function (`functions.includeFiles` in `apps/api/vercel.json`); `/admin`, deep links and hashed assets return 200, missing files 404, `index.html` is `no-store` and `noindex`.
+- Live lead AX-000001 through the site: stored, Telegram staff notice and customer email (Gmail SMTP) sent on the first attempt; the bot answers `/start` through the webhook.
 
 ## Deliberate deferrals
 
