@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "build:api": "vite build --outDir ../api/public/admin --emptyOutDir",
+    "build": "pnpm --filter @armorix/contracts build && vite build",
+    "build:api": "pnpm --filter @armorix/contracts build && vite build --outDir ../api/public/admin --emptyOutDir",
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {

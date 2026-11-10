@@ -4,10 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch --env-file-if-exists=../../.env.local --env-file-if-exists=.env src/dev.ts",
-    "migrate": "tsx --env-file-if-exists=../../.env.local --env-file-if-exists=.env src/scripts/migrate.ts",
-    "seed": "tsx --env-file-if-exists=../../.env.local --env-file-if-exists=.env src/scripts/seed.ts",
-    "create-admin": "tsx --env-file-if-exists=../../.env.local --env-file-if-exists=.env src/scripts/create-admin.ts",
+    "dev": "tsx watch --conditions=development --env-file-if-exists=../../.env.local --env-file-if-exists=.env src/dev.ts",
+    "migrate": "tsx --conditions=development --env-file-if-exists=../../.env.local --env-file-if-exists=.env src/scripts/migrate.ts",
+    "seed": "tsx --conditions=development --env-file-if-exists=../../.env.local --env-file-if-exists=.env src/scripts/seed.ts",
+    "create-admin": "tsx --conditions=development --env-file-if-exists=../../.env.local --env-file-if-exists=.env src/scripts/create-admin.ts",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run"
   },

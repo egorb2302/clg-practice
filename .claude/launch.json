@@ -10,7 +10,7 @@
     {
       "name": "api-r2",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@armorix/api", "exec", "tsx", "--env-file-if-exists=../../.env.local", "--env-file=../../.local/r2.env", "src/dev.ts"],
+      "runtimeArgs": ["--filter", "@armorix/api", "exec", "tsx", "--conditions=development", "--env-file-if-exists=../../.env.local", "--env-file=../../.local/r2.env", "src/dev.ts"],
       "port": 3350
     },
     {
