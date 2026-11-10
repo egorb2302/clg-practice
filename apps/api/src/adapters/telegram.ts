@@ -1,4 +1,5 @@
 import type { Config } from "../config.js";
+import { fetchJson, type FetchResponse } from "../http/fetch.js";
 import { PermanentError, RetryLaterError } from "./errors.js";
 
 export interface TelegramAdapter {
@@ -20,9 +21,9 @@ export class MemoryTelegram implements TelegramAdapter {
 export class HttpTelegram implements TelegramAdapter {
   constructor(private token: string) {}
   async call(method: string, params: Record<string, unknown>) {
-    let res: Response;
+    let res: FetchResponse;
     try {
-      res = await fetch(`https://api.telegram.org/bot${this.token}/${method}`, {
+      res = await fetchJson(`https://api.telegram.org/bot${this.token}/${method}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(params),

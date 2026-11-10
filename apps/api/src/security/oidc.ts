@@ -1,4 +1,5 @@
 import { createPublicKey, verify, type JsonWebKey } from "node:crypto";
+import { fetchJson } from "../http/fetch.js";
 
 export const TELEGRAM_ISSUER = "https://oauth.telegram.org";
 export const TELEGRAM_JWKS_URL = "https://oauth.telegram.org/.well-known/jwks.json";
@@ -29,11 +30,7 @@ export const refetchTelegramJwks: JwksSource = async () => {
 
 export const fetchTelegramJwks: JwksSource = async () => {
   if (cache && Date.now() - cache.at < 3600_000) return cache.keys;
-  const res = (await fetch(TELEGRAM_JWKS_URL, { signal: AbortSignal.timeout(5000) })) as unknown as {
-    ok: boolean;
-    status: number;
-    json(): Promise<unknown>;
-  };
+  const res = await fetchJson(TELEGRAM_JWKS_URL, { signal: AbortSignal.timeout(5000) });
   if (!res.ok) throw new Error(`jwks ${res.status}`);
   const body = (await res.json()) as { keys?: Jwk[] };
   cache = { at: Date.now(), keys: body.keys ?? [] };
