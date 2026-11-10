@@ -13,6 +13,10 @@ create trigger loyalty_ledger_append_only
   before update or delete on loyalty_ledger
   for each row execute function loyalty_ledger_immutable();
 
+update posts set status = 'draft', updated_at = now()
+  where id in (select r.post_id from offer_rules r where cardinality(r.product_ids) > 0
+    and not exists (select 1 from variants v where v.product_id = any(r.product_ids)));
+
 alter table offer_rules add column variant_ids uuid[] not null default '{}';
 update offer_rules r set variant_ids = coalesce(
   (select array_agg(v.id order by v.id) from variants v where v.product_id = any(r.product_ids)), '{}')

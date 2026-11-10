@@ -195,6 +195,8 @@ describe("customer cabinet and welcome bonus", () => {
     const [row] = await ctx.sql<{ id: string }[]>`select id from app.loyalty_ledger where user_id = ${c.userId} limit 1`;
     await expect(ctx.sql`update app.loyalty_ledger set points = 5000 where id = ${row!.id}`).rejects.toMatchObject({ code: "55000" });
     await expect(ctx.sql`delete from app.loyalty_ledger where id = ${row!.id}`).rejects.toMatchObject({ code: "55000" });
+    await ctx.sql`delete from app.users where id = ${c.userId}`;
+    expect(await ctx.sql`select 1 from app.loyalty_ledger where user_id = ${c.userId}`).toHaveLength(0);
   });
 
   it("expires only the unspent part of the bonus and does not return points after expiry", async () => {
@@ -315,6 +317,16 @@ describe("telegram login", () => {
     const ok = await telegramPost(n).send({ idToken: token, nonce: n.nonce });
     expect(ok.status).toBe(200);
     expect(binderFrom(ok)).toBe("ax_tg_login=");
+  });
+
+  it("keeps earlier nonces of the same browser valid when another nonce is requested", async () => {
+    const first = await loginNonce();
+    const second = await ctx.http().post("/api/v1/auth/telegram/nonce").set("Cookie", first.binder);
+    expect(binderFrom(second)).toBe(first.binder);
+    const a = await telegramPost(first).send({ idToken: idToken({ sub: "tg-tab-1", nonce: first.nonce }), nonce: first.nonce });
+    expect(a.status).toBe(200);
+    const b = await telegramPost(first).send({ idToken: idToken({ sub: "tg-tab-2", nonce: second.body.nonce }), nonce: second.body.nonce });
+    expect(b.status).toBe(200);
   });
 });
 

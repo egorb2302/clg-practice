@@ -46,7 +46,7 @@ function VariantPicker({ value, onChange, error }: { value: string[]; onChange: 
   if (list.loading && !list.data) return <Loading />;
   if (!list.data) return <ErrorBox error={list.error} onRetry={list.reload} />;
   const groups = new Map<string, VariantOption[]>();
-  for (const v of list.data.items) groups.set(v.productTitle, [...(groups.get(v.productTitle) ?? []), v]);
+  for (const v of list.data.items) groups.set(v.productCode, [...(groups.get(v.productCode) ?? []), v]);
   const known = new Set(list.data.items.map((v) => v.id));
   const missing = value.filter((id) => !known.has(id)).length;
   const toggle = (id: string, on: boolean) => onChange(on ? [...value, id] : value.filter((x) => x !== id));
@@ -54,11 +54,18 @@ function VariantPicker({ value, onChange, error }: { value: string[]; onChange: 
     <fieldset className="roles variant-picker">
       <legend>Варианты, на которые действует акция</legend>
       <p className="muted">Если ничего не выбрать, акция действует на любой товар</p>
-      {missing > 0 && <p className="muted">Ещё выбрано в архиве: {missing}</p>}
+      {missing > 0 && (
+        <div className="row">
+          <span className="muted">Ещё выбрано в архиве: {missing}</span>
+          <button className="btn small" type="button" onClick={() => onChange(value.filter((id) => known.has(id)))}>
+            Убрать архивные
+          </button>
+        </div>
+      )}
       {list.data.items.length === 0 && <Empty>Вариантов пока нет</Empty>}
-      {[...groups].map(([product, items]) => (
-        <div key={product} className="variant-group">
-          <strong>{product}</strong>
+      {[...groups].map(([code, items]) => (
+        <div key={code} className="variant-group">
+          <strong>{items[0]!.productTitle}</strong>
           {items.map((v) => (
             <label key={v.id} className="check">
               <input type="checkbox" checked={value.includes(v.id)} onChange={(e) => toggle(v.id, e.target.checked)} />

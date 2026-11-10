@@ -93,7 +93,8 @@ export function accountRoutes(deps: Deps) {
     await enforce(deps.sql, `tg-nonce:ip:${clientIp(req)}`, 60, 3600);
     const auth = res.locals.auth as AuthContext | null;
     const nonce = randomToken(24);
-    const binder = auth ? null : randomToken(24);
+    const existing = readCookie(req, binderCookie);
+    const binder = auth ? null : existing && /^[A-Za-z0-9_-]{32}$/.test(existing) ? existing : randomToken(24);
     await deps.sql`
       insert into oidc_nonces (nonce_hash, purpose, session_id, binder_hash, expires_at)
       values (${sha256(nonce)}, ${auth ? "link" : "login"}, ${auth?.sessionId ?? null}, ${binder ? sha256(binder) : null},
