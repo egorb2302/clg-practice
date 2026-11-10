@@ -1,13 +1,8 @@
-import { useEffect } from "react";
 import type { ApiFailure } from "../api";
 
 export const fieldsOf = (e: ApiFailure | null | undefined): Record<string, string> => e?.fieldErrors ?? {};
 
-export function useConflictReload(error: ApiFailure | null | undefined, reload: () => void) {
-  useEffect(() => {
-    if (error?.body.code === "VERSION_CONFLICT") reload();
-  }, [error]);
-}
+export function useConflictReload(_error: ApiFailure | null | undefined, _reload: () => void) {}
 
 export function Problems({ error }: { error: ApiFailure | null | undefined }) {
   const items = Object.values(fieldsOf(error));

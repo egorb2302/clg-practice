@@ -137,7 +137,10 @@ export function SaleDetail() {
   const refund = async (e: FormEvent) => {
     e.preventDefault();
     const kopecks = toKopecks(refundAmount);
-    if (!kopecks) return;
+    if (!kopecks) {
+      act.setError(new ApiFailure(422, { code: "VALIDATION", message: "Проверьте сумму", fieldErrors: { amountKopecks: "Укажите сумму возврата" }, requestId: "" }));
+      return;
+    }
     const r = await act.run(
       () => api(`/admin/sales/${id}/refunds`, { body: { amountKopecks: kopecks, reason: refundReason }, idempotencyKey: refundKey }),
       "Возврат оформлен",

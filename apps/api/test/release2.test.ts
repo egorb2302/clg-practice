@@ -300,6 +300,19 @@ describe("offers and news", () => {
     expect((await ctx.http().get("/api/v1/offers")).body.items).toHaveLength(0);
   });
 
+  it("keeps omitted offer fields on a partial edit and returns the full post", async () => {
+    const offerId = await createOffer({ offer: { minPurchases: 2, benefit: "Старое", productIds: [] } });
+    const [p] = await ctx.sql<{ version: number }[]>`select version from app.posts where id = ${offerId}`;
+    const patch = await as(ctx, editor).patch(`/api/v1/admin/posts/${offerId}`).send({ version: p!.version, offer: { benefit: "Новое" } });
+    expect(patch.status).toBe(200);
+    const full = await as(ctx, editor).get(`/api/v1/admin/posts/${offerId}`);
+    expect(full.body.post).toMatchObject({ minPurchases: 2, benefit: "Новое", ruleVersion: 2, summary: "После первой покупки" });
+    const clear = await as(ctx, editor).patch(`/api/v1/admin/posts/${offerId}`).send({ version: patch.body.version, offer: { minPurchases: null } });
+    expect(clear.status).toBe(200);
+    expect((await as(ctx, editor).get(`/api/v1/admin/posts/${offerId}`)).body.post.minPurchases).toBeNull();
+    expect((await as(ctx, editor).get(`/api/v1/admin/posts/${randomUUID()}`)).status).toBe(404);
+  });
+
   it("serves published news", async () => {
     const n = await as(ctx, editor).post("/api/v1/admin/posts").send({ type: "news", slug: "new-press", title: "Новый пресс", summary: "Расширили производство" });
     await as(ctx, editor).post(`/api/v1/admin/posts/${n.body.id}/status`).send({ version: n.body.version, status: "published" });

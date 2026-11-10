@@ -585,8 +585,17 @@ function UserLookup() {
   const [userId, setUserId] = useState("");
   const data = useLoad((signal) => (userId ? api<{ balance: number; history: LedgerRow[] }>(`/admin/loyalty/users/${userId}`, { signal }) : Promise.resolve(null)), [userId]);
   const act = useAction();
-  const [points, setPoints] = useState("");
-  const [reason, setReason] = useState("");
+  const [points, setPointsRaw] = useState("");
+  const [reason, setReasonRaw] = useState("");
+  const [key, setKey] = useState(newKey);
+  const setPoints = (v: string) => {
+    setPointsRaw(v);
+    setKey(newKey());
+  };
+  const setReason = (v: string) => {
+    setReasonRaw(v);
+    setKey(newKey());
+  };
   const fe = fieldsOf(act.error);
   const adjust = async (e: FormEvent) => {
     e.preventDefault();
@@ -595,7 +604,6 @@ function UserLookup() {
       act.setError(new ApiFailure(422, errorMessage("Укажите целое число баллов, не ноль", "points")));
       return;
     }
-    const key = newKey();
     const r = await act.run(() => api(`/admin/loyalty/users/${userId}/adjust`, { body: { points: n, reason: reason.trim() }, idempotencyKey: key }), "Баланс изменён");
     if (r) {
       setPoints("");
@@ -611,6 +619,7 @@ function UserLookup() {
         onSubmit={(e) => {
           e.preventDefault();
           setUserId(input.trim());
+          setKey(newKey());
         }}
       >
         <Field label="Идентификатор клиента">{(p) => <input {...p} value={input} onChange={(e) => setInput(e.target.value)} className="wide" />}</Field>
