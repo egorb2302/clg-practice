@@ -1,4 +1,5 @@
 import { waitUntil } from "@vercel/functions";
+import express from "express";
 import { createEmail } from "./adapters/email.js";
 import { createStorage } from "./adapters/storage.js";
 import { createTelegram } from "./adapters/telegram.js";
@@ -10,7 +11,7 @@ const cfg = loadConfig();
 const sql = createDb(cfg.DATABASE_URL);
 const apiBase = process.env.API_PUBLIC_URL ?? cfg.SITE_URL;
 
-const app = createApp({
+const app: ReturnType<typeof express> = createApp({
   cfg,
   sql,
   email: createEmail(cfg),
