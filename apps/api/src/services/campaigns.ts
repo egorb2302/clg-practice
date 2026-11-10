@@ -1,6 +1,6 @@
-import type { Deps } from "../deps";
-import { hmac } from "../security/crypto";
-import { enqueue, queueEmailLimit } from "./outbox";
+import type { Deps } from "../deps.js";
+import { hmac } from "../security/crypto.js";
+import { enqueue, queueEmailLimit } from "./outbox.js";
 
 const BATCH = 500;
 

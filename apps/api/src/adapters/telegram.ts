@@ -1,5 +1,5 @@
-import type { Config } from "../config";
-import { PermanentError, RetryLaterError } from "./errors";
+import type { Config } from "../config.js";
+import { PermanentError, RetryLaterError } from "./errors.js";
 
 export interface TelegramAdapter {
   call(method: string, params: Record<string, unknown>): Promise<unknown>;

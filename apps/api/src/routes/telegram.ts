@@ -1,8 +1,8 @@
 import { Router } from "express";
-import type { Deps } from "../deps";
-import { notFound } from "../http/errors";
-import { safeEqual } from "../security/crypto";
-import { enqueue, kick } from "../services/outbox";
+import type { Deps } from "../deps.js";
+import { notFound } from "../http/errors.js";
+import { safeEqual } from "../security/crypto.js";
+import { enqueue, kick } from "../services/outbox.js";
 
 type Update = {
   update_id?: number;

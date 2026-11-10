@@ -1,5 +1,5 @@
-import type { Deps } from "../deps";
-import { enqueue, kick } from "./outbox";
+import type { Deps } from "../deps.js";
+import { enqueue, kick } from "./outbox.js";
 
 const DB_LIMIT_BYTES = 500 * 1024 * 1024;
 const STORAGE_LIMIT_BYTES = 1024 * 1024 * 1024;

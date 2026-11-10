@@ -3,10 +3,10 @@ import { positions } from "@armorix/contracts";
 import { Router } from "express";
 import sharp, { type Metadata } from "sharp";
 import { z } from "zod";
-import type { Deps } from "../../deps";
-import { HttpError, notFound, parse, versionConflict } from "../../http/errors";
-import { authOf, requireStaff } from "../../security/session";
-import { audit } from "../../services/audit";
+import type { Deps } from "../../deps.js";
+import { HttpError, notFound, parse, versionConflict } from "../../http/errors.js";
+import { authOf, requireStaff } from "../../security/session.js";
+import { audit } from "../../services/audit.js";
 
 const slug = z.string().trim().regex(/^[a-z0-9-]{1,80}$/, { error: "Латиница, цифры и дефис" });
 const version = z.number().int().positive();

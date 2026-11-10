@@ -1,5 +1,5 @@
-import { createDb } from "../db";
-import { migrate } from "../migrate";
+import { createDb } from "../db.js";
+import { migrate } from "../migrate.js";
 
 const url = process.env.DATABASE_MIGRATION_URL ?? process.env.DATABASE_URL;
 if (!url) throw new Error("DATABASE_URL is required");

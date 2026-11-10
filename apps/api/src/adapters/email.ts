@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
-import type { Config } from "../config";
-import { PermanentError, RetryLaterError } from "./errors";
+import type { Config } from "../config.js";
+import { PermanentError, RetryLaterError } from "./errors.js";
 
 export type EmailMessage = {
   to: string;

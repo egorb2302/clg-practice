@@ -1,5 +1,5 @@
-import type { Db, Tx } from "../db";
-import { HttpError } from "../http/errors";
+import type { Db, Tx } from "../db.js";
+import { HttpError } from "../http/errors.js";
 
 const bad = (msg: string) => new HttpError(422, "VALIDATION", msg, { fieldErrors: { offerId: msg } });
 

@@ -1,5 +1,5 @@
-import type { Db, Sql, Tx } from "../db";
-import { HttpError } from "../http/errors";
+import type { Db, Sql, Tx } from "../db.js";
+import { HttpError } from "../http/errors.js";
 
 export type AwardStatus = "pending" | "credited" | "ineligible";
 

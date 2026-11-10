@@ -1,7 +1,7 @@
 import { Router, type Request } from "express";
-import type { Deps } from "../deps";
-import type { AuthContext } from "../security/session";
-import { afterLead, submitLead } from "../services/leads";
+import type { Deps } from "../deps.js";
+import type { AuthContext } from "../security/session.js";
+import { afterLead, submitLead } from "../services/leads.js";
 
 export function clientIp(req: Request) {
   const trusted = req.res?.locals.trustedClientIp as string | undefined;

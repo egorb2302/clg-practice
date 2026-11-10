@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { StorageClient } from "@supabase/storage-js";
-import type { Config } from "../config";
+import type { Config } from "../config.js";
 
 export interface StorageAdapter {
   createUploadUrl(path: string): Promise<{ url: string; token?: string }>;

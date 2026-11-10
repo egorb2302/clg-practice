@@ -1,5 +1,5 @@
-import { createDb } from "../db";
-import { normalizeEmail } from "../util";
+import { createDb } from "../db.js";
+import { normalizeEmail } from "../util.js";
 
 const email = process.argv[2];
 const name = process.argv[3] ?? "Администратор";

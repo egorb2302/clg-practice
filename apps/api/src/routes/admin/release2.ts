@@ -1,14 +1,14 @@
 import { Router } from "express";
 import { z } from "zod";
-import type { Tx } from "../../db";
-import type { Deps } from "../../deps";
-import { HttpError, notFound, parse, versionConflict } from "../../http/errors";
-import { feature } from "../../http/features";
-import { authOf, requireStaff } from "../../security/session";
-import { audit } from "../../services/audit";
-import { campaignMessage, sendingDays } from "../../services/campaigns";
-import { balance, lockUser, reverseAward } from "../../services/loyalty";
-import { enqueue, kick, queueEmailLimit } from "../../services/outbox";
+import type { Tx } from "../../db.js";
+import type { Deps } from "../../deps.js";
+import { HttpError, notFound, parse, versionConflict } from "../../http/errors.js";
+import { feature } from "../../http/features.js";
+import { authOf, requireStaff } from "../../security/session.js";
+import { audit } from "../../services/audit.js";
+import { campaignMessage, sendingDays } from "../../services/campaigns.js";
+import { balance, lockUser, reverseAward } from "../../services/loyalty.js";
+import { enqueue, kick, queueEmailLimit } from "../../services/outbox.js";
 
 const ruleBody = z.object({
   points: z.number().int().positive().max(1_000_000),

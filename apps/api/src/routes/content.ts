@@ -1,16 +1,16 @@
 import { Router } from "express";
 import { z } from "zod";
-import type { Deps } from "../deps";
-import { HttpError, notFound, parse } from "../http/errors";
-import { feature } from "../http/features";
-import { safeEqual } from "../security/crypto";
-import { enforce } from "../security/rateLimit";
-import type { AuthContext } from "../security/session";
-import { subscriptionToken, unsubscribeLinks } from "../services/campaigns";
-import { priorPurchases } from "../services/offers";
-import { enqueue, kick } from "../services/outbox";
-import { normalizeEmail } from "../util";
-import { clientIp } from "./leads";
+import type { Deps } from "../deps.js";
+import { HttpError, notFound, parse } from "../http/errors.js";
+import { feature } from "../http/features.js";
+import { safeEqual } from "../security/crypto.js";
+import { enforce } from "../security/rateLimit.js";
+import type { AuthContext } from "../security/session.js";
+import { subscriptionToken, unsubscribeLinks } from "../services/campaigns.js";
+import { priorPurchases } from "../services/offers.js";
+import { enqueue, kick } from "../services/outbox.js";
+import { normalizeEmail } from "../util.js";
+import { clientIp } from "./leads.js";
 
 const publicCache = "public, s-maxage=60, stale-while-revalidate=300";
 

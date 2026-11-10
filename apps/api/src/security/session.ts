@@ -1,9 +1,9 @@
 import type { RoleValue, SessionUser } from "@armorix/contracts";
 import type { NextFunction, Request, Response } from "express";
-import type { Db } from "../db";
-import type { Deps } from "../deps";
-import { HttpError } from "../http/errors";
-import { hmac, randomToken, safeEqual, sha256 } from "./crypto";
+import type { Db } from "../db.js";
+import type { Deps } from "../deps.js";
+import { HttpError } from "../http/errors.js";
+import { hmac, randomToken, safeEqual, sha256 } from "./crypto.js";
 
 export type AuthContext = {
   sessionId: string;

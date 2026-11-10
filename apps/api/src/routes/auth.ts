@@ -7,12 +7,12 @@ import {
 } from "@armorix/contracts";
 import { randomUUID } from "node:crypto";
 import { Router, type Response } from "express";
-import type { Deps } from "../deps";
-import { HttpError, parse } from "../http/errors";
-import { decrypt, encrypt, hmac, randomDigits, randomToken, safeEqual, sha256 } from "../security/crypto";
-import { enforce, hit } from "../security/rateLimit";
-import { audit as writeAudit } from "../services/audit";
-import { releaseEmail, reserveEmail } from "../services/outbox";
+import type { Deps } from "../deps.js";
+import { HttpError, parse } from "../http/errors.js";
+import { decrypt, encrypt, hmac, randomDigits, randomToken, safeEqual, sha256 } from "../security/crypto.js";
+import { enforce, hit } from "../security/rateLimit.js";
+import { audit as writeAudit } from "../services/audit.js";
+import { releaseEmail, reserveEmail } from "../services/outbox.js";
 import {
   clearSessionCookie,
   createSession,
@@ -21,10 +21,10 @@ import {
   revokeSession,
   setSessionCookie,
   type AuthContext,
-} from "../security/session";
-import { newTotpSecret, otpauthUri, verifyTotp } from "../security/totp";
-import { normalizeEmail } from "../util";
-import { clientIp } from "./leads";
+} from "../security/session.js";
+import { newTotpSecret, otpauthUri, verifyTotp } from "../security/totp.js";
+import { normalizeEmail } from "../util.js";
+import { clientIp } from "./leads.js";
 
 const CODE_TTL_MIN = 10;
 const MAX_ATTEMPTS = 5;

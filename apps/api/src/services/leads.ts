@@ -1,14 +1,14 @@
 import { randomInt } from "node:crypto";
 import { leadRequestSchema, type CatalogChange, type LeadCreatedResponse, type LeadRequest } from "@armorix/contracts";
-import type { Tx } from "../db";
-import type { Deps } from "../deps";
-import { HttpError, parse } from "../http/errors";
-import { fingerprint } from "../security/crypto";
-import { enforce } from "../security/rateLimit";
-import type { AuthContext } from "../security/session";
-import { normalizeEmail, normalizePhone } from "../util";
-import { awardForLead } from "./loyalty";
-import { enqueue, kick, type OutboxJob } from "./outbox";
+import type { Tx } from "../db.js";
+import type { Deps } from "../deps.js";
+import { HttpError, parse } from "../http/errors.js";
+import { fingerprint } from "../security/crypto.js";
+import { enforce } from "../security/rateLimit.js";
+import type { AuthContext } from "../security/session.js";
+import { normalizeEmail, normalizePhone } from "../util.js";
+import { awardForLead } from "./loyalty.js";
+import { enqueue, kick, type OutboxJob } from "./outbox.js";
 
 const KEY_RE = /^[A-Za-z0-9_-]{8,100}$/;
 

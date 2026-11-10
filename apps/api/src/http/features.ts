@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
-import type { Config } from "../config";
-import { notFound } from "./errors";
+import type { Config } from "../config.js";
+import { notFound } from "./errors.js";
 
 export type Feature = "FEATURE_ACCOUNT" | "FEATURE_LOYALTY" | "FEATURE_OFFERS" | "FEATURE_NEWS" | "FEATURE_CAMPAIGNS";
 

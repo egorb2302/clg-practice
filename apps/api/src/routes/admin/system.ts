@@ -1,12 +1,12 @@
 import { deliveryMethodCodes, grants, staffRoles } from "@armorix/contracts";
 import { Router } from "express";
 import { z } from "zod";
-import type { Deps } from "../../deps";
-import { HttpError, notFound, parse } from "../../http/errors";
-import { authOf, requireStaff } from "../../security/session";
-import { audit } from "../../services/audit";
-import { enqueue, kick } from "../../services/outbox";
-import { normalizeEmail } from "../../util";
+import type { Deps } from "../../deps.js";
+import { HttpError, notFound, parse } from "../../http/errors.js";
+import { authOf, requireStaff } from "../../security/session.js";
+import { audit } from "../../services/audit.js";
+import { enqueue, kick } from "../../services/outbox.js";
+import { normalizeEmail } from "../../util.js";
 
 const staffRoleValues = [...staffRoles, ...grants] as const;
 const rolesSchema = z.array(z.enum(staffRoleValues)).min(1).max(6);

@@ -1,11 +1,11 @@
 import { Router } from "express";
-import type { Deps } from "../deps";
-import { notFound } from "../http/errors";
-import { safeEqual } from "../security/crypto";
-import { dispatchCampaigns } from "../services/campaigns";
-import { expirePoints } from "../services/loyalty";
-import { runDailyMonitor } from "../services/monitor";
-import { runJobs } from "../services/outbox";
+import type { Deps } from "../deps.js";
+import { notFound } from "../http/errors.js";
+import { safeEqual } from "../security/crypto.js";
+import { dispatchCampaigns } from "../services/campaigns.js";
+import { expirePoints } from "../services/loyalty.js";
+import { runDailyMonitor } from "../services/monitor.js";
+import { runJobs } from "../services/outbox.js";
 
 export function internalRoutes(deps: Deps) {
   const r = Router();

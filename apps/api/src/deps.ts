@@ -1,9 +1,9 @@
-import type { EmailAdapter } from "./adapters/email";
-import type { StorageAdapter } from "./adapters/storage";
-import type { TelegramAdapter } from "./adapters/telegram";
-import type { Config } from "./config";
-import type { Sql } from "./db";
-import type { JwksSource } from "./security/oidc";
+import type { EmailAdapter } from "./adapters/email.js";
+import type { StorageAdapter } from "./adapters/storage.js";
+import type { TelegramAdapter } from "./adapters/telegram.js";
+import type { Config } from "./config.js";
+import type { Sql } from "./db.js";
+import type { JwksSource } from "./security/oidc.js";
 
 export type Deps = {
   cfg: Config;

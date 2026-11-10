@@ -1,5 +1,5 @@
 import type { CatalogQuery, CatalogResponse, Facet, Image, Position, ProductDetail } from "@armorix/contracts";
-import type { Db } from "../db";
+import type { Db } from "../db.js";
 
 export const PAGE_SIZE = 24;
 

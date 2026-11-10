@@ -1,10 +1,10 @@
 import { Router } from "express";
-import type { Deps } from "../../deps";
-import { adminCatalogRoutes } from "./catalog";
-import { adminLeadRoutes } from "./leads";
-import { adminRelease2Routes } from "./release2";
-import { adminSaleRoutes } from "./sales";
-import { adminSystemRoutes } from "./system";
+import type { Deps } from "../../deps.js";
+import { adminCatalogRoutes } from "./catalog.js";
+import { adminLeadRoutes } from "./leads.js";
+import { adminRelease2Routes } from "./release2.js";
+import { adminSaleRoutes } from "./sales.js";
+import { adminSystemRoutes } from "./system.js";
 
 export function adminRoutes(deps: Deps) {
   const r = Router();

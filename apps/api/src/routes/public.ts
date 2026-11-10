@@ -1,8 +1,8 @@
 import { catalogQuery, type MetaResponse } from "@armorix/contracts";
 import { Router } from "express";
-import type { Deps } from "../deps";
-import { notFound, parse } from "../http/errors";
-import { getProduct, listCatalog } from "../services/catalog";
+import type { Deps } from "../deps.js";
+import { notFound, parse } from "../http/errors.js";
+import { getProduct, listCatalog } from "../services/catalog.js";
 
 const publicCache = "public, s-maxage=60, stale-while-revalidate=300";
 

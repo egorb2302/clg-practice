@@ -1,5 +1,5 @@
-import type { Db } from "../db";
-import { HttpError } from "../http/errors";
+import type { Db } from "../db.js";
+import { HttpError } from "../http/errors.js";
 
 export async function hit(db: Db, key: string, limit: number, windowSec: number, now = new Date()) {
   const start = new Date(Math.floor(now.getTime() / 1000 / windowSec) * windowSec * 1000);

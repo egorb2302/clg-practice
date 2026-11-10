@@ -1,6 +1,6 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { Sql } from "./db";
+import type { Sql } from "./db.js";
 
 const dir = join(import.meta.dirname, "..", "migrations");
 

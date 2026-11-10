@@ -1,13 +1,13 @@
 import { closeReasons, leadStatuses, type LeadStatus } from "@armorix/contracts";
 import { Router } from "express";
 import { z } from "zod";
-import type { Deps } from "../../deps";
-import { HttpError, notFound, parse, versionConflict } from "../../http/errors";
-import { authOf, capsOf, requireStaff } from "../../security/session";
-import { audit } from "../../services/audit";
-import { reverseAward } from "../../services/loyalty";
-import { kick } from "../../services/outbox";
-import { maskEmail, maskPhone, normalizePhone } from "../../util";
+import type { Deps } from "../../deps.js";
+import { HttpError, notFound, parse, versionConflict } from "../../http/errors.js";
+import { authOf, capsOf, requireStaff } from "../../security/session.js";
+import { audit } from "../../services/audit.js";
+import { reverseAward } from "../../services/loyalty.js";
+import { kick } from "../../services/outbox.js";
+import { maskEmail, maskPhone, normalizePhone } from "../../util.js";
 
 const transitions: Record<LeadStatus, LeadStatus[]> = {
   new: ["in_progress", "closed"],

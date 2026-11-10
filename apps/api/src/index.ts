@@ -1,10 +1,10 @@
 import { waitUntil } from "@vercel/functions";
-import { createEmail } from "./adapters/email";
-import { createStorage } from "./adapters/storage";
-import { createTelegram } from "./adapters/telegram";
-import { createApp } from "./app";
-import { loadConfig } from "./config";
-import { createDb } from "./db";
+import { createEmail } from "./adapters/email.js";
+import { createStorage } from "./adapters/storage.js";
+import { createTelegram } from "./adapters/telegram.js";
+import { createApp } from "./app.js";
+import { loadConfig } from "./config.js";
+import { createDb } from "./db.js";
 
 const cfg = loadConfig();
 const sql = createDb(cfg.DATABASE_URL);

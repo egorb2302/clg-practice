@@ -1,12 +1,12 @@
 import { Router } from "express";
 import { z } from "zod";
-import type { Deps } from "../../deps";
-import { HttpError, notFound, parse, versionConflict } from "../../http/errors";
-import { authOf, capsOf, requireStaff } from "../../security/session";
-import { audit } from "../../services/audit";
-import { redeemForSale, returnRedeemed } from "../../services/loyalty";
-import { checkOffer } from "../../services/offers";
-import { maskEmail, maskPhone, normalizeEmail, normalizePhone } from "../../util";
+import type { Deps } from "../../deps.js";
+import { HttpError, notFound, parse, versionConflict } from "../../http/errors.js";
+import { authOf, capsOf, requireStaff } from "../../security/session.js";
+import { audit } from "../../services/audit.js";
+import { redeemForSale, returnRedeemed } from "../../services/loyalty.js";
+import { checkOffer } from "../../services/offers.js";
+import { maskEmail, maskPhone, normalizeEmail, normalizePhone } from "../../util.js";
 
 const saleItem = z.object({
   title: z.string().trim().min(1).max(300),

@@ -1,7 +1,7 @@
-import type { EmailMessage } from "../adapters/email";
-import { PermanentError, RetryLaterError } from "../adapters/errors";
-import type { Db, Sql } from "../db";
-import type { Deps } from "../deps";
+import type { EmailMessage } from "../adapters/email.js";
+import { PermanentError, RetryLaterError } from "../adapters/errors.js";
+import type { Db, Sql } from "../db.js";
+import type { Deps } from "../deps.js";
 
 export type OutboxJob =
   | { channel: "email"; topic: string; dedupeKey: string; payload: EmailMessage }
