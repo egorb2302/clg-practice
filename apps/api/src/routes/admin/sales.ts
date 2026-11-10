@@ -4,6 +4,8 @@ import type { Deps } from "../../deps";
 import { HttpError, notFound, parse, versionConflict } from "../../http/errors";
 import { authOf, capsOf, requireStaff } from "../../security/session";
 import { audit } from "../../services/audit";
+import { redeemForSale, returnRedeemed } from "../../services/loyalty";
+import { checkOffer } from "../../services/offers";
 import { maskEmail, maskPhone, normalizeEmail, normalizePhone } from "../../util";
 
 const saleItem = z.object({
@@ -27,6 +29,8 @@ const confirmBody = z.object({
   soldOn: z.iso.date(),
   externalId: z.string().trim().min(1).max(100),
   source: z.string().trim().regex(/^[a-z0-9_-]{1,30}$/).default("manual"),
+  redeemPoints: z.number().int().positive().optional(),
+  offerId: z.uuid().optional(),
 });
 
 const refundBody = z.object({
@@ -170,6 +174,19 @@ export function adminSaleRoutes(deps: Deps) {
         await tx`
           insert into sale_events (sale_id, type, amount_kopecks, actor_user_id)
           values (${s.id}, 'confirmed', ${body.amountKopecks}, ${actor})`;
+        const [client] = await tx<{ client_user_id: string | null }[]>`select client_user_id from sales where id = ${s.id}`;
+        const clientId = client?.client_user_id ?? null;
+        if (body.redeemPoints) {
+          if (!deps.cfg.FEATURE_LOYALTY) throw new HttpError(409, "CONFLICT", "Бонусная программа выключена");
+          if (!clientId) throw new HttpError(422, "VALIDATION", "Покупка не привязана к кабинету", { fieldErrors: { redeemPoints: "Нет кабинета клиента" } });
+          await redeemForSale(tx, { userId: clientId, saleId: s.id, points: body.redeemPoints, amountKopecks: body.amountKopecks, actor });
+          await tx`update sales set redeemed_points = ${body.redeemPoints} where id = ${s.id}`;
+        }
+        if (body.offerId) {
+          if (!deps.cfg.FEATURE_OFFERS) throw new HttpError(409, "CONFLICT", "Акции выключены");
+          const ruleVersion = await checkOffer(tx, body.offerId, s.id, clientId);
+          await tx`update sales set offer_id = ${body.offerId}, offer_rule_version = ${ruleVersion} where id = ${s.id}`;
+        }
         if (s.lead_id) {
           const [lead] = await tx<{ status: string }[]>`select status from leads where id = ${s.lead_id} for update`;
           if (lead && lead.status !== "sale_confirmed") {
@@ -231,6 +248,11 @@ export function adminSaleRoutes(deps: Deps) {
       }
       const status = refunded === cur.amount_kopecks ? "refunded" : "partially_refunded";
       await tx`update sales set refunded_kopecks = ${refunded}, status = ${status}, version = version + 1 where id = ${s.id}`;
+      if (status === "refunded") {
+        const [sale] = await tx<{ id: string; client_user_id: string | null; redeemed_points: number }[]>`
+          select id, client_user_id, redeemed_points from sales where id = ${s.id}`;
+        await returnRedeemed(tx, sale!, actor);
+      }
       await tx`
         insert into sale_events (sale_id, type, amount_kopecks, idempotency_key, actor_user_id, note)
         values (${s.id}, 'refund', ${body.amountKopecks}, ${key}, ${actor}, ${body.reason})`;

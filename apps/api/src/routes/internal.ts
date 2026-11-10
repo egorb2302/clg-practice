@@ -2,6 +2,8 @@ import { Router } from "express";
 import type { Deps } from "../deps";
 import { notFound } from "../http/errors";
 import { safeEqual } from "../security/crypto";
+import { dispatchCampaigns } from "../services/campaigns";
+import { expirePoints } from "../services/loyalty";
 import { runDailyMonitor } from "../services/monitor";
 import { runJobs } from "../services/outbox";
 
@@ -16,7 +18,9 @@ export function internalRoutes(deps: Deps) {
       console.error(JSON.stringify({ level: "error", event: "monitor.failed", error: String((e as Error).message) }));
       return { error: true };
     });
-    const result = { ...(await runJobs(deps, { budgetMs: 45_000 })), monitor };
+    const campaignJobs = deps.cfg.FEATURE_CAMPAIGNS ? await dispatchCampaigns(deps) : 0;
+    const expired = deps.cfg.FEATURE_LOYALTY ? await expirePoints(deps.sql) : 0;
+    const result = { ...(await runJobs(deps, { budgetMs: 40_000 })), monitor, campaignJobs, expired };
     await deps.sql`delete from rate_limits where window_start < now() - interval '1 day'`;
     await deps.sql`delete from idempotency_keys where expires_at < now()`;
     await deps.sql`delete from login_challenges where expires_at < now() - interval '1 day'`;

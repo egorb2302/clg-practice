@@ -70,6 +70,17 @@ describe("outbox", () => {
     await limited.sql.end();
   });
 
+  it("sends a hung delivery to manual review instead of retrying it blindly", async () => {
+    await enqueue(ctx.sql, [tgJob("hung")]);
+    const hung = { ...ctx.deps, telegram: { call: () => new Promise<never>(() => {}) } };
+    const started = Date.now();
+    const r = await runJobs(hung, { budgetMs: 7_000 });
+    expect(Date.now() - started).toBeLessThan(7_000);
+    expect(r.review).toBe(1);
+    const [j] = await ctx.sql`select status, last_error from app.outbox where dedupe_key = 'hung'`;
+    expect(j!.status).toBe("needs_review");
+  });
+
   it("fails a job that keeps crashing instead of looping forever", async () => {
     await enqueue(ctx.sql, [tgJob("loop")]);
     await ctx.sql`update app.outbox set status = 'processing', attempts = max_attempts, lease_until = now() - interval '1 minute'`;

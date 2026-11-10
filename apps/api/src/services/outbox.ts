@@ -37,11 +37,14 @@ export const authEmailReserve = (limit: number) => Math.min(50, Math.floor(limit
 export const queueEmailLimit = (limit: number) => limit - authEmailReserve(limit);
 
 const SEND_DEADLINE_MS = 60_000;
+const MIN_SEND_MS = 5_000;
+
+export class UnknownOutcomeError extends Error {}
 
 function withDeadline<T>(p: Promise<T>, ms: number): Promise<T> {
   let timer: NodeJS.Timeout | undefined;
   const timeout = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => reject(new Error("send deadline exceeded")), ms);
+    timer = setTimeout(() => reject(new UnknownOutcomeError("send deadline exceeded, outcome unknown")), ms);
   });
   return Promise.race([p, timeout]).finally(() => clearTimeout(timer));
 }
@@ -74,7 +77,7 @@ async function claimOne(db: Db, ids?: string[]) {
       where ((status = 'pending' and run_after <= now()) or (status = 'processing' and lease_until < now()))
         and attempts < max_attempts
       ${onlyIds ? db`and id in ${db(ids)}` : db``}
-      order by run_after
+      order by (topic = 'campaign'), run_after
       limit 1
       for update skip locked
     )
@@ -85,6 +88,7 @@ async function claimOne(db: Db, ids?: string[]) {
 type Outcome =
   | { status: "sent" }
   | { status: "failed"; error: string }
+  | { status: "needs_review"; error: string }
   | { status: "pending"; error: string; delaySec: number; refundAttempt?: boolean };
 
 async function finish(db: Db, job: Row, o: Outcome) {
@@ -103,7 +107,7 @@ async function finish(db: Db, job: Row, o: Outcome) {
 export async function runJobs(deps: Deps, opts: { ids?: string[]; budgetMs?: number } = {}) {
   const started = Date.now();
   const budgetMs = opts.budgetMs ?? 50_000;
-  const result = { sent: 0, retried: 0, failed: 0, deferred: 0 };
+  const result = { sent: 0, retried: 0, failed: 0, deferred: 0, review: 0, skipped: 0 };
   const sql = deps.sql;
   let processed = 0;
 
@@ -111,6 +115,22 @@ export async function runJobs(deps: Deps, opts: { ids?: string[]; budgetMs?: num
     const job = await claimOne(sql, opts.ids);
     if (!job) break;
     processed++;
+    const deadline = Math.max(MIN_SEND_MS, Math.min(SEND_DEADLINE_MS, budgetMs - (Date.now() - started) - 2_000));
+    const campaign = job.topic === "campaign";
+    const delivery = (status: "accepted" | "rejected" | "skipped" | "needs_review") =>
+      campaign ? sql`update campaign_deliveries set status = ${status}, updated_at = now() where outbox_id = ${job.id}` : null;
+    let message = job.payload as EmailMessage & { subscriptionId?: string };
+    if (campaign) {
+      const { subscriptionId, ...rest } = message;
+      message = rest;
+      const [sub] = await sql<{ status: string }[]>`select status from subscriptions where id = ${subscriptionId ?? null}`;
+      if (sub?.status !== "active") {
+        await finish(sql, job, { status: "sent" });
+        await delivery("skipped");
+        result.skipped++;
+        continue;
+      }
+    }
     if (job.channel === "email" && !(await reserveEmail(sql, queueEmailLimit(deps.cfg.EMAIL_DAILY_LIMIT)))) {
       await finish(sql, job, { status: "pending", error: "daily email limit", delaySec: 3600, refundAttempt: true });
       result.deferred++;
@@ -118,18 +138,26 @@ export async function runJobs(deps: Deps, opts: { ids?: string[]; budgetMs?: num
     }
     try {
       if (job.channel === "email") {
-        await withDeadline(deps.email.send(job.payload as EmailMessage), SEND_DEADLINE_MS);
+        await withDeadline(deps.email.send(message), deadline);
       } else {
         const p = job.payload as { method: string; params: Record<string, unknown> };
-        await withDeadline(deps.telegram.call(p.method, p.params), SEND_DEADLINE_MS);
+        await withDeadline(deps.telegram.call(p.method, p.params), deadline);
       }
       await finish(sql, job, { status: "sent" });
+      await delivery("accepted");
       result.sent++;
     } catch (e) {
       const error = (e as Error).message.slice(0, 300);
+      if (e instanceof UnknownOutcomeError) {
+        await finish(sql, job, { status: "needs_review", error });
+        await delivery("needs_review");
+        result.review++;
+        continue;
+      }
       if (job.channel === "email" && !(e instanceof PermanentError)) await releaseEmail(sql);
       if (e instanceof PermanentError || job.attempts >= job.max_attempts) {
         await finish(sql, job, { status: "failed", error });
+        await delivery("rejected");
         result.failed++;
       } else {
         const delaySec = e instanceof RetryLaterError ? e.retryAfterSec : backoffSec(job.attempts);

@@ -5,6 +5,7 @@ import type { Deps } from "../../deps";
 import { HttpError, notFound, parse, versionConflict } from "../../http/errors";
 import { authOf, capsOf, requireStaff } from "../../security/session";
 import { audit } from "../../services/audit";
+import { reverseAward } from "../../services/loyalty";
 import { kick } from "../../services/outbox";
 import { maskEmail, maskPhone, normalizePhone } from "../../util";
 
@@ -197,6 +198,11 @@ export function adminLeadRoutes(deps: Deps) {
       await tx`
         insert into lead_events (lead_id, actor_user_id, type, from_status, to_status, note)
         values (${lead.id}, ${actor}, 'status', ${lead.status}, ${body.to}, ${body.comment ?? body.reason ?? null})`;
+      if (body.to === "closed" && body.reason === "spam") {
+        await tx`update loyalty_awards set status = 'ineligible' where lead_id = ${lead.id} and status = 'pending'`;
+        const credited = await tx<{ id: string }[]>`select id from loyalty_awards where lead_id = ${lead.id} and status = 'credited'`;
+        for (const a of credited) await reverseAward(tx, a.id, "Заявка закрыта как спам", actor);
+      }
       await audit(tx, actor, "lead.status", "lead", lead.reference, { from: lead.status, to: body.to, reason: body.reason });
       return rows[0]!;
     });

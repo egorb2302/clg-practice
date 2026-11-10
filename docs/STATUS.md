@@ -10,7 +10,8 @@ Updated 2026-11-10.
 | API contracts | built | `packages/contracts` |
 | Public site (`apps/web`) | in progress by the frontend teammate on branch `agent/front-web`, merged by PR | not in `main` yet |
 | Admin UI (`/admin/*` pages) | not started; backend team, next block | — |
-| Release 2 (cabinet, loyalty, offers, news, campaigns) | not built; flags `FEATURE_*` default to `false` | — |
+| Release 2 backend (cabinet, Telegram Login with phone, guest lead claim, welcome bonus ledger, offers, news, subscriptions, campaigns) | built and tested locally; every route returns 404 while its `FEATURE_*` flag is `false` (the default) | `apps/api` |
+| Release 2 pages on the site | frontend teammate, after release 1 | — |
 
 ## Deployment
 

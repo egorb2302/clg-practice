@@ -3,6 +3,7 @@ import type { StorageAdapter } from "./adapters/storage";
 import type { TelegramAdapter } from "./adapters/telegram";
 import type { Config } from "./config";
 import type { Sql } from "./db";
+import type { JwksSource } from "./security/oidc";
 
 export type Deps = {
   cfg: Config;
@@ -11,4 +12,5 @@ export type Deps = {
   telegram: TelegramAdapter;
   storage: StorageAdapter;
   waitUntil: (p: Promise<unknown>) => void;
+  telegramJwks?: JwksSource;
 };

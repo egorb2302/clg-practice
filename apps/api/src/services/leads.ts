@@ -7,6 +7,7 @@ import { fingerprint } from "../security/crypto";
 import { enforce } from "../security/rateLimit";
 import type { AuthContext } from "../security/session";
 import { normalizeEmail, normalizePhone } from "../util";
+import { awardForLead } from "./loyalty";
 import { enqueue, kick, type OutboxJob } from "./outbox";
 
 const KEY_RE = /^[A-Za-z0-9_-]{8,100}$/;
@@ -118,7 +119,12 @@ export async function submitLead(
     await tx`insert into lead_events (lead_id, type, to_status) values (${leadRow.id}, 'created', 'new')`;
 
     const jobIds = await enqueue(tx, leadNotifications(deps, leadRow, lead));
-    const body: LeadCreatedResponse = { reference: leadRow.reference, status: "received" };
+    const loyaltyStatus = deps.cfg.FEATURE_LOYALTY ? await awardForLead(tx, { id: leadRow.id, type: lead.type }, ownerId) : undefined;
+    const body: LeadCreatedResponse = {
+      reference: leadRow.reference,
+      status: "received",
+      ...(loyaltyStatus ? { loyaltyStatus } : {}),
+    };
     await tx`
       update idempotency_keys set response_status = 201, response_body = ${tx.json(body)}
       where scope = 'lead' and key = ${key}`;

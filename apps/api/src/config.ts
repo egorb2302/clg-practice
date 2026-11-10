@@ -48,6 +48,8 @@ const schema = z.object({
   TELEGRAM_BOT_TOKEN: z.string().optional(),
   TELEGRAM_WEBHOOK_SECRET: z.string().min(16).optional(),
   TELEGRAM_STAFF_CHAT_IDS: list,
+  TELEGRAM_LOGIN_CLIENT_ID: z.string().regex(/^\d+$/).optional(),
+  CONSENT_TEXT_VERSION: z.string().default("2026-11-10"),
 
   STORAGE_DRIVER: z.enum(["local", "supabase"]).default("local"),
   LOCAL_MEDIA_DIR: z.string().default(".local/media"),

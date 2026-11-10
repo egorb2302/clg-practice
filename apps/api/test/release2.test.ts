@@ -1,0 +1,266 @@
+import { createSign, generateKeyPairSync, randomUUID } from "node:crypto";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { dispatchCampaigns } from "../src/services/campaigns";
+import { runJobs } from "../src/services/outbox";
+import { as, cookieFrom, createStaff, key, leadBody, loginStaff, makeDeps, resetData, variantId, type Ctx } from "./helpers";
+
+const CLIENT_ID = "7000000001";
+const { publicKey, privateKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
+const jwk = { ...publicKey.export({ format: "jwk" }), kid: "test-key", alg: "RS256" };
+
+function idToken(claims: Record<string, unknown>) {
+  const enc = (o: object) => Buffer.from(JSON.stringify(o)).toString("base64url");
+  const head = enc({ alg: "RS256", kid: "test-key", typ: "JWT" });
+  const body = enc({ iss: "https://oauth.telegram.org", aud: CLIENT_ID, exp: Math.floor(Date.now() / 1000) + 300, ...claims });
+  const sig = createSign("RSA-SHA256").update(`${head}.${body}`).sign(privateKey).toString("base64url");
+  return `${head}.${body}.${sig}`;
+}
+
+let ctx: Ctx;
+let v1: string;
+let manager: { cookie: string; csrf: string };
+let admin: { cookie: string; csrf: string };
+let editor: { cookie: string; csrf: string };
+
+beforeAll(async () => {
+  ctx = makeDeps({
+    FEATURE_ACCOUNT: "true",
+    FEATURE_LOYALTY: "true",
+    FEATURE_OFFERS: "true",
+    FEATURE_NEWS: "true",
+    FEATURE_CAMPAIGNS: "true",
+    TELEGRAM_LOGIN_CLIENT_ID: CLIENT_ID,
+  });
+  ctx.deps.telegramJwks = async () => [jwk as never];
+});
+beforeEach(async () => {
+  await resetData(ctx);
+  ctx.email.sent = [];
+  await createStaff(ctx, "m@armorix.test", ["manager"]);
+  await createStaff(ctx, "a@armorix.test", ["admin"]);
+  await createStaff(ctx, "e@armorix.test", ["editor"]);
+  manager = await loginStaff(ctx, "m@armorix.test");
+  admin = await loginStaff(ctx, "a@armorix.test");
+  editor = await loginStaff(ctx, "e@armorix.test");
+  await as(ctx, admin).post("/api/v1/admin/loyalty/rules").send({ points: 500, kopecksPerPoint: 100, redeemLimitPct: 20 });
+  v1 = await variantId(ctx, "jac-t9-front-tube", "Без защиты картера");
+  await ctx.sql`delete from app.rate_limits`;
+});
+afterAll(async () => {
+  await ctx.sql.end();
+});
+
+async function clientLogin(email: string) {
+  await ctx.sql`delete from app.rate_limits`;
+  const r = await ctx.http().post("/api/v1/auth/email/request").send({ email });
+  await ctx.settle();
+  const code = ctx.email.sent.filter((m) => m.to === email && m.subject.startsWith("Код входа")).at(-1)!.text.match(/\b(\d{6})\b/)![1];
+  const v = await ctx.http().post("/api/v1/auth/email/verify").send({ challengeId: r.body.challengeId, code });
+  expect(v.status).toBe(200);
+  return { cookie: cookieFrom(v), csrf: v.body.csrfToken as string, userId: v.body.user.id as string };
+}
+
+async function telegramLogin(claims: Record<string, unknown>) {
+  const n = await ctx.http().post("/api/v1/auth/telegram/nonce");
+  const res = await ctx.http().post("/api/v1/auth/telegram").send({ idToken: idToken({ nonce: n.body.nonce, ...claims }), nonce: n.body.nonce });
+  return { res, nonce: n.body.nonce as string };
+}
+
+const submit = (s: { cookie: string; csrf: string } | null, extra: Record<string, unknown> = {}) => {
+  const r = ctx.http().post("/api/v1/leads").set("Idempotency-Key", key());
+  return (s ? r.set("Cookie", s.cookie).set("X-CSRF-Token", s.csrf) : r).send(leadBody([{ variantId: v1, quantity: 1 }], extra));
+};
+
+async function confirmSale(ref: string, body: Record<string, unknown>) {
+  const draft = await as(ctx, manager).post(`/api/v1/admin/leads/${ref}/sale`);
+  const sale = await as(ctx, manager).get(`/api/v1/admin/sales/${draft.body.saleId}`);
+  const res = await as(ctx, manager)
+    .post(`/api/v1/admin/sales/${draft.body.saleId}/confirm`)
+    .send({ version: sale.body.sale.version, amountKopecks: 4_590_000, soldOn: "2026-11-10", externalId: `INV-${randomUUID().slice(0, 8)}`, ...body });
+  return { res, saleId: draft.body.saleId as string };
+}
+
+describe("release 2 flags", () => {
+  it("hides every release-2 route when flags are off", async () => {
+    const off = makeDeps();
+    for (const url of ["/api/v1/me", "/api/v1/offers", "/api/v1/news", "/api/v1/me/loyalty"]) {
+      expect((await off.http().get(url)).status).toBe(404);
+    }
+    expect((await off.http().post("/api/v1/subscriptions").send({ email: "x@x.test", consent: true })).status).toBe(404);
+    expect((await off.http().post("/api/v1/auth/telegram/nonce")).status).toBe(404);
+    await off.sql.end();
+  });
+});
+
+describe("customer cabinet and welcome bonus", () => {
+  it("credits a logged-in client once and shows own leads only", async () => {
+    const c = await clientLogin("client@example.test");
+    const first = await submit(c);
+    expect(first.body.loyaltyStatus).toBe("credited");
+    const second = await submit(c);
+    expect(second.body.loyaltyStatus).toBe("ineligible");
+    const loyalty = await as(ctx, c).get("/api/v1/me/loyalty");
+    expect(loyalty.body.balance).toBe(500);
+    const leads = await as(ctx, c).get("/api/v1/me/leads");
+    expect(leads.body.items).toHaveLength(2);
+    expect(leads.body.items[0].status).toBe("Принята");
+    const other = await clientLogin("other@example.test");
+    expect((await as(ctx, other).get("/api/v1/me/leads")).body.items).toHaveLength(0);
+  });
+
+  it("keeps a guest bonus pending until the client claims the lead by a verified contact", async () => {
+    const guest = await submit(null, { contact: { preferred: "email", email: "guest@example.test" } });
+    expect(guest.body.loyaltyStatus).toBe("pending");
+    const c = await clientLogin("guest@example.test");
+    const claimable = await as(ctx, c).get("/api/v1/me/leads/claimable");
+    expect(claimable.body.items.map((l: { reference: string }) => l.reference)).toEqual([guest.body.reference]);
+    const claim = await as(ctx, c).post("/api/v1/me/leads/claim").send({ references: [guest.body.reference] });
+    expect(claim.body.items[0]).toMatchObject({ claimed: true, loyaltyStatus: "credited" });
+    expect((await as(ctx, c).get("/api/v1/me/loyalty")).body.balance).toBe(500);
+    const stranger = await clientLogin("stranger@example.test");
+    const steal = await as(ctx, stranger).post("/api/v1/me/leads/claim").send({ references: [guest.body.reference] });
+    expect(steal.body.items[0].claimed).toBe(false);
+  });
+
+  it("credits only one bonus when two guest leads are claimed at once", async () => {
+    const a = await submit(null, { contact: { preferred: "email", email: "two@example.test" } });
+    const b = await submit(null, { contact: { preferred: "email", email: "two@example.test" } });
+    const c = await clientLogin("two@example.test");
+    await Promise.all([
+      as(ctx, c).post("/api/v1/me/leads/claim").send({ references: [a.body.reference] }),
+      as(ctx, c).post("/api/v1/me/leads/claim").send({ references: [b.body.reference] }),
+    ]);
+    expect((await as(ctx, c).get("/api/v1/me/loyalty")).body.balance).toBe(500);
+  });
+
+  it("redeems within the balance and the limit, and returns points on a full refund", async () => {
+    const c = await clientLogin("buyer@example.test");
+    const lead = await submit(c);
+    const tooMany = await confirmSale(lead.body.reference, { redeemPoints: 600 });
+    expect(tooMany.res.status).toBe(422);
+    const ok = await confirmSale(lead.body.reference, { redeemPoints: 400 });
+    expect(ok.res.status).toBe(200);
+    expect((await as(ctx, c).get("/api/v1/me/loyalty")).body.balance).toBe(100);
+    const purchases = await as(ctx, c).get("/api/v1/me/purchases");
+    expect(purchases.body.items).toHaveLength(1);
+    await as(ctx, manager).post(`/api/v1/admin/sales/${ok.saleId}/refunds`).set("Idempotency-Key", key()).send({ amountKopecks: 4_590_000, reason: "Полный возврат" });
+    expect((await as(ctx, c).get("/api/v1/me/loyalty")).body.balance).toBe(500);
+  });
+
+  it("reverses the bonus when the lead is closed as spam", async () => {
+    const c = await clientLogin("spam@example.test");
+    const lead = await submit(c);
+    const d = await as(ctx, manager).get(`/api/v1/admin/leads/${lead.body.reference}`);
+    await as(ctx, manager).post(`/api/v1/admin/leads/${lead.body.reference}/status`).send({ to: "closed", version: d.body.lead.version, reason: "spam" });
+    expect((await as(ctx, c).get("/api/v1/me/loyalty")).body.balance).toBe(0);
+  });
+});
+
+describe("telegram login", () => {
+  it("creates a client, takes the verified phone and lets the client claim a phone lead", async () => {
+    const guest = await submit(null, { contact: { preferred: "phone", phone: "+79005556677" } });
+    const { res } = await telegramLogin({ sub: "tg-42", name: "Тест", phone_number: "79005556677", phone_number_verified: true });
+    expect(res.status).toBe(200);
+    const s = { cookie: cookieFrom(res), csrf: res.body.csrfToken as string };
+    const me = await as(ctx, s).get("/api/v1/me");
+    expect(me.body.profile).toMatchObject({ phone: "+79005556677", phoneVerified: true, identities: ["telegram"] });
+    const claim = await as(ctx, s).post("/api/v1/me/leads/claim").send({ references: [guest.body.reference] });
+    expect(claim.body.items[0].claimed).toBe(true);
+    const again = await telegramLogin({ sub: "tg-42" });
+    expect(again.res.body.user.id).toBe(res.body.user.id);
+  });
+
+  it("rejects a reused nonce, a foreign audience and a forged signature", async () => {
+    const n = await ctx.http().post("/api/v1/auth/telegram/nonce");
+    const token = idToken({ sub: "tg-1", nonce: n.body.nonce });
+    expect((await ctx.http().post("/api/v1/auth/telegram").send({ idToken: token, nonce: n.body.nonce })).status).toBe(200);
+    expect((await ctx.http().post("/api/v1/auth/telegram").send({ idToken: token, nonce: n.body.nonce })).status).toBe(400);
+    const n2 = await ctx.http().post("/api/v1/auth/telegram/nonce");
+    const foreign = idToken({ sub: "tg-2", nonce: n2.body.nonce, aud: "123" });
+    expect((await ctx.http().post("/api/v1/auth/telegram").send({ idToken: foreign, nonce: n2.body.nonce })).status).toBe(400);
+    const n3 = await ctx.http().post("/api/v1/auth/telegram/nonce");
+    const parts = idToken({ sub: "tg-3", nonce: n3.body.nonce }).split(".");
+    const forged = [parts[0], Buffer.from(JSON.stringify({ iss: "https://oauth.telegram.org", aud: CLIENT_ID, sub: "admin", exp: 9e9, nonce: n3.body.nonce })).toString("base64url"), parts[2]].join(".");
+    expect((await ctx.http().post("/api/v1/auth/telegram").send({ idToken: forged, nonce: n3.body.nonce })).status).toBe(400);
+  });
+});
+
+describe("offers and news", () => {
+  async function createOffer(extra: Record<string, unknown> = {}) {
+    const created = await as(ctx, editor).post("/api/v1/admin/posts").send({
+      type: "offer", slug: `offer-${randomUUID().slice(0, 6)}`, title: "Скидка постоянным", summary: "После первой покупки",
+      offer: { minPurchases: 1, benefit: "5% на второй комплект" }, ...extra,
+    });
+    expect(created.status).toBe(201);
+    const pub = await as(ctx, editor).post(`/api/v1/admin/posts/${created.body.id}/status`).send({ version: created.body.version, status: "published" });
+    expect(pub.status).toBe(200);
+    return created.body.id as string;
+  }
+
+  it("publishes an offer and applies it only after enough confirmed purchases", async () => {
+    const offerId = await createOffer();
+    expect((await ctx.http().get("/api/v1/offers")).body.items).toHaveLength(1);
+    const c = await clientLogin("loyal@example.test");
+    const first = await submit(c);
+    const early = await confirmSale(first.body.reference, { offerId });
+    expect(early.res.status).toBe(422);
+    expect((await confirmSale(first.body.reference, {})).res.status).toBe(200);
+    const second = await submit(c);
+    const applied = await confirmSale(second.body.reference, { offerId });
+    expect(applied.res.status).toBe(200);
+    const [sale] = await ctx.sql`select offer_id, offer_rule_version from app.sales where id = ${applied.saleId}`;
+    expect(sale).toEqual({ offer_id: offerId, offer_rule_version: 1 });
+    const mine = await as(ctx, c).get("/api/v1/me/offers");
+    expect(mine.body.items[0].eligible).toBe(true);
+  });
+
+  it("does not apply an expired offer", async () => {
+    const offerId = await createOffer({ offer: { minPurchases: null, benefit: "Сезон" } });
+    await ctx.sql`update app.posts set starts_at = now() - interval '2 days', ends_at = now() - interval '1 day' where id = ${offerId}`;
+    const c = await clientLogin("late@example.test");
+    const lead = await submit(c);
+    expect((await confirmSale(lead.body.reference, { offerId })).res.status).toBe(422);
+    expect((await ctx.http().get("/api/v1/offers")).body.items).toHaveLength(0);
+  });
+
+  it("serves published news", async () => {
+    const n = await as(ctx, editor).post("/api/v1/admin/posts").send({ type: "news", slug: "new-press", title: "Новый пресс", summary: "Расширили производство" });
+    await as(ctx, editor).post(`/api/v1/admin/posts/${n.body.id}/status`).send({ version: n.body.version, status: "published" });
+    const res = await ctx.http().get("/api/v1/news/new-press");
+    expect(res.body.post.title).toBe("Новый пресс");
+  });
+});
+
+describe("subscriptions and campaigns", () => {
+  async function subscribe(email: string) {
+    await ctx.http().post("/api/v1/subscriptions").send({ email, consent: true });
+    await ctx.settle();
+    const msg = ctx.email.sent.filter((m) => m.to === email).at(-1)!;
+    const url = new URL(msg.text.match(/https?:\/\/\S+/)![0]);
+    const res = await ctx.http().post("/api/v1/subscriptions/confirm").send({ id: url.searchParams.get("id"), token: url.searchParams.get("token") });
+    expect(res.status).toBe(200);
+    return url.searchParams.get("id")!;
+  }
+
+  it("requires consent, double opt-in, and skips people who unsubscribed before sending", async () => {
+    expect((await ctx.http().post("/api/v1/subscriptions").send({ email: "n@example.test", consent: false })).status).toBe(422);
+    const a = await subscribe("a@example.test");
+    await subscribe("b@example.test");
+    const c = await as(ctx, editor).post("/api/v1/admin/campaigns").send({ subject: "Новинки ноября", bodyText: "Мы выпустили новые комплекты для JAC T9." });
+    const at = new Date(Date.now() + 1000).toISOString();
+    expect((await as(ctx, editor).post(`/api/v1/admin/campaigns/${c.body.id}/schedule`).send({ version: c.body.version, at, confirm: true })).status).toBe(403);
+    expect((await as(ctx, admin).post(`/api/v1/admin/campaigns/${c.body.id}/schedule`).send({ version: c.body.version, at, confirm: true })).status).toBe(200);
+    await ctx.sql`update app.campaigns set scheduled_at = now() - interval '1 second'`;
+    ctx.email.sent = [];
+    await dispatchCampaigns(ctx.deps);
+    const unsubToken = (await import("../src/services/campaigns")).subscriptionToken(ctx.deps, a, "unsubscribe");
+    await ctx.http().post(`/api/v1/subscriptions/one-click?id=${a}&token=${unsubToken}`);
+    await runJobs(ctx.deps);
+    expect(ctx.email.sent.map((m) => m.to)).toEqual(["b@example.test"]);
+    expect(ctx.email.sent[0]!.headers!["List-Unsubscribe-Post"]).toBe("List-Unsubscribe=One-Click");
+    const list = await as(ctx, editor).get("/api/v1/admin/campaigns");
+    expect(list.body.items[0].report).toEqual({ accepted: 1, skipped: 1 });
+    const repeat = await ctx.http().post("/api/v1/subscriptions/unsubscribe").send({ id: a, token: unsubToken });
+    expect(repeat.status).toBe(200);
+  });
+});

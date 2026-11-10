@@ -124,7 +124,9 @@ export type Capability =
   | "catalog_edit"
   | "users_manage"
   | "jobs_manage"
-  | "audit_view";
+  | "audit_view"
+  | "campaigns_send"
+  | "loyalty_manage";
 
 export function capabilities(roles: readonly RoleValue[]): Set<Capability> {
   const caps = new Set<Capability>();
@@ -143,7 +145,10 @@ export function capabilities(roles: readonly RoleValue[]): Set<Capability> {
     caps.add("users_manage");
     caps.add("jobs_manage");
     caps.add("audit_view");
+    caps.add("campaigns_send");
+    caps.add("loyalty_manage");
   }
+  if (has("campaigns_send")) caps.add("campaigns_send");
   return caps;
 }
 

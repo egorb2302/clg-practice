@@ -66,7 +66,9 @@ export type Ctx = ReturnType<typeof makeDeps>;
 export async function resetData(ctx: Ctx) {
   await ctx.sql`
     truncate app.audit_events, app.outbox, app.idempotency_keys, app.rate_limits, app.telegram_updates,
-      app.email_budget, app.monitor_runs,
+      app.email_budget, app.monitor_runs, app.campaign_deliveries, app.campaigns, app.consent_events, app.subscriptions,
+      app.offer_rules, app.posts, app.loyalty_expiry_checks, app.loyalty_ledger, app.loyalty_program_claims,
+      app.loyalty_awards, app.loyalty_rules, app.oidc_nonces, app.identities,
       app.sale_events, app.sale_items, app.sales, app.lead_events, app.lead_items, app.leads,
       app.recovery_codes, app.totp_factors, app.login_challenges, app.sessions, app.user_roles, app.users,
       app.slug_redirects, app.media, app.variants, app.compatibilities, app.products, app.vehicle_models,

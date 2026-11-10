@@ -5,7 +5,9 @@ import { LocalStorage } from "./adapters/storage";
 import type { Deps } from "./deps";
 import { errorHandler, notFound } from "./http/errors";
 import { adminRoutes } from "./routes/admin";
+import { accountRoutes } from "./routes/account";
 import { authRoutes } from "./routes/auth";
+import { contentRoutes } from "./routes/content";
 import { internalRoutes } from "./routes/internal";
 import { leadRoutes } from "./routes/leads";
 import { publicRoutes } from "./routes/public";
@@ -57,6 +59,8 @@ export function createApp(deps: Deps) {
   api.use(publicRoutes(deps));
   api.use(leadRoutes(deps));
   api.use(authRoutes(deps));
+  api.use(accountRoutes(deps));
+  api.use(contentRoutes(deps));
   api.use(telegramRoutes(deps));
   api.use(internalRoutes(deps));
   api.use("/admin", (_req, res, next) => {

@@ -115,7 +115,7 @@ body: {
 Render only when the flag from `/meta` is on; routes return 404 when off.
 
 - `/login`: email → 6-digit code step (resend timer 60 s, neutral errors), «Войти через Telegram» (Telegram Login widget; bot name from env).
-- `/account`: profile, contacts with «подтверждён / не подтверждён», «Подтвердить телефон в Telegram» (opens `t.me/<bot>?start=<token>` from `POST /me/phone/telegram-link`), logout.
+- `/account`: profile, contacts with «подтверждён / не подтверждён», «Подтвердить телефон в Telegram» (Telegram Login with scope `openid profile phone`: get `{ nonce, clientId }` from `POST /auth/telegram/nonce`, run the Telegram login library, send `{ idToken, nonce }` to `POST /me/identities/telegram`; the same flow with `POST /auth/telegram` is the login button), logout. The page must not send `Cross-Origin-Opener-Policy: same-origin` (it breaks the Telegram popup).
 - `/account/leads` (list with simple public status and date, «Привязать заявку» flow by email code), `/account/purchases`, `/account/bonus` (balance + history), `/account/subscription`. Each with an empty state explaining when data appears.
 - After a guest lead with `loyaltyStatus: 'pending'`: hint «Баллы станут доступны после входа и подтверждения контакта».
 - `/offers`, `/offers/:slug`, `/news`, `/news/:slug`; offer block on the home page.
