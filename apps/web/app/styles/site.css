@@ -484,3 +484,4 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .lg .mute { color: rgb(214 210 200 / .7); }
 .lg .field input::placeholder, .lg .field textarea::placeholder { color: rgb(214 210 200 / .62); }
+.nw { white-space: nowrap; }

@@ -103,7 +103,7 @@ export function LeadForm({ type: initialType, switchable, items = [], deliveryMe
     return (
       <div className={`lead lead--ok ${className}`} role="status" aria-live="polite" tabIndex={-1}>
         <span className="lead__okmark"><Icon name="check" /></span>
-        <h3 className="lead__okt">Заявка {status.ref} принята</h3>
+        <h3 className="lead__okt">Заявка <span className="nw">{status.ref}</span> принята</h3>
         <ol className="lead__next">
           <li><b>Сегодня</b><span>Менеджер проверит совместимость с вашей машиной и цену комплектации</span></li>
           <li><b>В течение рабочего дня</b><span>Свяжемся {preferred === "phone" ? "по телефону" : "по email"}, который вы указали, и назовем точную стоимость</span></li>
