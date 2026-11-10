@@ -117,6 +117,7 @@ export function originGuard(deps: Deps) {
 
 export type Capability =
   | "staff"
+  | "leads_read"
   | "leads"
   | "contacts_view"
   | "sales_confirm"
@@ -137,6 +138,7 @@ export function capabilities(roles: readonly RoleValue[]): Set<Capability> {
   if (has("editor") || has("admin")) caps.add("catalog_edit");
   if (has("contacts_view")) caps.add("contacts_view");
   if (has("sales_confirm")) caps.add("sales_confirm");
+  if (caps.has("leads") || caps.has("contacts_view") || caps.has("sales_confirm")) caps.add("leads_read");
   if (has("admin")) {
     caps.add("users_manage");
     caps.add("jobs_manage");

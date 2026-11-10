@@ -10,24 +10,36 @@ jobs:
     if: ${{ vars.BACKUP_ENABLED == 'true' }}
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - name: Install pg_dump 17
         run: |
           sudo apt-get update -y
           sudo apt-get install -y postgresql-common
           sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
           sudo apt-get install -y postgresql-client-17
-      - name: Dump app schema
+      - name: Dump database and media
         env:
           DATABASE_BACKUP_URL: ${{ secrets.DATABASE_BACKUP_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
         run: |
           set -euo pipefail
           stamp=$(date -u +%Y%m%dT%H%M%SZ)
-          /usr/lib/postgresql/17/bin/pg_dump "$DATABASE_BACKUP_URL" --schema=app --format=custom --no-owner --file=armorix.dump
-          gpg --batch --yes --pinentry-mode loopback --passphrase "$BACKUP_PASSPHRASE" --symmetric --cipher-algo AES256 --output "armorix-$stamp.dump.gpg" armorix.dump
-          rm armorix.dump
+          mkdir -p backup
+          /usr/lib/postgresql/17/bin/pg_dump "$DATABASE_BACKUP_URL" --schema=app --format=custom --no-owner --file=backup/armorix.dump
+          pnpm --filter @armorix/api exec tsx src/scripts/backup-media.ts "$GITHUB_WORKSPACE/backup/media"
+          tar -czf armorix.tar.gz backup
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$BACKUP_PASSPHRASE" --symmetric --cipher-algo AES256 --output "armorix-$stamp.tar.gz.gpg" armorix.tar.gz
+          rm -rf backup armorix.tar.gz
       - uses: actions/upload-artifact@v4
         with:
-          name: armorix-db
-          path: armorix-*.dump.gpg
+          name: armorix-backup
+          path: armorix-*.tar.gz.gpg
           retention-days: 30

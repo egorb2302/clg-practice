@@ -20,7 +20,7 @@ const inviteBody = z.object({
 const contactsBody = z.object({
   phone: z.string().trim().max(40).optional(),
   email: z.email().max(254).optional(),
-  telegram: z.url().max(200).optional(),
+  telegram: z.url({ protocol: /^https$/ }).max(200).optional(),
   address: z.string().trim().max(300).optional(),
   hours: z.string().trim().max(200).optional(),
 });
@@ -76,6 +76,7 @@ export function adminSystemRoutes(deps: Deps) {
   r.put("/admin/users/:id/roles", admin, async (req, res) => {
     const roles = parse(z.object({ roles: rolesSchema }), req.body).roles;
     const id = String(req.params.id);
+    if (!z.uuid().safeParse(id).success) throw notFound("Сотрудник не найден");
     const actor = authOf(res).user.id;
     if (id === actor && !roles.includes("admin")) {
       throw new HttpError(409, "CONFLICT", "Нельзя снять роль администратора с себя");

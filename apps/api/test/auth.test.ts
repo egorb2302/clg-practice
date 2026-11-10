@@ -88,6 +88,16 @@ describe("staff auth", () => {
     expect((await ctx.http().post("/api/v1/auth/email/verify").send({ challengeId, code })).status).toBe(400);
   });
 
+  it("does not allow more than five guesses under concurrency", async () => {
+    await createStaff(ctx, "burst@armorix.test", ["manager"]);
+    const { challengeId, code } = await requestCode("burst@armorix.test");
+    const wrong = Array.from({ length: 12 }, (_, i) => String(i).padStart(6, "9")).filter((c) => c !== code);
+    await Promise.all(wrong.map((c) => ctx.http().post("/api/v1/auth/email/verify").send({ challengeId, code: c })));
+    const [row] = await ctx.sql<{ attempts: number }[]>`select attempts from app.login_challenges where id = ${challengeId}`;
+    expect(row!.attempts).toBe(5);
+    expect((await ctx.http().post("/api/v1/auth/email/verify").send({ challengeId, code })).status).toBe(400);
+  });
+
   it("throttles repeated code requests for one email", async () => {
     await createStaff(ctx, "y@armorix.test", ["manager"]);
     expect((await requestCode("y@armorix.test")).status).toBe(202);

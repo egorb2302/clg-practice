@@ -66,6 +66,7 @@ export type Ctx = ReturnType<typeof makeDeps>;
 export async function resetData(ctx: Ctx) {
   await ctx.sql`
     truncate app.audit_events, app.outbox, app.idempotency_keys, app.rate_limits, app.telegram_updates,
+      app.email_budget, app.monitor_runs,
       app.sale_events, app.sale_items, app.sales, app.lead_events, app.lead_items, app.leads,
       app.recovery_codes, app.totp_factors, app.login_challenges, app.sessions, app.user_roles, app.users,
       app.slug_redirects, app.media, app.variants, app.compatibilities, app.products, app.vehicle_models,
@@ -73,11 +74,14 @@ export async function resetData(ctx: Ctx) {
   await seed(ctx.sql);
 }
 
+const seenPrices = new Map<string, number | null>();
+
 export async function variantId(ctx: Ctx, productSlug: string, title: string) {
-  const [v] = await ctx.sql<{ id: string }[]>`
-    select x.id from app.variants x join app.products p on p.id = x.product_id
+  const [v] = await ctx.sql<{ id: string; price: number | null }[]>`
+    select x.id, x.price_kopecks as price from app.variants x join app.products p on p.id = x.product_id
     where p.slug = ${productSlug} and x.title = ${title}`;
   if (!v) throw new Error(`no variant ${productSlug}/${title}`);
+  seenPrices.set(v.id, v.price);
   return v.id;
 }
 
@@ -86,10 +90,10 @@ export function leadBody(items: { variantId: string; quantity: number; seenPrice
     type: "catalog",
     name: "Иван",
     contact: { preferred: "phone", phone: "8 (900) 123-45-67", email: "ivan@example.test" },
-    items,
+    items: items.map((i) => ({ seenPriceFrom: seenPrices.get(i.variantId) ?? null, ...i })),
     deliveryMethod: "pickup",
     website: "",
-    formStartedAt: Date.now() - 10_000,
+    fillMs: 10_000,
     ...extra,
   };
 }

@@ -38,8 +38,7 @@ function normalize(lead: LeadRequest): Normalized {
 }
 
 function isBot(deps: Deps, lead: LeadRequest) {
-  const age = Date.now() - lead.formStartedAt;
-  return lead.website !== "" || age < deps.cfg.LEAD_MIN_FILL_MS || age < -60_000;
+  return lead.website !== "" || lead.fillMs < deps.cfg.LEAD_MIN_FILL_MS;
 }
 
 const fakeReference = () => `AX-${String(randomInt(100_000, 999_999))}`;
@@ -66,7 +65,7 @@ export async function submitLead(
     return { status: 201, body: { reference: fakeReference(), status: "received" }, jobIds: [] };
   }
   const lead = normalize(raw);
-  const { formStartedAt: _f, website: _w, ...fpSource } = lead;
+  const { fillMs: _f, website: _w, ...fpSource } = lead;
   const fp = fingerprint(fpSource);
 
   const prior = await storedResponse(deps, key);
@@ -76,7 +75,9 @@ export async function submitLead(
   }
 
   await enforce(deps.sql, `lead:ip:${input.ip}`, deps.cfg.LEAD_LIMIT_IP_PER_HOUR, 3600);
-  await enforce(deps.sql, `lead:contact:${lead.phone ?? lead.email}`, deps.cfg.LEAD_LIMIT_CONTACT_PER_HOUR, 3600);
+  for (const contact of [lead.phone, lead.email]) {
+    if (contact) await enforce(deps.sql, `lead:contact:${contact}`, deps.cfg.LEAD_LIMIT_CONTACT_PER_HOUR, 3600);
+  }
 
   return deps.sql.begin(async (tx) => {
     const claimed = await tx`
@@ -162,7 +163,9 @@ async function verifyItems(tx: Tx, lead: Extract<Normalized, { type: "catalog" }
     { id: string; variant_title: string; price: number | null; ok: boolean; product_id: string; slug: string; title: string; code: string; make: string; model: string }[]
   >`
     select x.id, x.title as variant_title, x.price_kopecks as price,
-      (x.status = 'active' and x.available and p.status = 'published' and v.published) as ok,
+      (x.status = 'active' and x.available and p.status = 'published' and v.published
+        and exists (select 1 from compatibilities c where c.product_id = x.product_id
+          and c.vehicle_model_id = x.vehicle_model_id and c.active)) as ok,
       p.id as product_id, p.slug, p.title, p.code, v.make, v.model
     from variants x join products p on p.id = x.product_id join vehicle_models v on v.id = x.vehicle_model_id
     where x.id in ${tx(ids)}`;
@@ -175,7 +178,7 @@ async function verifyItems(tx: Tx, lead: Extract<Normalized, { type: "catalog" }
       changes.push({ variantId: item.variantId, available: false, priceFrom: null });
       continue;
     }
-    if (item.seenPriceFrom !== undefined && item.seenPriceFrom !== r.price) {
+    if (item.seenPriceFrom !== r.price) {
       changes.push({ variantId: item.variantId, available: true, priceFrom: r.price });
       continue;
     }
@@ -199,7 +202,7 @@ async function verifyItems(tx: Tx, lead: Extract<Normalized, { type: "catalog" }
 
 function leadNotifications(deps: Deps, lead: { id: string; reference: string }, req: Normalized): OutboxJob[] {
   const link = `${deps.cfg.SITE_URL}/admin/leads/${lead.reference}`;
-  const staffText = `Новая заявка ${lead.reference} — ${leadTypeLabels[req.type]}\n${link}`;
+  const staffText = `Новая заявка ${lead.reference}: ${leadTypeLabels[req.type]}\n${link}`;
   const jobs: OutboxJob[] = [];
   for (const chat of deps.cfg.TELEGRAM_STAFF_CHAT_IDS) {
     jobs.push({
@@ -225,7 +228,7 @@ function leadNotifications(deps: Deps, lead: { id: string; reference: string }, 
       dedupeKey: `lead:${lead.id}:email-customer`,
       payload: {
         to: req.email,
-        subject: `Заявка ${lead.reference} принята — ARMORIX`,
+        subject: `ARMORIX: заявка ${lead.reference} принята`,
         text: [
           "Здравствуйте!",
           "",

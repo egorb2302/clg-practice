@@ -22,6 +22,7 @@ const createBody = z.object({
 const editBody = z.object({ version: z.number().int().positive(), items: z.array(saleItem).min(1).max(50) });
 
 const confirmBody = z.object({
+  version: z.number().int().positive(),
   amountKopecks: z.number().int().positive(),
   soldOn: z.iso.date(),
   externalId: z.string().trim().min(1).max(100),
@@ -58,7 +59,7 @@ export function adminSaleRoutes(deps: Deps) {
     return s;
   }
 
-  r.get("/admin/sales", requireStaff("leads"), async (req, res) => {
+  r.get("/admin/sales", requireStaff("leads_read"), async (req, res) => {
     const status = typeof req.query.status === "string" ? req.query.status : undefined;
     const rows = await deps.sql`
       select s.id, s.status, s.amount_kopecks as "amount", s.refunded_kopecks as "refunded", s.sold_on::text as "soldOn",
@@ -69,7 +70,7 @@ export function adminSaleRoutes(deps: Deps) {
     res.json({ items: rows });
   });
 
-  r.get("/admin/sales/:id", requireStaff("leads"), async (req, res) => {
+  r.get("/admin/sales/:id", requireStaff("leads_read"), async (req, res) => {
     const s = await loadSale(String(req.params.id));
     const canView = capsOf(res).has("contacts_view");
     const items = await deps.sql`
@@ -145,24 +146,27 @@ export function adminSaleRoutes(deps: Deps) {
 
   r.post("/admin/sales/:id/confirm", canSell, async (req, res) => {
     const body = parse(confirmBody, req.body);
-    const s = await loadSale(String(req.params.id));
+    const id = String(req.params.id);
     const actor = authOf(res).user.id;
-    if (s.status !== "draft") {
+    const alreadyDone = (s: SaleRow) => {
       const same = s.external_id === body.externalId && s.source === body.source && s.amount_kopecks === body.amountKopecks;
-      if (same) {
-        res.json({ saleId: s.id, status: s.status, alreadyConfirmed: true });
-        return;
-      }
-      throw new HttpError(409, "INVALID_TRANSITION", "Сделка уже подтверждена с другими данными");
-    }
+      if (!same) throw new HttpError(409, "INVALID_TRANSITION", "Сделка уже подтверждена с другими данными");
+      res.json({ saleId: s.id, status: s.status, alreadyConfirmed: true });
+    };
+    const s = await loadSale(id);
+    if (s.status !== "draft") return alreadyDone(s);
+    let raced = false;
     try {
       await deps.sql.begin(async (tx) => {
         const rows = await tx`
           update sales set status = 'confirmed', amount_kopecks = ${body.amountKopecks}, sold_on = ${body.soldOn},
             external_id = ${body.externalId}, source = ${body.source}, confirmed_by = ${actor}, confirmed_at = now(),
             version = version + 1
-          where id = ${s.id} and status = 'draft' returning id`;
-        if (rows.length === 0) throw new HttpError(409, "CONFLICT", "Сделку уже подтвердили, обновите страницу");
+          where id = ${s.id} and status = 'draft' and version = ${body.version} returning id`;
+        if (rows.length === 0) {
+          raced = true;
+          return;
+        }
         await tx`
           insert into sale_events (sale_id, type, amount_kopecks, actor_user_id)
           values (${s.id}, 'confirmed', ${body.amountKopecks}, ${actor})`;
@@ -189,6 +193,11 @@ export function adminSaleRoutes(deps: Deps) {
       }
       throw e;
     }
+    if (raced) {
+      const now = await loadSale(id);
+      if (now.status === "draft") throw versionConflict();
+      return alreadyDone(now);
+    }
     res.json({ saleId: s.id, status: "confirmed" });
   });
 
@@ -203,9 +212,14 @@ export function adminSaleRoutes(deps: Deps) {
     const result = await deps.sql.begin(async (tx) => {
       const [cur] = await tx<{ status: string; amount_kopecks: number | null; refunded_kopecks: number }[]>`
         select status, amount_kopecks, refunded_kopecks from sales where id = ${s.id} for update`;
-      const dup = await tx`
-        select 1 from sale_events where sale_id = ${s.id} and type = 'refund' and idempotency_key = ${key}`;
-      if (dup.length && cur) return { status: cur.status, refunded: cur.refunded_kopecks, duplicate: true };
+      const [dup] = await tx<{ amount_kopecks: number }[]>`
+        select amount_kopecks from sale_events where sale_id = ${s.id} and type = 'refund' and idempotency_key = ${key}`;
+      if (dup && cur) {
+        if (dup.amount_kopecks !== body.amountKopecks) {
+          throw new HttpError(409, "IDEMPOTENCY_MISMATCH", "Ключ уже использован для другого возврата");
+        }
+        return { status: cur.status, refunded: cur.refunded_kopecks, duplicate: true };
+      }
       if (!cur || !["confirmed", "partially_refunded"].includes(cur.status) || cur.amount_kopecks === null) {
         throw new HttpError(409, "INVALID_TRANSITION", "Возврат возможен только по подтверждённой сделке");
       }

@@ -67,7 +67,8 @@ describe("admin leads", () => {
     const again = await as(ctx, manager).post(`/api/v1/admin/leads/${ref}/sale`);
     expect(again.body.saleId).toBe(draft.body.saleId);
     const id = draft.body.saleId;
-    const body = { amountKopecks: 4_800_000, soldOn: "2026-11-10", externalId: "INV-1" };
+    const sv = (await as(ctx, manager).get(`/api/v1/admin/sales/${id}`)).body.sale.version;
+    const body = { version: sv, amountKopecks: 4_800_000, soldOn: "2026-11-10", externalId: "INV-1" };
     expect((await as(ctx, manager).post(`/api/v1/admin/sales/${id}/confirm`).send(body)).status).toBe(200);
     const repeat = await as(ctx, manager).post(`/api/v1/admin/sales/${id}/confirm`).send(body);
     expect(repeat.body.alreadyConfirmed).toBe(true);
@@ -79,7 +80,7 @@ describe("admin leads", () => {
     expect(lead.body.lead.status).toBe("sale_confirmed");
 
     const offline = await as(ctx, manager).post("/api/v1/admin/sales").send({ items: [{ title: "Пороги", quantity: 1 }] });
-    const dupExternal = await as(ctx, manager).post(`/api/v1/admin/sales/${offline.body.saleId}/confirm`).send(body);
+    const dupExternal = await as(ctx, manager).post(`/api/v1/admin/sales/${offline.body.saleId}/confirm`).send({ ...body, version: 1 });
     expect(dupExternal.status).toBe(409);
     expect(dupExternal.body.fieldErrors.externalId).toBeTruthy();
 
@@ -95,8 +96,36 @@ describe("admin leads", () => {
 
   it("does not let an editor confirm sales", async () => {
     const draft = await as(ctx, manager).post(`/api/v1/admin/leads/${ref}/sale`);
-    const res = await as(ctx, editor).post(`/api/v1/admin/sales/${draft.body.saleId}/confirm`).send({ amountKopecks: 1, soldOn: "2026-11-10", externalId: "X" });
+    const res = await as(ctx, editor).post(`/api/v1/admin/sales/${draft.body.saleId}/confirm`).send({ version: 1, amountKopecks: 1, soldOn: "2026-11-10", externalId: "X" });
     expect(res.status).toBe(403);
+  });
+
+  it("rejects confirming a sale edited after the screen was loaded", async () => {
+    const draft = await as(ctx, manager).post(`/api/v1/admin/leads/${ref}/sale`);
+    const id = draft.body.saleId;
+    const edited = await as(ctx, manager).patch(`/api/v1/admin/sales/${id}`).send({ version: 1, items: [{ title: "Другой состав", quantity: 2 }] });
+    expect(edited.status).toBe(200);
+    const stale = await as(ctx, manager).post(`/api/v1/admin/sales/${id}/confirm`).send({ version: 1, amountKopecks: 100, soldOn: "2026-11-10", externalId: "S-1" });
+    expect(stale.status).toBe(409);
+    expect(stale.body.code).toBe("VERSION_CONFLICT");
+  });
+
+  it("does not allow a sale draft on a lead whose sale is already confirmed", async () => {
+    const draft = await as(ctx, manager).post(`/api/v1/admin/leads/${ref}/sale`);
+    await as(ctx, manager).post(`/api/v1/admin/sales/${draft.body.saleId}/confirm`).send({ version: 1, amountKopecks: 100, soldOn: "2026-11-10", externalId: "S-2" });
+    const second = await as(ctx, manager).post(`/api/v1/admin/leads/${ref}/sale`);
+    expect(second.status).toBe(409);
+  });
+
+  it("masks contacts for staff with a sales grant but no contacts grant", async () => {
+    await createStaff(ctx, "seller@armorix.test", ["editor", "sales_confirm"]);
+    const seller = await loginStaff(ctx, "seller@armorix.test");
+    const res = await as(ctx, seller).get(`/api/v1/admin/leads/${ref}`);
+    expect(res.status).toBe(200);
+    expect(res.body.lead.phone).toBe("+7***4567");
+    expect(res.body.lead.email).toBe("i***@example.test");
+    const change = await as(ctx, seller).post(`/api/v1/admin/leads/${ref}/status`).send({ to: "in_progress", version: 1 });
+    expect(change.status).toBe(403);
   });
 });
 
@@ -142,6 +171,32 @@ describe("admin catalog", () => {
     expect(done.status).toBe(200);
     expect(done.body.width).toBe(1600);
     expect(done.body.variants.map((v: { width: number }) => v.width)).toEqual([480, 960, 1600]);
+  });
+
+  it("keeps other fields on a partial product edit", async () => {
+    const [p] = await ctx.sql<{ id: string; version: number }[]>`select id, version from app.products where slug = 'jac-t9-front-tube'`;
+    const res = await as(ctx, editor).patch(`/api/v1/admin/catalog/${p!.id}`).send({ version: p!.version, title: "Новое название" });
+    expect(res.status).toBe(200);
+    const [after] = await ctx.sql`select title, description, composition, material, installation from app.products where id = ${p!.id}`;
+    expect(after!.title).toBe("Новое название");
+    expect(after!.description).toContain("Демонстрационная");
+    expect(after!.composition).toHaveLength(3);
+    expect(after!.material).toBe("aisi304");
+    expect(after!.installation).toBeTruthy();
+  });
+
+  it("removes a vehicle from compatibility even when it has variants, and hides it publicly", async () => {
+    const [p] = await ctx.sql<{ id: string; version: number }[]>`select id, version from app.products where slug = 'universal-steps'`;
+    const [haval] = await ctx.sql<{ id: string }[]>`select id from app.vehicle_models where slug = 'haval-h3'`;
+    const [jac] = await ctx.sql<{ id: string }[]>`select id from app.vehicle_models where slug = 'jac-t9'`;
+    const res = await as(ctx, editor).put(`/api/v1/admin/catalog/${p!.id}/compatibilities`).send({ version: p!.version, items: [{ vehicleModelId: jac!.id }] });
+    expect(res.status).toBe(200);
+    const list = await ctx.http().get("/api/v1/catalog?vehicle=haval-h3");
+    expect(list.body.items.map((i: { slug: string }) => i.slug)).not.toContain("universal-steps");
+    const detail = await ctx.http().get("/api/v1/catalog/universal-steps");
+    expect(detail.body.product.variants.every((v: { vehicleSlug: string }) => v.vehicleSlug === "jac-t9")).toBe(true);
+    const variant = await as(ctx, editor).post(`/api/v1/admin/catalog/${p!.id}/variants`).send({ vehicleModelId: haval!.id, title: "Снова", priceKopecks: 1000 });
+    expect(variant.status).toBe(409);
   });
 
   it("keeps managers from editing the catalog", async () => {

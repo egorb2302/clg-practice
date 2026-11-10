@@ -12,6 +12,7 @@ import { HttpError, parse } from "../http/errors";
 import { decrypt, encrypt, hmac, randomDigits, randomToken, safeEqual, sha256 } from "../security/crypto";
 import { enforce, hit } from "../security/rateLimit";
 import { audit as writeAudit } from "../services/audit";
+import { reserveEmail } from "../services/outbox";
 import {
   clearSessionCookie,
   createSession,
@@ -27,6 +28,7 @@ import { clientIp } from "./leads";
 
 const CODE_TTL_MIN = 10;
 const MAX_ATTEMPTS = 5;
+const OTP_RESERVE = 50;
 const badCode = () => new HttpError(400, "VALIDATION", "Код неверный или истёк", { fieldErrors: { code: "Код неверный или истёк" } });
 
 export const codeHmac = (deps: Deps, challengeId: string, code: string) => hmac(deps.cfg.APP_SECRET, `otp:${challengeId}:${code}`);
@@ -80,6 +82,11 @@ export function authRoutes(deps: Deps) {
       insert into login_challenges (id, purpose, email, user_id, code_hmac, expires_at)
       values (${id}, 'login', ${email}, ${user?.id ?? null}, ${codeHmac(deps, id, code)},
         now() + make_interval(mins => ${CODE_TTL_MIN}))`;
+    if (!(await reserveEmail(deps.sql, deps.cfg.EMAIL_DAILY_LIMIT + OTP_RESERVE))) {
+      console.error(JSON.stringify({ level: "error", event: "otp.daily_limit" }));
+      res.status(202).json({ challengeId: id, expiresInSec: CODE_TTL_MIN * 60 });
+      return;
+    }
     deps.waitUntil(
       deps.email
         .send({
@@ -96,14 +103,12 @@ export function authRoutes(deps: Deps) {
     const { challengeId, code } = parse(emailVerifySchema, req.body);
     await enforce(deps.sql, `otp-verify:ip:${clientIp(req)}`, 30, 3600);
     if (!/^[0-9a-f-]{36}$/.test(challengeId)) throw badCode();
-    const [ch] = await deps.sql<{ id: string; email: string; user_id: string | null; code_hmac: Buffer; attempts: number }[]>`
-      select id, email, user_id, code_hmac, attempts from login_challenges
-      where id = ${challengeId} and purpose = 'login' and consumed_at is null and expires_at > now()`;
-    if (!ch || ch.attempts >= MAX_ATTEMPTS) throw badCode();
-    if (!safeEqual(ch.code_hmac, codeHmac(deps, ch.id, code))) {
-      await deps.sql`update login_challenges set attempts = attempts + 1 where id = ${ch.id}`;
-      throw badCode();
-    }
+    const [ch] = await deps.sql<{ id: string; email: string; user_id: string | null; code_hmac: Buffer }[]>`
+      update login_challenges set attempts = attempts + 1
+      where id = ${challengeId} and purpose = 'login' and consumed_at is null and expires_at > now()
+        and attempts < ${MAX_ATTEMPTS}
+      returning id, email, user_id, code_hmac`;
+    if (!ch || !safeEqual(ch.code_hmac, codeHmac(deps, ch.id, code))) throw badCode();
     const consumed = await deps.sql`
       update login_challenges set consumed_at = now() where id = ${ch.id} and consumed_at is null returning id`;
     if (consumed.length === 0) throw badCode();

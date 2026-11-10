@@ -49,7 +49,7 @@ export function telegramRoutes(deps: Deps) {
             method: "sendMessage",
             params: {
               chat_id: chatId,
-              text: "ARMORIX — защита бамперов для внедорожников. Подберите комплект в каталоге, оставьте заявку или свяжитесь с нами.",
+              text: "ARMORIX: защита бамперов для внедорожников. Подберите комплект в каталоге, оставьте заявку или свяжитесь с нами",
               reply_markup: {
                 inline_keyboard: [
                   [{ text: "Каталог", url: `${site}${startPayloadPath(payload)}` }],

@@ -45,7 +45,7 @@ export class SmtpEmail implements EmailAdapter {
       return { messageId: String(info.messageId) };
     } catch (e) {
       const code = (e as { responseCode?: number }).responseCode;
-      if (code && code >= 500 && code < 600) throw new PermanentError(`smtp ${code}`);
+      if (code && code >= 500 && code < 600 && code !== 530 && code !== 535) throw new PermanentError(`smtp ${code}`);
       throw new Error(`smtp ${code ?? (e as { code?: string }).code ?? "error"}`);
     }
   }

@@ -56,6 +56,8 @@ type LeadRow = {
 export function adminLeadRoutes(deps: Deps) {
   const r = Router();
   const staffLeads = requireStaff("leads");
+  const readLeads = requireStaff("leads_read");
+  const tz = deps.cfg.BUSINESS_TZ;
 
   const contacts = (canView: boolean, phone: string | null, email: string | null) =>
     canView ? { phone, email } : { phone: maskPhone(phone), email: maskEmail(email) };
@@ -77,7 +79,7 @@ export function adminLeadRoutes(deps: Deps) {
     res.json({ items });
   });
 
-  r.get("/admin/leads", staffLeads, async (req, res) => {
+  r.get("/admin/leads", readLeads, async (req, res) => {
     const q = parse(listQuery, req.query);
     const canView = capsOf(res).has("contacts_view");
     const search = q.q ?? "";
@@ -101,8 +103,8 @@ export function adminLeadRoutes(deps: Deps) {
       where true
         ${q.status ? deps.sql`and l.status = ${q.status}` : deps.sql``}
         ${q.assignee === "none" ? deps.sql`and l.assignee_user_id is null` : q.assignee ? deps.sql`and l.assignee_user_id = ${q.assignee}` : deps.sql``}
-        ${q.from ? deps.sql`and l.created_at >= ${q.from}::date` : deps.sql``}
-        ${q.to ? deps.sql`and l.created_at < ${q.to}::date + 1` : deps.sql``}
+        ${q.from ? deps.sql`and l.created_at >= (${q.from}::date)::timestamp at time zone ${tz}` : deps.sql``}
+        ${q.to ? deps.sql`and l.created_at < (${q.to}::date + 1)::timestamp at time zone ${tz}` : deps.sql``}
         ${searchSql}
       order by l.created_at desc
       limit ${PAGE} offset ${(q.page - 1) * PAGE}`;
@@ -125,7 +127,7 @@ export function adminLeadRoutes(deps: Deps) {
     });
   });
 
-  r.get("/admin/leads/:ref", staffLeads, async (req, res) => {
+  r.get("/admin/leads/:ref", readLeads, async (req, res) => {
     const lead = await loadLead(String(req.params.ref));
     const canView = capsOf(res).has("contacts_view");
     const items = await deps.sql`
@@ -249,10 +251,11 @@ export function adminLeadRoutes(deps: Deps) {
   r.post("/admin/leads/:ref/sale", requireStaff("sales_confirm"), async (req, res) => {
     const lead = await loadLead(String(req.params.ref));
     const actor = authOf(res).user.id;
-    if (lead.status === "closed" || lead.status === "sale_confirmed") {
-      throw new HttpError(409, "INVALID_TRANSITION", "Для этой заявки нельзя оформить продажу");
-    }
     const sale = await deps.sql.begin(async (tx) => {
+      const [locked] = await tx<{ status: string }[]>`select status from leads where id = ${lead.id} for update`;
+      if (!locked || locked.status === "closed" || locked.status === "sale_confirmed") {
+        throw new HttpError(409, "INVALID_TRANSITION", "Для этой заявки нельзя оформить продажу");
+      }
       const [existing] = await tx<{ id: string }[]>`select id from sales where lead_id = ${lead.id} and status = 'draft'`;
       if (existing) return { id: existing.id, created: false };
       const [created] = await tx<{ id: string }[]>`
@@ -261,7 +264,7 @@ export function adminLeadRoutes(deps: Deps) {
         returning id`;
       await tx`
         insert into sale_items (sale_id, variant_id, title, quantity, price_kopecks)
-        select ${created!.id}, variant_id, product_title || ' — ' || variant_title || ' (' || vehicle_label || ')',
+        select ${created!.id}, variant_id, product_title || ', ' || variant_title || ' (' || vehicle_label || ')',
           quantity, price_from_kopecks
         from lead_items where lead_id = ${lead.id}`;
       await tx`insert into sale_events (sale_id, type, actor_user_id) values (${created!.id}, 'created', ${actor})`;

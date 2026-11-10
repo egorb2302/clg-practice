@@ -23,7 +23,7 @@ export async function listCatalog(db: Db, q: CatalogQuery): Promise<CatalogRespo
   const offset = (q.page - 1) * PAGE_SIZE;
   const base = db`
     from products p
-    join compatibilities c on c.product_id = p.id
+    join compatibilities c on c.product_id = p.id and c.active
     join vehicle_models v on v.id = c.vehicle_model_id and v.published
     where p.status = 'published'
       and exists (select 1 from variants x where x.product_id = p.id and x.vehicle_model_id = v.id and x.status = 'active')
@@ -104,7 +104,7 @@ export async function getProduct(db: Db, slug: string, vehicleSlug?: string): Pr
   const compat = await db<{ id: string; slug: string; make: string; model: string; note: string | null }[]>`
     select v.id, v.slug, v.make, v.model, c.note
     from compatibilities c join vehicle_models v on v.id = c.vehicle_model_id and v.published
-    where c.product_id = ${p.id}
+    where c.product_id = ${p.id} and c.active
       and exists (select 1 from variants x where x.product_id = ${p.id} and x.vehicle_model_id = v.id and x.status = 'active')
     order by v.sort, v.slug`;
   if (compat.length === 0) return null;
@@ -113,7 +113,8 @@ export async function getProduct(db: Db, slug: string, vehicleSlug?: string): Pr
 
   const variants = await db<{ id: string; title: string; vehicle_slug: string; price: number | null; available: boolean }[]>`
     select x.id, x.title, v.slug as vehicle_slug, x.price_kopecks as price, x.available
-    from variants x join vehicle_models v on v.id = x.vehicle_model_id
+    from variants x join vehicle_models v on v.id = x.vehicle_model_id and v.published
+    join compatibilities c on c.product_id = x.product_id and c.vehicle_model_id = x.vehicle_model_id and c.active
     where x.product_id = ${p.id} and x.status = 'active'
     order by v.sort, x.sort, x.title`;
 

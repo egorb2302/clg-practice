@@ -36,7 +36,7 @@ export function publicRoutes(deps: Deps) {
       select v.slug, v.make, v.model from vehicle_models v
       where v.published and exists (
         select 1 from compatibilities c join products p on p.id = c.product_id
-        where c.vehicle_model_id = v.id and p.status = 'published')
+        where c.vehicle_model_id = v.id and c.active and p.status = 'published')
       order by v.sort, v.slug`;
     res.set("Cache-Control", publicCache).json({ items: items.map((v) => ({ ...v, label: `${v.make} ${v.model}` })) });
   });

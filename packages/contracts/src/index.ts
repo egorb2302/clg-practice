@@ -125,13 +125,13 @@ export const contactSchema = z
 
 const antiBot = {
   website: z.string().max(200).default(""),
-  formStartedAt: z.number().int().nonnegative(),
+  fillMs: z.number().int().nonnegative().max(7 * 24 * 3600 * 1000),
 };
 
 export const leadItemSchema = z.object({
   variantId: z.uuid({ error: "Неизвестная позиция" }),
   quantity: z.number().int().min(1, { error: "Минимум 1" }).max(20, { error: "Не больше 20" }),
-  seenPriceFrom: z.number().int().positive().nullable().optional(),
+  seenPriceFrom: z.number().int().positive().nullable(),
 });
 
 export const leadRequestSchema = z.discriminatedUnion("type", [

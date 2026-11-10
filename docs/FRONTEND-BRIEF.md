@@ -42,7 +42,8 @@ For the frontend agent. Full product spec: `docs/SPEC.md` (v0.3, Russian). Visua
 Three types share one component: `catalog` (from `/selection`), `custom`, `general` (from `/contacts` and CTAs).
 
 - Fields: name; preferred contact radio «Позвонить» / «Написать на email» — the chosen one is required (phone mask for RU numbers, email validation); comment (optional). `custom` adds make, model, year (optional), «Что нужно изготовить» (required). `general` adds message (required).
-- Hidden honeypot field `website` (visually hidden, `tabindex=-1`, `autocomplete=off`) and `formStartedAt` timestamp sent with the body.
+- Hidden honeypot field `website` (visually hidden, `tabindex=-1`, `autocomplete=off`) and `fillMs`: milliseconds between the form becoming visible and submit, measured with `performance.now()` (never wall-clock time; client clocks drift).
+- Every item sends `seenPriceFrom`: the price «от» the user saw (kopecks), or `null` if they saw «Уточнить цену». The server answers `409 CATALOG_CHANGED` when it differs.
 - Submit flow:
   1. Generate `Idempotency-Key` (UUID) when the user presses submit; **reuse the same key** on retry after timeout/network error; generate a new key only after the user changes the selection or form.
   2. Button shows loading, form stays filled, double submit blocked.
@@ -95,12 +96,12 @@ body: {
   type: 'catalog' | 'custom' | 'general';
   name: string;
   contact: { preferred: 'phone' | 'email'; phone?: string; email?: string };
-  items?: { variantId: string; quantity: number }[];    // catalog
+  items?: { variantId: string; quantity: number; seenPriceFrom: number | null }[];    // catalog
   deliveryMethod?: 'pickup' | 'shipping' | 'install';   // catalog
   vehicle?: { make: string; model: string; year?: number }; request?: string;  // custom
   message?: string;                                      // general
   comment?: string;
-  website: string; formStartedAt: number;               // anti-bot
+  website: string; fillMs: number;                      // anti-bot
 }
 201 → { reference: string; status: 'received'; loyaltyStatus?: 'pending' | 'credited' | 'ineligible' }
 409 → { code: 'CATALOG_CHANGED'; changes: { variantId: string; available: boolean; priceFrom: number | null }[] }

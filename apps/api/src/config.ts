@@ -13,6 +13,8 @@ const list = z
 
 const schema = z.object({
   NODE_ENV: z.string().default("development"),
+  ALLOW_DEV_ADAPTERS: bool(false),
+  BUSINESS_TZ: z.string().default("Europe/Moscow"),
   PORT: z.coerce.number().int().default(3350),
   DATABASE_URL: z.string().min(1),
   SITE_URL: z.url(),
@@ -64,6 +66,17 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     throw new Error(`Invalid configuration: ${keys}`);
   }
   const c = parsed.data;
+  if (c.NODE_ENV === "production" && !c.ALLOW_DEV_ADAPTERS) {
+    const dev = [
+      c.EMAIL_TRANSPORT !== "smtp" && "EMAIL_TRANSPORT",
+      c.TELEGRAM_TRANSPORT !== "http" && "TELEGRAM_TRANSPORT",
+      c.STORAGE_DRIVER !== "supabase" && "STORAGE_DRIVER",
+      !c.COOKIE_SECURE && "COOKIE_SECURE",
+    ].filter(Boolean);
+    if (dev.length) {
+      throw new Error(`Invalid configuration: production needs real adapters (${dev.join(", ")}); set ALLOW_DEV_ADAPTERS=true only on staging`);
+    }
+  }
   if (c.EMAIL_TRANSPORT === "smtp" && (!c.SMTP_HOST || !c.SMTP_USER || !c.SMTP_PASS)) {
     throw new Error("Invalid configuration: SMTP_HOST, SMTP_USER, SMTP_PASS required for smtp transport");
   }

@@ -49,7 +49,7 @@ describe("POST /leads", () => {
     const k = key();
     const body = leadBody([{ variantId: v1, quantity: 1 }]);
     const a = await post(k, body);
-    const b = await post(k, { ...body, formStartedAt: body.formStartedAt + 5 });
+    const b = await post(k, { ...body, fillMs: body.fillMs + 5 });
     expect(a.status).toBe(201);
     expect(b.status).toBe(201);
     expect(b.body.reference).toBe(a.body.reference);
@@ -132,7 +132,7 @@ describe("POST /leads", () => {
 
   it("answers bots with a fake success and stores nothing", async () => {
     const trap = await post(key(), leadBody([{ variantId: v1, quantity: 1 }], { website: "http://spam" }));
-    const fast = await post(key(), leadBody([{ variantId: v1, quantity: 1 }], { formStartedAt: Date.now() }));
+    const fast = await post(key(), leadBody([{ variantId: v1, quantity: 1 }], { fillMs: 200 }));
     expect(trap.status).toBe(201);
     expect(fast.status).toBe(201);
     const [{ n }] = (await ctx.sql`select count(*)::int as n from app.leads`) as unknown as [{ n: number }];
@@ -147,7 +147,7 @@ describe("POST /leads", () => {
       vehicle: { make: "Toyota", model: "Land Cruiser 300", year: 2023 },
       request: "Нужна защита переднего бампера с лебёдкой",
       website: "",
-      formStartedAt: Date.now() - 5000,
+      fillMs: 5000,
     });
     expect(custom.status).toBe(201);
     const general = await post(key(), {
@@ -156,7 +156,7 @@ describe("POST /leads", () => {
       contact: { preferred: "phone", phone: "+7 912 000 11 22" },
       message: "Есть ли установка в выходные?",
       website: "",
-      formStartedAt: Date.now() - 5000,
+      fillMs: 5000,
     });
     expect(general.status).toBe(201);
     const rows = await ctx.sql`select type, email, vehicle_model from app.leads order by number`;
@@ -199,6 +199,31 @@ describe("POST /leads", () => {
     const third = await send();
     expect(third.status).toBe(429);
     expect(third.body.retryAfterSec).toBeGreaterThan(0);
+    await limited.settle();
+    await limited.sql.end();
+  });
+
+  it("treats a slow fill as human regardless of the client clock", async () => {
+    const res = await post(key(), leadBody([{ variantId: v1, quantity: 1 }], { fillMs: 4000, formStartedAt: Date.now() + 3_600_000 }));
+    expect(res.status).toBe(201);
+    const [{ n }] = (await ctx.sql`select count(*)::int as n from app.leads`) as unknown as [{ n: number }];
+    expect(n).toBe(1);
+  });
+
+  it("requires the price the user saw for each item", async () => {
+    const body = leadBody([{ variantId: v1, quantity: 1 }]);
+    const res = await post(key(), { ...body, items: [{ variantId: v1, quantity: 1 }] });
+    expect(res.status).toBe(422);
+    expect(res.body.fieldErrors["items.0.seenPriceFrom"]).toBeTruthy();
+  });
+
+  it("limits every contact separately", async () => {
+    const limited = makeDeps({ LEAD_LIMIT_CONTACT_PER_HOUR: "1" });
+    const send = (phone: string) =>
+      limited.http().post("/api/v1/leads").set("Idempotency-Key", key())
+        .send(leadBody([{ variantId: v1, quantity: 1 }], { contact: { preferred: "email", email: "same@example.test", phone } }));
+    expect((await send("+79001110001")).status).toBe(201);
+    expect((await send("+79001110002")).status).toBe(429);
     await limited.settle();
     await limited.sql.end();
   });

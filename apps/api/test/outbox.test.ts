@@ -70,6 +70,40 @@ describe("outbox", () => {
     await limited.sql.end();
   });
 
+  it("fails a job that keeps crashing instead of looping forever", async () => {
+    await enqueue(ctx.sql, [tgJob("loop")]);
+    await ctx.sql`update app.outbox set status = 'processing', attempts = max_attempts, lease_until = now() - interval '1 minute'`;
+    await runJobs(ctx.deps);
+    const [j] = await ctx.sql`select status from app.outbox where dedupe_key = 'loop'`;
+    expect(j!.status).toBe("failed");
+    expect(ctx.telegram.calls).toHaveLength(0);
+  });
+
+  it("shares one daily email budget across concurrent runners", async () => {
+    const limited = makeDeps({ EMAIL_DAILY_LIMIT: "1" });
+    await enqueue(limited.sql, [
+      { channel: "email", topic: "t", dedupeKey: "c1", payload: { to: "a@x.test", subject: "1", text: "1" } },
+      { channel: "email", topic: "t", dedupeKey: "c2", payload: { to: "b@x.test", subject: "2", text: "2" } },
+    ]);
+    await Promise.all([runJobs(limited.deps), runJobs(limited.deps)]);
+    expect(limited.email.sent).toHaveLength(1);
+    await limited.sql.end();
+  });
+
+  it("refuses dev adapters in production", async () => {
+    const { loadConfig } = await import("../src/config");
+    const base = {
+      NODE_ENV: "production",
+      DATABASE_URL: "postgres://x@127.0.0.1:1/x",
+      SITE_URL: "https://example.test",
+      APP_SECRET: "a".repeat(40),
+      TOTP_ENC_KEY: "b".repeat(44),
+      JOBS_SECRET: "c".repeat(30),
+    };
+    expect(() => loadConfig(base)).toThrow(/production needs real adapters/);
+    expect(() => loadConfig({ ...base, ALLOW_DEV_ADAPTERS: "true" })).not.toThrow();
+  });
+
   it("protects the job runner with a bearer secret", async () => {
     expect((await ctx.http().post("/api/v1/internal/jobs/run")).status).toBe(404);
     const ok = await ctx.http().post("/api/v1/internal/jobs/run").set("Authorization", "Bearer jobs-secret-for-tests-0123456789");
@@ -108,7 +142,7 @@ describe("telegram webhook", () => {
       contact: { preferred: "email", email: "t@example.test" },
       message: "Связь с Telegram пропала",
       website: "",
-      formStartedAt: Date.now() - 5000,
+      fillMs: 5000,
     });
     expect(res.status).toBe(201);
     await ctx.settle();

@@ -2,6 +2,7 @@ import { Router } from "express";
 import type { Deps } from "../deps";
 import { notFound } from "../http/errors";
 import { safeEqual } from "../security/crypto";
+import { runDailyMonitor } from "../services/monitor";
 import { runJobs } from "../services/outbox";
 
 export function internalRoutes(deps: Deps) {
@@ -11,7 +12,8 @@ export function internalRoutes(deps: Deps) {
     const auth = req.header("authorization") ?? "";
     const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
     if (!token || !safeEqual(token, deps.cfg.JOBS_SECRET)) throw notFound();
-    const result = await runJobs(deps, { budgetMs: 50_000 });
+    const monitor = await runDailyMonitor(deps);
+    const result = { ...(await runJobs(deps, { budgetMs: 45_000 })), monitor };
     await deps.sql`delete from rate_limits where window_start < now() - interval '1 day'`;
     await deps.sql`delete from idempotency_keys where expires_at < now()`;
     await deps.sql`delete from login_challenges where expires_at < now() - interval '1 day'`;

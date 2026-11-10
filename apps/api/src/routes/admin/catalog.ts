@@ -16,12 +16,18 @@ const productFields = {
   code: z.string().trim().min(1).max(40),
   title: z.string().trim().min(1).max(200),
   position: z.enum(positions),
-  description: z.string().trim().max(5000).default(""),
-  composition: z.array(z.string().trim().min(1).max(200)).max(50).default([]),
-  material: z.string().trim().max(40).nullable().default(null),
-  installation: z.string().trim().max(2000).nullable().default(null),
+  description: z.string().trim().max(5000),
+  composition: z.array(z.string().trim().min(1).max(200)).max(50),
+  material: z.string().trim().max(40).nullable(),
+  installation: z.string().trim().max(2000).nullable(),
 };
-const productCreate = z.object(productFields);
+const productCreate = z.object({
+  ...productFields,
+  description: productFields.description.default(""),
+  composition: productFields.composition.default([]),
+  material: productFields.material.default(null),
+  installation: productFields.installation.default(null),
+});
 const productPatch = z.object({ version, ...z.object(productFields).partial().shape });
 
 const compatBody = z.object({
@@ -102,24 +108,34 @@ export function adminCatalogRoutes(deps: Deps) {
 
   r.post("/admin/vehicles", edit, async (req, res) => {
     const b = parse(vehicleCreate, req.body);
-    const [v] = await deps.sql`
-      insert into vehicle_models (slug, make, model, sort) values (${b.slug}, ${b.make}, ${b.model}, ${b.sort})
-      returning id, version`.catch(mapDbError);
-    await audit(deps.sql, authOf(res).user.id, "vehicle.create", "vehicle", v!.id as string, b);
+    const v = await deps.sql
+      .begin(async (tx) => {
+        const [row] = await tx<{ id: string; version: number }[]>`
+          insert into vehicle_models (slug, make, model, sort) values (${b.slug}, ${b.make}, ${b.model}, ${b.sort})
+          returning id, version`;
+        await audit(tx, authOf(res).user.id, "vehicle.create", "vehicle", row!.id, b);
+        return row!;
+      })
+      .catch(mapDbError);
     res.status(201).json(v);
   });
 
   r.patch("/admin/vehicles/:id", edit, async (req, res) => {
     const b = parse(vehiclePatch, req.body);
-    const rows = await deps.sql`
-      update vehicle_models set
-        make = coalesce(${b.make ?? null}, make), model = coalesce(${b.model ?? null}, model),
-        sort = coalesce(${b.sort ?? null}, sort), published = coalesce(${b.published ?? null}, published),
-        version = version + 1
-      where id = ${String(req.params.id)} and version = ${b.version} returning id, version`;
-    if (rows.length === 0) throw versionConflict();
-    await audit(deps.sql, authOf(res).user.id, "vehicle.update", "vehicle", String(req.params.id), b);
-    res.json(rows[0]);
+    const id = String(req.params.id);
+    if (!z.uuid().safeParse(id).success) throw notFound("Модель не найдена");
+    const row = await deps.sql.begin(async (tx) => {
+      const rows = await tx`
+        update vehicle_models set
+          make = coalesce(${b.make ?? null}, make), model = coalesce(${b.model ?? null}, model),
+          sort = coalesce(${b.sort ?? null}, sort), published = coalesce(${b.published ?? null}, published),
+          version = version + 1
+        where id = ${id} and version = ${b.version} returning id, version`;
+      if (rows.length === 0) throw versionConflict();
+      await audit(tx, authOf(res).user.id, "vehicle.update", "vehicle", id, b);
+      return rows[0];
+    });
+    res.json(row);
   });
 
   r.get("/admin/materials", requireStaff(), async (_req, res) => {
@@ -128,8 +144,11 @@ export function adminCatalogRoutes(deps: Deps) {
 
   r.post("/admin/materials", edit, async (req, res) => {
     const b = parse(materialBody, req.body);
-    await deps.sql`insert into materials (code, label) values (${b.code}, ${b.label})
-      on conflict (code) do update set label = excluded.label`;
+    await deps.sql.begin(async (tx) => {
+      await tx`insert into materials (code, label) values (${b.code}, ${b.label})
+        on conflict (code) do update set label = excluded.label`;
+      await audit(tx, authOf(res).user.id, "material.upsert", "material", b.code, b);
+    });
     res.status(201).json(b);
   });
 
@@ -152,7 +171,7 @@ export function adminCatalogRoutes(deps: Deps) {
       select id, slug, code, title, position, description, composition, material, installation, status, version,
         published_at as "publishedAt" from products where id = ${p.id}`;
     const compatibilities = await deps.sql`
-      select c.vehicle_model_id as "vehicleModelId", v.slug, v.make, v.model, c.note
+      select c.vehicle_model_id as "vehicleModelId", v.slug, v.make, v.model, c.note, c.active
       from compatibilities c join vehicle_models v on v.id = c.vehicle_model_id where c.product_id = ${p.id}`;
     const variants = await deps.sql`
       select id, vehicle_model_id as "vehicleModelId", title, price_kopecks as "priceKopecks", available, status, sort, version
@@ -164,11 +183,16 @@ export function adminCatalogRoutes(deps: Deps) {
 
   r.post("/admin/catalog", edit, async (req, res) => {
     const b = parse(productCreate, req.body);
-    const [p] = await deps.sql<{ id: string; version: number }[]>`
-      insert into products (slug, code, title, position, description, composition, material, installation)
-      values (${b.slug}, ${b.code}, ${b.title}, ${b.position}, ${b.description}, ${b.composition}, ${b.material}, ${b.installation})
-      returning id, version`.catch(mapDbError);
-    await audit(deps.sql, authOf(res).user.id, "product.create", "product", p!.id, { slug: b.slug });
+    const p = await deps.sql
+      .begin(async (tx) => {
+        const [row] = await tx<{ id: string; version: number }[]>`
+          insert into products (slug, code, title, position, description, composition, material, installation)
+          values (${b.slug}, ${b.code}, ${b.title}, ${b.position}, ${b.description}, ${b.composition}, ${b.material}, ${b.installation})
+          returning id, version`;
+        await audit(tx, authOf(res).user.id, "product.create", "product", row!.id, { slug: b.slug });
+        return row!;
+      })
+      .catch(mapDbError);
     res.status(201).json(p);
   });
 
@@ -211,36 +235,34 @@ export function adminCatalogRoutes(deps: Deps) {
           update products set version = version + 1, updated_at = now() where id = ${p.id} and version = ${b.version} returning version`;
         if (rows.length === 0) throw versionConflict();
         const keep = b.items.map((i) => i.vehicleModelId);
-        await tx`delete from compatibilities where product_id = ${p.id}
+        await tx`update compatibilities set active = false where product_id = ${p.id}
           ${keep.length ? tx`and vehicle_model_id not in ${tx(keep)}` : tx``}`;
         for (const it of b.items) {
           await tx`insert into compatibilities (product_id, vehicle_model_id, note) values (${p.id}, ${it.vehicleModelId}, ${it.note ?? null})
-            on conflict (product_id, vehicle_model_id) do update set note = excluded.note`;
+            on conflict (product_id, vehicle_model_id) do update set note = excluded.note, active = true`;
         }
         await audit(tx, actor, "product.compatibilities", "product", p.id, { vehicles: keep });
         return rows[0]!;
       })
-      .catch((e) => {
-        if (pgCode(e) === "23503") {
-          throw new HttpError(409, "CONFLICT", "Нельзя убрать модель, для которой есть варианты. Сначала архивируйте варианты");
-        }
-        throw e;
-      });
+      .catch(mapDbError);
     res.json(result);
   });
 
   r.post("/admin/catalog/:id/variants", edit, async (req, res) => {
     const b = parse(variantCreate, req.body);
     const p = await loadProduct(String(req.params.id));
-    const [v] = await deps.sql<{ id: string; version: number }[]>`
-      insert into variants (product_id, vehicle_model_id, title, price_kopecks, available, sort)
-      values (${p.id}, ${b.vehicleModelId}, ${b.title}, ${b.priceKopecks}, ${b.available}, ${b.sort})
-      returning id, version`.catch((e) => {
-      if (pgCode(e) === "23503") throw new HttpError(409, "CONFLICT", "Модель не указана в совместимости товара");
-      throw e;
+    const v = await deps.sql.begin(async (tx) => {
+      const [compat] = await tx`
+        select 1 from compatibilities where product_id = ${p.id} and vehicle_model_id = ${b.vehicleModelId} and active`;
+      if (!compat) throw new HttpError(409, "CONFLICT", "Модель не указана в совместимости товара");
+      const [row] = await tx<{ id: string; version: number }[]>`
+        insert into variants (product_id, vehicle_model_id, title, price_kopecks, available, sort)
+        values (${p.id}, ${b.vehicleModelId}, ${b.title}, ${b.priceKopecks}, ${b.available}, ${b.sort})
+        returning id, version`;
+      await tx`update products set updated_at = now() where id = ${p.id}`;
+      await audit(tx, authOf(res).user.id, "variant.create", "variant", row!.id, { product: p.id, price: b.priceKopecks });
+      return row!;
     });
-    await deps.sql`update products set updated_at = now() where id = ${p.id}`;
-    await audit(deps.sql, authOf(res).user.id, "variant.create", "variant", v!.id, { product: p.id, price: b.priceKopecks });
     res.status(201).json(v);
   });
 
@@ -290,23 +312,29 @@ export function adminCatalogRoutes(deps: Deps) {
     if (Object.keys(problems).length) {
       throw new HttpError(422, "VALIDATION", "Товар не готов к публикации", { fieldErrors: problems });
     }
-    const rows = await deps.sql<{ version: number }[]>`
-      update products set status = 'published', published_at = coalesce(published_at, now()), version = version + 1, updated_at = now()
-      where id = ${p.id} and version = ${b.version} returning version`;
-    if (rows.length === 0) throw versionConflict();
-    await audit(deps.sql, authOf(res).user.id, "product.publish", "product", p.id);
-    res.json({ status: "published", version: rows[0]!.version, visibleWithinSec: 60 });
+    const newVersion = await deps.sql.begin(async (tx) => {
+      const rows = await tx<{ version: number }[]>`
+        update products set status = 'published', published_at = coalesce(published_at, now()), version = version + 1, updated_at = now()
+        where id = ${p.id} and version = ${b.version} returning version`;
+      if (rows.length === 0) throw versionConflict();
+      await audit(tx, authOf(res).user.id, "product.publish", "product", p.id);
+      return rows[0]!.version;
+    });
+    res.json({ status: "published", version: newVersion, visibleWithinSec: 60 });
   });
 
   r.post("/admin/catalog/:id/status", edit, async (req, res) => {
     const b = parse(statusBody, req.body);
     const p = await loadProduct(String(req.params.id));
-    const rows = await deps.sql<{ version: number }[]>`
-      update products set status = ${b.status}, version = version + 1, updated_at = now()
-      where id = ${p.id} and version = ${b.version} returning version`;
-    if (rows.length === 0) throw versionConflict();
-    await audit(deps.sql, authOf(res).user.id, "product.status", "product", p.id, { from: p.status, to: b.status });
-    res.json({ status: b.status, version: rows[0]!.version });
+    const newVersion = await deps.sql.begin(async (tx) => {
+      const rows = await tx<{ version: number }[]>`
+        update products set status = ${b.status}, version = version + 1, updated_at = now()
+        where id = ${p.id} and version = ${b.version} returning version`;
+      if (rows.length === 0) throw versionConflict();
+      await audit(tx, authOf(res).user.id, "product.status", "product", p.id, { from: p.status, to: b.status });
+      return rows[0]!.version;
+    });
+    res.json({ status: b.status, version: newVersion });
   });
 
   r.post("/admin/media/upload-url", edit, async (req, res) => {
@@ -364,11 +392,13 @@ export function adminCatalogRoutes(deps: Deps) {
       outputs.push({ width: info.width, height: info.height, url });
     }
     const main = outputs[outputs.length - 1]!;
-    await deps.sql`
-      update media set status = 'ready', url = ${main.url}, width = ${main.width}, height = ${main.height},
-        variants = ${deps.sql.json(outputs)} where id = ${m.id}`;
-    await deps.sql`update products set updated_at = now() where id = ${m.product_id}`;
-    await audit(deps.sql, authOf(res).user.id, "media.process", "media", m.id, { product: m.product_id });
+    await deps.sql.begin(async (tx) => {
+      await tx`
+        update media set status = 'ready', url = ${main.url}, width = ${main.width}, height = ${main.height},
+          variants = ${tx.json(outputs)} where id = ${m.id}`;
+      await tx`update products set updated_at = now() where id = ${m.product_id}`;
+      await audit(tx, authOf(res).user.id, "media.process", "media", m.id, { product: m.product_id });
+    });
     res.json({ id: m.id, url: main.url, width: main.width, height: main.height, variants: outputs });
   });
 
@@ -376,19 +406,25 @@ export function adminCatalogRoutes(deps: Deps) {
     const b = parse(mediaPatch, req.body);
     const id = String(req.params.id);
     if (!z.uuid().safeParse(id).success) throw notFound("Фото не найдено");
-    const rows = await deps.sql`
-      update media set alt = coalesce(${b.alt ?? null}, alt), sort = coalesce(${b.sort ?? null}, sort)
-      where id = ${id} returning id, alt, sort`;
-    if (rows.length === 0) throw notFound("Фото не найдено");
-    res.json(rows[0]);
+    const row = await deps.sql.begin(async (tx) => {
+      const rows = await tx`
+        update media set alt = coalesce(${b.alt ?? null}, alt), sort = coalesce(${b.sort ?? null}, sort)
+        where id = ${id} returning id, alt, sort`;
+      if (rows.length === 0) throw notFound("Фото не найдено");
+      await audit(tx, authOf(res).user.id, "media.update", "media", id, b);
+      return rows[0];
+    });
+    res.json(row);
   });
 
   r.delete("/admin/media/:id", edit, async (req, res) => {
     const id = String(req.params.id);
     if (!z.uuid().safeParse(id).success) throw notFound("Фото не найдено");
-    const rows = await deps.sql`delete from media where id = ${id} returning product_id`;
-    if (rows.length === 0) throw notFound("Фото не найдено");
-    await audit(deps.sql, authOf(res).user.id, "media.delete", "media", id);
+    await deps.sql.begin(async (tx) => {
+      const rows = await tx`delete from media where id = ${id} returning product_id`;
+      if (rows.length === 0) throw notFound("Фото не найдено");
+      await audit(tx, authOf(res).user.id, "media.delete", "media", id);
+    });
     res.status(204).end();
   });
 
