@@ -1,10 +1,13 @@
-import type { Features } from "@armorix/contracts";
+import type { Features, Vehicle } from "@armorix/contracts";
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router";
 import { useSelection } from "../lib/selection";
 import { Icon, Logo, Sbtn } from "./ui";
 
-export function Header({ features }: { features: Features }) {
+/* thumbnails for the catalog menu, same scenes as the home model stage */
+const THUMB: Record<string, string> = { "jac-t9": "/img/truck-s.webp", "haval-h3": "/img/road-mud-s.webp" };
+
+export function Header({ features, vehicles = [] }: { features: Features; vehicles?: Vehicle[] }) {
   const items = useSelection();
   const count = items.reduce((n, i) => n + i.quantity, 0);
   const [open, setOpen] = useState(false);
@@ -44,11 +47,33 @@ export function Header({ features }: { features: Features }) {
   const links = nav.map((n) => (
     <li key={n.to}><NavLink to={n.to} prefetch="intent">{n.label}</NavLink></li>
   ));
+  // desktop: «Каталог» opens the models on hover and keyboard focus
+  const desk = nav.map((n) =>
+    n.to === "/catalog" && vehicles.length ? (
+      <li key={n.to} className="bar__dd">
+        <NavLink to={n.to} prefetch="intent" aria-haspopup="true">{n.label}<Icon name="chev" vb="0 0 20 20" /></NavLink>
+        <div className="dd" role="menu" aria-label="Модели в каталоге">
+          <div className="dd__in">
+            {vehicles.map((v) => (
+              <Link key={v.slug} role="menuitem" className="dd__car" to={`/catalog?vehicle=${v.slug}`} prefetch="intent">
+                <img src={THUMB[v.slug] ?? "/img/car-snow-s.webp"} alt="" loading="lazy" />
+                <span><b>{v.label}</b><small>Защита бампера</small></span>
+              </Link>
+            ))}
+            <div className="dd__side">
+              <Link role="menuitem" to="/catalog">Весь каталог <Icon name="arrow" vb="0 0 20 20" /></Link>
+              <Link role="menuitem" to="/contacts?type=custom">Под вашу модель <Icon name="arrow" vb="0 0 20 20" /></Link>
+            </div>
+          </div>
+        </div>
+      </li>
+    ) : <li key={n.to}><NavLink to={n.to} prefetch="intent">{n.label}</NavLink></li>,
+  );
 
   return (
     <header className={`bar${open ? " is-open" : ""}`}>
       <Link className="bar__logo" to="/" aria-label="ARMORIX, на главную"><Logo /></Link>
-      <nav aria-label="Основное меню"><ul className="bar__links">{links}</ul></nav>
+      <nav aria-label="Основное меню"><ul className="bar__links">{desk}</ul></nav>
       <div className="bar__end">
         <Link className="bar__bag" to="/selection" aria-label={`Подборка: ${count}`}>
           <Icon name="bag" />

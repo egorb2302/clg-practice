@@ -1,5 +1,5 @@
 import type { MetaResponse } from "@armorix/contracts";
-import type { ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { Link } from "react-router";
 import { nb, telegramLink } from "../lib/format";
 import { LeadForm, type LeadType } from "./LeadForm";
@@ -84,7 +84,7 @@ export function Adv({ chip, title, img, items }: { chip: [string, string]; title
 }
 
 /* ── Numbers: the whole viewport, steel numerals over the workshop ── */
-export type Stat = { count: string; shown: string; unit?: string; title: string; text: string; tag: string; code: string };
+export type Stat = { count: string; shown: string; unit?: string; title: string; text: string; tag: string; code: string; img: string };
 export function Stats({ chip, title, lead, img, items }: { chip: [string, string]; title: [string, string]; lead: string; img: string; items: Stat[] }) {
   return (
     <section className="nums frame" aria-label={chip[1]}>
@@ -100,6 +100,7 @@ export function Stats({ chip, title, lead, img, items }: { chip: [string, string
             <div key={s.title} className="nums__i" data-in="">
               <p className="nums__tag" aria-hidden="true"><span className="num">{s.code}</span><span>{s.tag}</span><i /></p>
               <b className="num"><span data-count={s.count}>{s.shown}</span>{s.unit ? <small>{s.unit}</small> : null}</b>
+              <span className="nums__pic" aria-hidden="true"><img src={s.img} alt="" loading="lazy" /></span>
               <div><h3>{nb(s.title)}</h3><p>{nb(s.text)}</p></div>
             </div>
           ))}
@@ -116,7 +117,7 @@ export function Faq({ chip, items, phone }: { chip: [string, string]; items: QA[
     <section className="sec wrap faqs" id="faq" aria-label={chip[1]}>
       <div className="faqs__side" data-in="">
         <Chip n={chip[0]}>{chip[1]}</Chip>
-        <Tt a="Частые вопросы" b="перед заказом защиты" />
+        <Tt a="Частые вопросы" b="перед заказом" />
         <div className="faqs__ask">
           <b>Не нашли свой вопрос?</b>
           <p>{nb("Ответим про вашу машину, комплектацию и сроки, менеджер перезвонит в течение рабочего дня")}</p>
@@ -126,15 +127,35 @@ export function Faq({ chip, items, phone }: { chip: [string, string]; items: QA[
           </div>
         </div>
       </div>
-      <div className="faqs__list" data-stagger="">
-        {items.map((x, i) => (
-          <details key={x.q} data-in="" open={i === 0}>
-            <summary><span className="faqs__n num">{String(i + 1).padStart(2, "0")}</span><span className="faqs__q">{nb(x.q)}</span><Icon name="plus" /></summary>
-            <div className="faqs__a">{x.a}</div>
-          </details>
-        ))}
-      </div>
+      <FaqList items={items} />
     </section>
+  );
+}
+
+/* accordion: one open at a time, the panel slides open (grid rows 0fr → 1fr), the number fills with steel */
+function FaqList({ items }: { items: QA[] }) {
+  const [open, setOpen] = useState(0);
+  const uid = useId();
+  return (
+    <div className="faqs__list" data-stagger="">
+      {items.map((x, i) => {
+        const on = open === i;
+        return (
+          <div key={x.q} className={`fq${on ? " is-open" : ""}`} data-in="">
+            <h3 className="fq__h">
+              <button type="button" aria-expanded={on} aria-controls={`${uid}-${i}`} onClick={() => setOpen(on ? -1 : i)}>
+                <span className="fq__n num">{String(i + 1).padStart(2, "0")}</span>
+                <span className="fq__q">{nb(x.q)}</span>
+                <span className="fq__x" aria-hidden="true"><i /><i /></span>
+              </button>
+            </h3>
+            <div className="fq__p" id={`${uid}-${i}`} role="region" inert={!on}>
+              <div className="fq__in"><div className="faqs__a">{x.a}</div></div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 

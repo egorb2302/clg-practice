@@ -49,12 +49,14 @@ export default function Catalog({ loaderData }: Route.ComponentProps) {
     facets.length >= 2 ? (
       <div className="fl" role="group" aria-label={name}>
         <span className="fl__t">{name}</span>
+        <div className="fl__track">
         <Link className="fl__o" to={href({ [key]: undefined })} aria-current={!q[key] ? "true" : undefined} preventScrollReset>Все</Link>
         {facets.map((f) => (
           <Link key={f.value} className="fl__o" to={href({ [key]: q[key] === f.value ? undefined : f.value })} aria-current={q[key] === f.value ? "true" : undefined} preventScrollReset>
             {f.label}<span className="num">{f.count}</span>
           </Link>
         ))}
+        </div>
       </div>
     ) : null;
 
@@ -89,7 +91,10 @@ export default function Catalog({ loaderData }: Route.ComponentProps) {
         <div className="cat__bar">
           {group("Тип защиты", "position", catalog.filters.position)}
           {group("Материал", "material", catalog.filters.material)}
-          {(q.position || q.material) ? <Link className="tlink" to={href({ position: undefined, material: undefined })} preventScrollReset>Сбросить фильтры</Link> : null}
+          <div className="cat__sum">
+            <span><b className="num">{catalog.total}</b> {plural(catalog.total, ["позиция", "позиции", "позиций"])}</span>
+            {(q.position || q.material) ? <Link className="cat__reset" to={href({ position: undefined, material: undefined })} preventScrollReset><Icon name="close" />Сбросить</Link> : null}
+          </div>
         </div>
 
         {catalog.items.length ? (

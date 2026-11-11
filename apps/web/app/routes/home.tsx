@@ -3,7 +3,7 @@ import { useState } from "react";
 import { data, Link, useRouteLoaderData } from "react-router";
 import type { Route } from "./+types/home";
 import { ProductCard } from "../components/ProductCard";
-import { Adv, ContactPlate, Faq, Flow, Rail, Say, Stats } from "../components/sections";
+import { Adv, ContactPlate, Faq, Flow, Rail, Stats } from "../components/sections";
 import { Chip, Icon, Img, Sbtn, Tt } from "../components/ui";
 import { api, PUBLIC_CACHE } from "../lib/api.server";
 import { ADV, CUSTOM, FAQ, STATS, STEPS } from "../lib/content";
@@ -37,14 +37,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     <>
       <Hero vehicles={vehicles} products={products} />
       <Showcase vehicles={vehicles} products={products} />
-      <section className="sec wrap saysec" aria-label="Коротко о защите">
-        <Say parts={[
-          "Мы гнем защиту", { pic: "/img/bumper-s.webp", alt: "Полированная защита бампера" },
-          "из", { steel: "нержавеющей стали," }, "которой не страшны соль, реагенты и щебень", { pic: "/img/car-snow-s.webp", alt: "Внедорожник на снежной дороге" },
-          "и ставим ее на", { steel: "штатные точки" }, { pic: "/img/install-hands-s.webp", alt: "Мастер затягивает крепеж" },
-          "чтобы кузов остался таким, каким вы его купили",
-        ]} />
-      </section>
+      <Plates />
       <Story models={vehicles.length} items={products.length} />
       <Flow chip={["03", "Путь комплекта"]} title={["От листа стали", "до вашей дороги"]} steps={STEPS} />
       <Adv chip={["04", "Преимущество"]} title="Не универсальная, а ваша" img="/img/road-taiga.webp" items={ADV} />
@@ -216,6 +209,32 @@ function Showcase({ vehicles, products }: { vehicles: Vehicle[]; products: Card[
   );
 }
 
+/* ── Three promises stamped into steel plates (replaces the lit sentence, round 11) ── */
+const PLATES = [
+  { n: "01", word: "Не ржавеет", text: "AISI 304 переживает соль, реагенты и мойки, даже на сколах", pos: "20% 30%" },
+  { n: "02", word: "Не сверлим", text: "Кронштейны встают в заводские отверстия рамы", pos: "70% 60%" },
+  { n: "03", word: "Не на глаз", text: "Каждый комплект гнем по замерам конкретной модели", pos: "45% 85%" },
+];
+function Plates() {
+  return (
+    <section className="sec wrap plates" aria-label="Три обещания">
+      <div className="head" data-in="">
+        <Tt a="Три обещания" b="выбитые в стали" />
+      </div>
+      <ul className="plates__row" data-stagger="">
+        {PLATES.map((p) => (
+          <li key={p.n} className="plate" data-in="" style={{ "--pos": p.pos } as React.CSSProperties}>
+            <span className="plate__rv" aria-hidden="true"><i /><i /><i /><i /></span>
+            <span className="plate__n num">{p.n}</span>
+            <b className="plate__w">{p.word}</b>
+            <p className="plate__t">{nb(p.text)}</p>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 /* ── 02 Company: a filled bento, every tile carries a picture or a diagram ── */
 function Story({ models, items }: { models: number; items: number }) {
   return (
@@ -239,8 +258,8 @@ function Story({ models, items }: { models: number; items: number }) {
           <p className="bt__p">{nb("Мы делаем стальную защиту под конкретную китайскую машину: по ее замерам, на ее штатные точки")}</p>
           <ul className="bt__row"><li><b className="num">{models}</b><span>{plural(models, ["модель", "модели", "моделей"])} в каталоге</span></li><li><b className="num">{items}</b><span>{plural(items, ["готовая позиция", "готовые позиции", "готовых позиций"])}</span></li><li><b>∞</b><span>под заказ</span></li></ul>
         </div>
-        {/* the three small tiles: one at a time takes the accent as you scroll, its details open */}
-        <div className="bt bt--mat bt--step is-on" data-in="">
+        {/* the three small tiles share one structure: label, a visual of one height, title, text */}
+        <div className="bt bt--mat bt--step" data-in="">
           <p className="bt__lbl"><span className="num">01</span>Материал</p>
           <div className="bt__img"><Img src="/img/tex-brushed.webp" alt="" sizes="33vw" /><span className="bt__stamp num">AISI 304</span></div>
           <b>Нержавеющая сталь</b>
@@ -263,8 +282,8 @@ function Story({ models, items }: { models: number; items: number }) {
           </div>
         </div>
         <div className="bt bt--time bt--step" data-in="">
-          <span className="bt__num num" aria-hidden="true">2,5</span>
           <p className="bt__lbl"><span className="num">03</span>Установка</p>
+          <div className="bt__vis" aria-hidden="true"><span className="bt__num num">2,5</span></div>
           <b>Установка за 2,5 часа</b>
           <ol className="tl bt__more">
             <li><span className="num">10:00</span>Приезжаете в мастерскую</li>
@@ -290,6 +309,11 @@ function Custom() {
         </div>
       </div>
       <Rail items={CUSTOM} label="Что изготавливаем под заказ" />
+      <ul className="wrap custom__facts" data-stagger="">
+        {[["gear", "Срок", "от 4 недель"], ["gem", "Материал", "AISI 304 или порошок"], ["wrench", "Примерка", "на вашей машине"], ["sheet", "Цена", "до начала работ"]].map(([ic, k, v]) => (
+          <li key={k} data-in=""><Icon name={ic!} /><span>{k}</span><b>{v}</b></li>
+        ))}
+      </ul>
     </section>
   );
 }

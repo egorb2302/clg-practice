@@ -40,7 +40,7 @@ export default function Contacts() {
         </div>
         <div className="lg" data-in="">
           <div className="lg__in">
-            <Tt a={type === "custom" ? "Изготовим под вашу модель" : "Задайте вопрос"} b={type === "custom" ? "расскажите о машине" : "или опишите задачу"} />
+            <Tt a={type === "custom" ? "Изготовим под вашу модель" : "Задайте вопрос"} b={type === "custom" ? "расскажите о машине" : "или опишите, что изготовить"} />
             <LeadForm type={type} switchable submitLabel="Отправить" />
           </div>
         </div>

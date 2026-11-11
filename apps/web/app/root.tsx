@@ -31,11 +31,15 @@ const FALLBACK_META: MetaResponse = {
 
 export async function loader({ request }: Route.LoaderArgs) {
   let fresh = true;
-  const meta = await api.meta().catch(() => {
-    fresh = false;
-    return FALLBACK_META;
-  });
-  return data({ meta, origin: siteOrigin(request) }, { headers: { "Cache-Control": fresh ? PUBLIC_CACHE : "no-store" } });
+  const [meta, vehicles] = await Promise.all([
+    api.meta().catch(() => {
+      fresh = false;
+      return FALLBACK_META;
+    }),
+    // the header's catalog menu lists the models; an empty list just hides the menu
+    api.vehicles().then((r) => r.items).catch(() => []),
+  ]);
+  return data({ meta, vehicles, origin: siteOrigin(request) }, { headers: { "Cache-Control": fresh ? PUBLIC_CACHE : "no-store" } });
 }
 
 export const headers: Route.HeadersFunction = ({ loaderHeaders }) => loaderHeaders;
@@ -61,7 +65,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <a className="skip" href="#main">К содержанию</a>
         <Intro />
         <NavProgress />
-        <Header features={meta.features} />
+        <Header features={meta.features} vehicles={root?.vehicles ?? []} />
         <main id="main">{children}</main>
         <Footer meta={meta} />
         <ScrollRestoration />

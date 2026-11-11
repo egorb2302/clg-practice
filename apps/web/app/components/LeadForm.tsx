@@ -9,7 +9,8 @@ import { Icon, Sbtn } from "./ui";
 export type LeadType = "catalog" | "custom" | "general";
 type Props = {
   type: LeadType;
-  /** contacts page: «Общий вопрос» / «Индивидуальное изготовление» */
+  /** one form for a question and a custom order (round 11): the car is optional, the text is
+      required; with make and model filled it goes out as `custom`, otherwise as `general` */
   switchable?: boolean;
   items?: SelectionItem[];
   deliveryMethods?: MetaResponse["deliveryMethods"];
@@ -57,6 +58,12 @@ export function LeadForm({ type: initialType, switchable, items = [], deliveryMe
     if (type === "catalog") {
       return { type, ...base, items: items.map((i) => ({ variantId: i.variantId, quantity: i.quantity, seenPriceFrom: i.snapshot.priceFrom })), deliveryMethod: delivery || undefined, comment: s("comment") || undefined } as LeadRequest;
     }
+    if (switchable) {
+      const make = s("make"), model = s("model"), text = s("text"), year = Number(s("year"));
+      if (make && model) return { type: "custom", ...base, vehicle: { make, model, ...(year ? { year } : {}) }, request: text } as LeadRequest;
+      const car = [make, model, year ? String(year) : ""].filter(Boolean).join(" ");
+      return { type: "general", ...base, message: car && text ? `${car}: ${text}` : text } as LeadRequest;
+    }
     if (type === "custom") {
       const year = Number(s("year"));
       return { type, ...base, vehicle: { make: s("make"), model: s("model"), ...(year ? { year } : {}) }, request: s("request"), comment: s("comment") || undefined } as LeadRequest;
@@ -65,6 +72,10 @@ export function LeadForm({ type: initialType, switchable, items = [], deliveryMe
   }
 
   function showErrors(fe: Record<string, string>) {
+    if (switchable) {
+      const t = fe.message ?? fe.request;
+      if (t) fe = { ...fe, text: "Напишите вопрос или что нужно изготовить" };
+    }
     setErrors(fe);
     setStatus({ s: "invalid" });
     requestAnimationFrame(() => {
@@ -119,12 +130,6 @@ export function LeadForm({ type: initialType, switchable, items = [], deliveryMe
 
   return (
     <form ref={form} className={`lead ${className}`} onSubmit={submit} onChange={touched} noValidate>
-      {switchable ? (
-        <fieldset className="seg" aria-label="Тема обращения">
-          <label><input type="radio" name="kind" value="general" checked={type === "general"} onChange={() => setType("general")} /><span>Общий вопрос</span></label>
-          <label><input type="radio" name="kind" value="custom" checked={type === "custom"} onChange={() => setType("custom")} /><span>Индивидуальное изготовление</span></label>
-        </fieldset>
-      ) : null}
 
       <div className="lead__grid">
         <div className="field field--full">
@@ -153,7 +158,31 @@ export function LeadForm({ type: initialType, switchable, items = [], deliveryMe
           </div>
         )}
 
-        {type === "custom" ? (
+        {switchable ? (
+          <>
+            <p className="lead__hint field--full">Машина <em>необязательно</em><span>{"Укажите марку и модель, если нужна защита под заказ"}</span></p>
+            <div className="field">
+              <label htmlFor={`${id}-make`}>Марка</label>
+              <input id={`${id}-make`} name="make" maxLength={60} defaultValue={prefill.make} placeholder="Tank" {...aria("vehicle.make")} />
+              {err("vehicle.make")}
+            </div>
+            <div className="field">
+              <label htmlFor={`${id}-model`}>Модель</label>
+              <input id={`${id}-model`} name="model" maxLength={60} defaultValue={prefill.model} placeholder="300" {...aria("vehicle.model")} />
+              {err("vehicle.model")}
+            </div>
+            <div className="field">
+              <label htmlFor={`${id}-year`}>Год</label>
+              <input id={`${id}-year`} name="year" inputMode="numeric" maxLength={4} placeholder="2024" {...aria("vehicle.year")} />
+              {err("vehicle.year")}
+            </div>
+            <div className="field field--full">
+              <label htmlFor={`${id}-text`}>Ваш вопрос или что нужно изготовить <em className="req">обязательно</em></label>
+              <textarea id={`${id}-text`} name="text" maxLength={2000} rows={4} required defaultValue={prefill.request} placeholder="Например, подойдет ли защита к машине с фаркопом, или передняя дуга с площадкой под лебедку" {...aria("text")} />
+              {err("text")}
+            </div>
+          </>
+        ) : type === "custom" ? (
           <>
             <div className="field">
               <label htmlFor={`${id}-make`}>Марка</label>
@@ -178,7 +207,7 @@ export function LeadForm({ type: initialType, switchable, items = [], deliveryMe
           </>
         ) : null}
 
-        {type === "general" ? (
+        {type === "general" && !switchable ? (
           <div className="field field--full">
             <label htmlFor={`${id}-msg`}>Ваш вопрос</label>
             <textarea id={`${id}-msg`} name="message" maxLength={2000} rows={4} placeholder="Например, подойдет ли защита к машине с фаркопом" {...aria("message")} />
@@ -196,7 +225,7 @@ export function LeadForm({ type: initialType, switchable, items = [], deliveryMe
           </fieldset>
         ) : null}
 
-        {type !== "general" ? (
+        {type !== "general" && !switchable ? (
           <div className="field field--full">
             <label htmlFor={`${id}-comment`}>Комментарий <em>необязательно</em></label>
             <textarea id={`${id}-comment`} name="comment" maxLength={1000} rows={2} defaultValue={prefill.comment} {...aria("comment")} />
