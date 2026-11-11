@@ -4,3 +4,6 @@ build
 .env
 .vercel
 .claude
+_tweaks*.json
+_tweaks_assets/
+.vercelignore

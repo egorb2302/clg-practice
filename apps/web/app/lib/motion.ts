@@ -36,6 +36,7 @@ export function initMotion(): () => void {
   const says = $$<HTMLElement>(".say");
   const flows = $$<HTMLElement>(".flow");
   const bar = d.querySelector(".bar");
+  const bentos = $$<HTMLElement>(".bento");
   let tick = false;
   const frame = () => {
     tick = false;
@@ -47,6 +48,23 @@ export function initMotion(): () => void {
       const k = calm ? 1 : Math.min(1, Math.max(0, (vh * 0.82 - r.top) / (r.height + vh * 0.35)));
       const n = Math.round(k * parts.length);
       parts.forEach((w, i) => w.classList.toggle("is-lit", i < n));
+    });
+    /* bento: the lit tile follows the scroll; side by side it steps through by progress,
+       stacked (phone) it is the tile nearest the middle of the screen */
+    bentos.forEach((b) => {
+      const tiles = $$<HTMLElement>(".bt--step", b), n = tiles.length;
+      if (!n || calm) return;
+      const rs = tiles.map((t) => t.getBoundingClientRect());
+      const row = rs.every((r) => Math.abs(r.top - rs[0]!.top) < 4);
+      let cur = 0;
+      if (row) {
+        const p = Math.min(0.9999, Math.max(0, (vh * 0.92 - rs[0]!.top) / (vh * 0.62)));
+        cur = Math.floor(p * n);
+      } else {
+        let best = Infinity;
+        rs.forEach((r, i) => { const dd = Math.abs(r.top + r.height / 2 - vh / 2); if (dd < best) { best = dd; cur = i; } });
+      }
+      tiles.forEach((t, i) => t.classList.toggle("is-on", i === cur));
     });
     flows.forEach((f) => {
       const steps = $$<HTMLElement>(".flow__steps li", f), n = steps.length;

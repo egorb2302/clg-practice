@@ -47,7 +47,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const root = useRouteLoaderData<typeof loader>("root");
   const meta = root?.meta ?? FALLBACK_META;
   return (
-    <html lang="ru" className="no-js">
+    <html lang="ru" className="no-js" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />

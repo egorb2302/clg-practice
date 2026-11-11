@@ -39,7 +39,7 @@ export default function About() {
       <Flow chip={["01", "Производство"]} title={["От листа стали", "до вашей дороги"]} steps={STEPS} />
 
       <section className="sec wrap mats" aria-label="Материалы">
-        <div className="head" data-in=""><div><Chip n="02">Материалы</Chip><Tt a="Две отделки," b="одна сталь под нагрузку" /></div></div>
+        <div className="head" data-in=""><div><Chip n="02">Материалы</Chip><Tt a="Две отделки на выбор" b="и одна сталь под нагрузку" /></div></div>
         <div className="mats__grid" data-stagger="">
           {[
             { img: "/img/steel-chrome.webp", t: "AISI 304, зеркальная полировка", d: "Нержавеющая сталь, не ржавеет даже на сколах, блестит как хром и переживает зимы с реагентами", tags: ["Не ржавеет", "Блеск", "Дороже"] },
@@ -68,7 +68,7 @@ export default function About() {
 
       <Adv chip={["04", "Преимущество"]} title="Не универсальная, а ваша" img="/img/road-mud.webp" items={ADV} />
       <div className="gap-s" />
-      {root?.meta ? <ContactPlate meta={root.meta} chip={["05", "Контакты"]} title={["Приезжайте", "или напишите нам"]} img="/img/taiga-valley.webp" /> : null}
+      {root?.meta ? <ContactPlate meta={root.meta} chip={["05", "Контакты"]} title={["Приезжайте в мастерскую", "или напишите нам"]} img="/img/taiga-valley.webp" /> : null}
     </>
   );
 }

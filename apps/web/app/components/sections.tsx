@@ -36,6 +36,9 @@ export function Flow({ chip, title, steps, id = "flow" }: { chip: [string, strin
             <div className="panel__top">
               <Chip n={chip[0]}>{chip[1]}</Chip>
               <Tt a={title[0]} b={title[1]} />
+              <span className="marks" aria-hidden="true"><i /><i /><i /><i /></span>
+              <span className="ruler" aria-hidden="true" />
+              <svg className="cross" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5" /><path d="M12 0v24M0 12h24" /></svg>
             </div>
             <ol className="flow__steps">
               {steps.map((s, i) => <li key={s.name} className={i === 0 ? "is-on" : ""}>{s.name}</li>)}
@@ -81,7 +84,7 @@ export function Adv({ chip, title, img, items }: { chip: [string, string]; title
 }
 
 /* ── Numbers: the whole viewport, steel numerals over the workshop ── */
-export type Stat = { count: string; shown: string; unit?: string; title: string; text: string };
+export type Stat = { count: string; shown: string; unit?: string; title: string; text: string; tag: string; code: string };
 export function Stats({ chip, title, lead, img, items }: { chip: [string, string]; title: [string, string]; lead: string; img: string; items: Stat[] }) {
   return (
     <section className="nums frame" aria-label={chip[1]}>
@@ -95,6 +98,7 @@ export function Stats({ chip, title, lead, img, items }: { chip: [string, string
         <div className="nums__grid" data-stagger="">
           {items.map((s) => (
             <div key={s.title} className="nums__i" data-in="">
+              <p className="nums__tag" aria-hidden="true"><span className="num">{s.code}</span><span>{s.tag}</span><i /></p>
               <b className="num"><span data-count={s.count}>{s.shown}</span>{s.unit ? <small>{s.unit}</small> : null}</b>
               <div><h3>{nb(s.title)}</h3><p>{nb(s.text)}</p></div>
             </div>
@@ -112,9 +116,10 @@ export function Faq({ chip, items, phone }: { chip: [string, string]; items: QA[
     <section className="sec wrap faqs" id="faq" aria-label={chip[1]}>
       <div className="faqs__side" data-in="">
         <Chip n={chip[0]}>{chip[1]}</Chip>
-        <Tt a="Перед заказом" b="обычно спрашивают" />
+        <Tt a="Частые вопросы" b="перед заказом защиты" />
         <div className="faqs__ask">
-          <p>Не нашли свой вопрос? Ответим про вашу машину, комплектацию и сроки</p>
+          <b>Не нашли свой вопрос?</b>
+          <p>{nb("Ответим про вашу машину, комплектацию и сроки, менеджер перезвонит в течение рабочего дня")}</p>
           <div className="faqs__go">
             <Sbtn to="/contacts">Задать вопрос</Sbtn>
             {phone ? <a className="tlink num" href={`tel:${phone.replace(/[^\d+]/g, "")}`}><Icon name="phone" />{phone}</a> : null}
@@ -139,6 +144,7 @@ export function ContactPlate({ meta, chip, title, img, type = "general", id = "c
   return (
     <section className="cta frame" id={id} aria-label={chip[1]}>
       <div className="frame__bg"><Img src={img} alt="" /></div>
+      <svg className="cta__logo" viewBox="0 0 407.2 94.5" aria-hidden="true"><use href="#lock-h" /></svg>
       <div className="cta__side" data-in="">
         <Chip n={chip[0]}>{chip[1]}</Chip>
         <ul className="cta__ch">

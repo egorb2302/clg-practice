@@ -5,7 +5,6 @@ import type { Route } from "./+types/home";
 import { ProductCard } from "../components/ProductCard";
 import { Adv, ContactPlate, Faq, Flow, Rail, Say, Stats } from "../components/sections";
 import { Chip, Icon, Img, Sbtn, Tt } from "../components/ui";
-import { VehiclePicker } from "../components/VehiclePicker";
 import { api, PUBLIC_CACHE } from "../lib/api.server";
 import { ADV, CUSTOM, FAQ, STATS, STEPS } from "../lib/content";
 import { nb, plural, POSITION_LABEL, priceFrom } from "../lib/format";
@@ -50,10 +49,10 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       <Flow chip={["03", "Путь комплекта"]} title={["От листа стали", "до вашей дороги"]} steps={STEPS} />
       <Adv chip={["04", "Преимущество"]} title="Не универсальная, а ваша" img="/img/road-taiga.webp" items={ADV} />
       <div className="gap-s" />
-      <Stats chip={["05", "В цифрах"]} title={["Цифры,", "за которые мы отвечаем"]} lead="Каждый комплект проходит одни и те же проверки: марка стали, посадка на раму, швы и покрытие" img="/img/steel-wrenches.webp" items={STATS} />
+      <Stats chip={["05", "В цифрах"]} title={["Мы отвечаем за эти цифры", "в каждом комплекте"]} lead="Каждый комплект проходит одни и те же проверки: марка стали, посадка на раму, швы и покрытие" img="/img/steel-wrenches.webp" items={STATS} />
       <Custom />
       {meta ? <Faq chip={["07", "Вопросы"]} items={FAQ} phone={meta.contacts.phone} /> : null}
-      {meta ? <ContactPlate meta={meta} chip={["08", "Контакты"]} title={["Обсудим", "вашу машину"]} img="/img/road-fog.webp" /> : null}
+      {meta ? <ContactPlate meta={meta} chip={["08", "Контакты"]} title={["Обсудим вашу машину", "и подберем защиту"]} img="/img/road-fog.webp" /> : null}
     </>
   );
 }
@@ -84,7 +83,8 @@ function Hero({ vehicles, products }: { vehicles: Vehicle[]; products: Card[] })
           <p className="hero__lead fade-in">{nb("Готовые комплекты для JAC T9 и Haval H3 из нержавеющей стали AISI 304 ставятся на штатные точки рамы, без сверления кузова")}</p>
         </div>
 
-        <VehiclePicker vehicles={vehicles} className="glass hero__picker fade-in" />
+        {/* round 10: the picker is gone, the brand word is back as the second anchor (never louder than the H1) */}
+        <p className="hero__brand fade-in" aria-hidden="true">ARMORIX<sup>®</sup></p>
 
         <div className="hero__kits fade-in" aria-label="Готовые комплекты">
           <p className="hero__kits-t"><span>Готовые комплекты</span><Link className="tlink" to="/catalog">Весь каталог</Link></p>
@@ -103,7 +103,7 @@ function Hero({ vehicles, products }: { vehicles: Vehicle[]; products: Card[] })
         </div>
 
         <ul className="hero__facts fade-in">
-          <li><Icon name="nodrill" /><span><b>0 отверстий</b>штатные точки рамы</span></li>
+          <li><Icon name="nodrill" /><span><b>Кузов без сверления</b>крепеж в заводские точки</span></li>
           <li><Icon name="gem" /><span><b>AISI 304</b>зеркальная полировка</span></li>
           <li><Icon name="wrench" /><span><b>2,5 часа</b>установка у нас</span></li>
           <li><Icon name="truck" /><span><b>Вся Россия</b>доставка в коробке</span></li>
@@ -143,7 +143,7 @@ function Showcase({ vehicles, products }: { vehicles: Vehicle[]; products: Card[
 
         <div className="show__head" data-in="">
           <Chip n="01">Готовые комплекты</Chip>
-          <Tt a="Выберите машину," b="мы покажем, что на нее есть" />
+          <Tt a="Выберите свою машину" b="и посмотрите, что на нее есть" />
         </div>
 
         <div className="show__card glass" key={`c-${cur}`}>
@@ -221,7 +221,7 @@ function Story({ models, items }: { models: number; items: number }) {
   return (
     <section className="sec wrap story" aria-label="О компании">
       <div className="head" data-in="">
-        <div><Chip n="02">О компании</Chip><Tt a="Делаем защиту," b="которую ставим и на свои машины" /></div>
+        <div><Chip n="02">О компании</Chip><Tt a="Ставим эту защиту" b="и на свои машины" /></div>
         <Link className="tlink" to="/about">Подробнее о производстве <Icon name="arrow" vb="0 0 20 20" /></Link>
       </div>
       <div className="bento" data-stagger="">
@@ -239,13 +239,18 @@ function Story({ models, items }: { models: number; items: number }) {
           <p className="bt__p">{nb("Мы делаем стальную защиту под конкретную китайскую машину: по ее замерам, на ее штатные точки")}</p>
           <ul className="bt__row"><li><b className="num">{models}</b><span>{plural(models, ["модель", "модели", "моделей"])} в каталоге</span></li><li><b className="num">{items}</b><span>{plural(items, ["готовая позиция", "готовые позиции", "готовых позиций"])}</span></li><li><b>∞</b><span>под заказ</span></li></ul>
         </div>
-        <div className="bt bt--mat" data-in="">
+        {/* the three small tiles: one at a time takes the accent as you scroll, its details open */}
+        <div className="bt bt--mat bt--step is-on" data-in="">
+          <p className="bt__lbl"><span className="num">01</span>Материал</p>
           <div className="bt__img"><Img src="/img/tex-brushed.webp" alt="" sizes="33vw" /><span className="bt__stamp num">AISI 304</span></div>
           <b>Нержавеющая сталь</b>
-          <p>{nb("Зеркальная полировка, не ржавеет на сколах и переживает зимы с реагентами")}</p>
-          <dl className="bt__spec"><div><dt>Труба</dt><dd className="num">Ø 63 и 76 мм</dd></div><div><dt>Стенка</dt><dd className="num">2 мм</dd></div></dl>
+          <div className="bt__more">
+            <p>{nb("Зеркальная полировка, не ржавеет на сколах и переживает зимы с реагентами")}</p>
+            <dl className="bt__spec"><div><dt>Труба</dt><dd className="num">Ø 63 и 76 мм</dd></div><div><dt>Стенка</dt><dd className="num">2 мм</dd></div></dl>
+          </div>
         </div>
-        <div className="bt bt--mount" data-in="">
+        <div className="bt bt--mount bt--step" data-in="">
+          <p className="bt__lbl"><span className="num">02</span>Крепление</p>
           <svg className="mount" viewBox="0 0 320 150" aria-hidden="true">
             <path className="mount__bumper" d="M20 60 Q160 20 300 60 L290 110 Q160 130 30 110 Z" />
             <path className="mount__bar" d="M30 52 Q160 8 290 52" />
@@ -253,11 +258,15 @@ function Story({ models, items }: { models: number; items: number }) {
             {[[60, 118], [120, 126], [200, 126], [260, 118]].map(([x, y]) => <g key={x}><line x1={x} y1={y! - 20} x2={x} y2={y} /><circle cx={x} cy={y} r="5" /></g>)}
           </svg>
           <b>Штатные точки рамы</b>
-          <p>{nb("Четыре кронштейна встают в заводские отверстия, ни одного нового в кузове")}</p>
+          <div className="bt__more">
+            <p>{nb("Четыре кронштейна встают в заводские отверстия, ни одного нового в кузове")}</p>
+          </div>
         </div>
-        <div className="bt bt--time" data-in="">
+        <div className="bt bt--time bt--step" data-in="">
+          <span className="bt__num num" aria-hidden="true">2,5</span>
+          <p className="bt__lbl"><span className="num">03</span>Установка</p>
           <b>Установка за 2,5 часа</b>
-          <ol className="tl">
+          <ol className="tl bt__more">
             <li><span className="num">10:00</span>Приезжаете в мастерскую</li>
             <li><span className="num">10:20</span>Ставим кронштейны на раму</li>
             <li><span className="num">11:40</span>Навешиваем и выставляем дугу</li>
