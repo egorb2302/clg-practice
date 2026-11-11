@@ -12,7 +12,14 @@ export function initFilm(): () => void {
   const frames = d.querySelector<HTMLElement>(".frames");
   const mq = d.querySelector<HTMLElement>(".mq");
   const cases = [...d.querySelectorAll<HTMLElement>(".case")];
-  if (!film && !frames && !mq && !cases.length) return () => {};
+  const bento = d.querySelector<HTMLElement>(".bento");
+  if (!film && !frames && !mq && !cases.length && !bento) return () => {};
+
+  /* bento 02: the three small tiles open one after another as you reach them and stay open;
+     the steel accent sits on the newest. Side by side they open by how far the row has come up
+     (01 at 82 %, 02 at 66 %, 03 at 50 % of the screen); stacked, each opens at 72 % */
+  const steps = bento ? [...bento.querySelectorAll<HTMLElement>(".bt--step")] : [];
+  if (bento && steps.length && !calm) bento.classList.add("is-staged");
 
   /* hero reel: a new frame every 4.2 s in both layers, the viewfinder clock runs at 25 fps */
   if (film) {
@@ -39,25 +46,59 @@ export function initFilm(): () => void {
     film.classList.toggle("is-calm", calm);
   }
 
-  /* frames: a short clip on hover (the photos of the card cycle with a slow push-in) */
+  /* frames, after the reference frame by frame: the card under the cursor rises ~52 px, the two
+     next to it 22 and 7 px (a keybed), it turns to colour at once and its clip runs from the
+     first frame, each stock frame 1.1 s with a camera push; leaving drops it back in 0.25 s */
   const fr = frames ? [...frames.querySelectorAll<HTMLElement>(".fr")] : [];
-  fr.forEach((card) => {
+  const LIFT = [52, 22, 7];
+  let hot = -1;
+  const lift = () => fr.forEach((c, i) => { const dd = hot < 0 ? 9 : Math.abs(i - hot); c.style.setProperty("--lift", `${-(LIFT[dd] ?? 0)}px`); });
+  fr.forEach((card, idx) => {
     const imgs = [...card.querySelectorAll<HTMLElement>(".fr__clip img")];
     let id = 0, k = 0;
+    const show = (n: number) => imgs.forEach((im, i) => { im.classList.toggle("is-on", i === n); if (i === n) { im.style.animation = "none"; void im.offsetWidth; im.style.animation = ""; } });
     const play = () => {
+      hot = idx; lift();
+      card.classList.add("is-hot");
       if (calm || !imgs.length) return;
       card.classList.add("is-play");
-      k = 0; imgs.forEach((im, i) => im.classList.toggle("is-on", i === 0));
+      k = 0; show(0);
       clearInterval(id);
-      id = window.setInterval(() => { k = (k + 1) % imgs.length; imgs.forEach((im, i) => im.classList.toggle("is-on", i === k)); }, 900);
+      id = window.setInterval(() => { k = (k + 1) % imgs.length; show(k); }, 1100);
     };
-    const stop = () => { card.classList.remove("is-play"); clearInterval(id); };
+    const stop = () => { card.classList.remove("is-play", "is-hot"); clearInterval(id); if (hot === idx) { hot = -1; lift(); } };
     on(card, "pointerenter", ((e: PointerEvent) => { if (e.pointerType !== "touch") play(); }) as EventListener);
     on(card, "pointerleave", stop);
     on(card, "focus", play);
     on(card, "blur", stop);
     off.push(() => clearInterval(id));
   });
+
+  /* makes: hover stops the line, lights the make and wipes its photo in from the right */
+  let mqHold = false;
+  if (mq) {
+    const stage = [...mq.querySelectorAll<HTMLElement>(".mq__stage img")];
+    let cur = -1, z = 1;
+    const set = (i: number) => {
+      if (i === cur) return;
+      cur = i;
+      mq.classList.toggle("is-hot", i >= 0);
+      if (i < 0) { stage.forEach((im) => im.classList.remove("is-on")); return; }
+      const im = stage[i]; if (!im) return;
+      im.style.zIndex = String(++z);
+      im.classList.remove("is-on"); void im.offsetWidth; im.classList.add("is-on");
+      mq.querySelectorAll<HTMLElement>(".mq__w").forEach((w) => w.classList.toggle("is-on", Number(w.dataset.i) === i));
+    };
+    mq.querySelectorAll<HTMLElement>(".mq__w").forEach((w) => {
+      on(w, "pointerenter", ((e: PointerEvent) => { if (e.pointerType === "touch") return; mqHold = true; set(Number(w.dataset.i)); }) as EventListener);
+      on(w, "focus", () => { mqHold = true; set(Number(w.dataset.i)); });
+    });
+    const run = mq.querySelector<HTMLElement>(".mq__run");
+    if (run) {
+      on(run, "pointerleave", () => { mqHold = false; set(-1); mq.querySelectorAll(".mq__w.is-on").forEach((w) => w.classList.remove("is-on")); });
+      on(run, "focusout", ((e: FocusEvent) => { if (!run.contains(e.relatedTarget as Node)) { mqHold = false; set(-1); } }) as EventListener);
+    }
+  }
 
   /* frames track: drag with the mouse, a progress line under it */
   const track = frames?.querySelector<HTMLElement>(".frames__track");
@@ -86,7 +127,6 @@ export function initFilm(): () => void {
 
   /* one scroll loop: hero mask, frames in / out and their wave, marquee speed, case parallax */
   let lastY = scrollY, vel = 0, raf = 0, running = true;
-  const waves = fr.map(() => 0);
   const mqAnim = () => mq?.querySelector<HTMLElement>(".mq__line")?.getAnimations()[0];
   const loop = () => {
     if (!running) return;
@@ -112,18 +152,24 @@ export function initFilm(): () => void {
       const past = r.bottom <= vh * 0.38;
       frames.classList.toggle("is-in", inView);
       frames.classList.toggle("is-out", past);
-      if (!calm && inView) {
-        fr.forEach((c, i) => {
-          const target = clamp(vel * (0.9 + (i % 5) * 0.12), -28, 28);
-          waves[i]! += (target - waves[i]!) * (0.06 + 0.012 * (fr.length - i));
-          c.style.setProperty("--w", `${waves[i]!.toFixed(2)}px`);
-        });
-      }
+    }
+
+    if (bento && steps.length && !calm) {
+      const rs = steps.map((t) => t.getBoundingClientRect());
+      const row = rs.every((r) => Math.abs(r.top - rs[0]!.top) < 4);
+      let last = -1;
+      steps.forEach((t, i) => {
+        const at = row ? vh * (0.82 - 0.16 * i) : vh * 0.72;
+        if (rs[i]!.top < at) t.classList.add("is-open");
+        if (t.classList.contains("is-open")) last = i;
+      });
+      steps.forEach((t, i) => t.classList.toggle("is-cur", i === last));
     }
 
     if (mq && !calm) {
       const a = mqAnim();
-      if (a) a.playbackRate += ((1 + Math.min(5, Math.abs(vel) * 0.12)) - a.playbackRate) * 0.08;
+      const want = mqHold ? 0 : 1 + Math.min(5, Math.abs(vel) * 0.12);
+      if (a) { a.playbackRate += (want - a.playbackRate) * (mqHold ? 0.16 : 0.08); if (Math.abs(a.playbackRate) < 0.01 && mqHold) a.playbackRate = 0; }
     }
 
     if (!calm) cases.forEach((c) => {

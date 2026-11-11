@@ -443,15 +443,23 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .lg::before { content: ""; position: absolute; inset: 0; z-index: -1; background: radial-gradient(120% 70% at 0% 0%, rgb(255 255 255 / .2), transparent 55%), radial-gradient(80% 50% at 100% 100%, rgb(169 174 180 / .14), transparent 60%); pointer-events: none; }
 .lg::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(115deg, transparent 35%, rgb(255 255 255 / .12) 47%, transparent 58%) 160% 0 / 250% 100% no-repeat; animation: liquid 9s ease-in-out infinite; pointer-events: none; }
 @keyframes liquid { 0%, 30% { background-position: 160% 0; } 60%, 100% { background-position: -60% 0; } }
-.lg__in { padding: var(--s-5); display: grid; gap: var(--s-4); }
-.lg .tt { font-size: clamp(2rem, 3vw, 3rem); }
+.lg__in { padding: var(--s-4) var(--s-5) var(--s-5); display: grid; gap: var(--s-3); }
+.lg .tt { font-size: clamp(1.6rem, 2.3vw, 2.4rem); }
 .lg .field input, .lg .field select, .lg .field textarea { background-color: rgb(11 13 12 / .5); }
 
 /* ── Forms ── */
-.lead { display: grid; gap: var(--s-4); }
-.lead__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-3); }
-.lead__grid > .field { grid-column: span 3; }
-.lead__grid > .field:not(.field--full) { grid-column: span 1; }
+.lead { display: grid; gap: var(--s-3); }
+.lead__grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--s-3); }
+.lead__grid > .field { grid-column: span 2; }
+.lead__grid > .field--full { grid-column: 1 / -1; }
+.lead__grid > .field--half { grid-column: span 3; }
+/* required: an asterisk; optional: smaller, quieter fields with the name inside */
+.field label .req { margin-left: 3px; font-style: normal; color: var(--steel-100); }
+.lead__alt { margin-left: auto; padding: 0; border: 0; background: none; color: var(--text-3); font: inherit; font-size: .75rem; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.lead__alt:hover { color: var(--text); }
+.field label { display: flex; align-items: baseline; }
+.field--sm input, .field--sm textarea { min-height: 40px; font-size: var(--t-small); background-color: rgb(11 13 12 / .3); box-shadow: inset 0 0 0 1px rgb(142 148 155 / .45); }
+.field--sm label { font-size: .75rem; color: var(--text-3); }
 .field { display: grid; gap: var(--s-2); align-content: start; border: 0; padding: 0; margin: 0; min-width: 0; }
 .field label, .field legend { font-size: .8125rem; color: var(--text-2); padding: 0; }
 .field label em { font-style: normal; color: var(--text-3); margin-left: var(--s-1); }
@@ -561,11 +569,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .lead__send p { max-width: none; white-space: nowrap; text-align: center; }
 
 /* ── round 11 ── */
-/* one form: the optional car row and the one required text */
-.lead__hint { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px var(--s-2); align-items: baseline; margin: var(--s-2) 0 calc(var(--s-1) * -1); font-size: .8125rem; color: var(--text); }
-.lead__hint em { font-style: normal; color: var(--text-3); }
-.lead__hint span { flex-basis: 100%; color: var(--text-3); }
-.field label em.req { color: var(--steel-100); }
+/* one form: a quiet caption over the optional car row */
+.lead__hint { grid-column: 1 / -1; margin: var(--s-1) 0 calc(var(--s-2) * -1); font-size: .75rem; color: var(--text-3); }
 /* header catalog menu: models on hover / focus, a bridge keeps it open on the way down */
 .bar__dd { position: relative; }
 .bar__dd > a { display: inline-flex; align-items: center; gap: 4px; }

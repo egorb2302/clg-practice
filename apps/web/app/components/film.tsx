@@ -51,34 +51,36 @@ export function FilmHero() {
   );
 }
 
-/* ── framed photos with a clip on hover ── */
-type Frame = { t: string; to: string; seq: string[] };
+/* ── framed photos: a keybed. The card under the cursor rises most, its neighbours a little;
+      it turns to colour at once and its clip starts (stock frames with a camera push) ── */
+const U = (n: number) => `/img/stock/u${String(n).padStart(2, "0")}.webp`;
+type Frame = { t: string; to: string; still: string; clip: string[] };
 const FRAMES: Frame[] = [
-  { t: "JAC T9", to: "/catalog?vehicle=jac-t9", seq: ["truck-l", "truck-cut", "bumper"] },
-  { t: "Haval H3", to: "/catalog?vehicle=haval-h3", seq: ["road-mud", "hero-wet", "car-dust"] },
-  { t: "Трубогиб", to: "/about", seq: ["steel-tubes", "steel-chrome", "tex-brushed"] },
-  { t: "Сварка", to: "/about", seq: ["shop-welder", "shop-sparks", "shop-grinder"] },
-  { t: "Полировка", to: "/about", seq: ["steel-liquid", "steel-plates", "tex-scratch"] },
-  { t: "Установка", to: "/about#delivery", seq: ["install-rack", "install-hands", "engine"] },
-  { t: "Тайга", to: "/catalog", seq: ["road-taiga", "taiga-spruce", "taiga-valley"] },
-  { t: "Снег", to: "/catalog", seq: ["car-snow", "taiga-peaks", "taiga-hills"] },
-  { t: "Туман", to: "/catalog", seq: ["road-fog", "hero-forest", "hero-wet"] },
-  { t: "Кенгурин", to: "/catalog?vehicle=jac-t9", seq: ["bullbar", "bumper", "truck"] },
+  { t: "JAC T9", to: "/catalog?vehicle=jac-t9", still: S("truck-l"), clip: [U(4), U(20), U(22), U(21)] },
+  { t: "Haval H3", to: "/catalog?vehicle=haval-h3", still: S("road-mud"), clip: [U(5), U(2), U(19), U(12)] },
+  { t: "Сварка", to: "/about", still: S("shop-welder"), clip: [U(25), U(26), U(33), U(36)] },
+  { t: "Шлифовка", to: "/about", still: S("shop-grinder"), clip: [U(27), U(30), U(34), U(32)] },
+  { t: "Металл", to: "/about", still: S("steel-tubes"), clip: [U(35), U(37), U(31), U(32)] },
+  { t: "Установка", to: "/about#delivery", still: S("install-rack"), clip: [U(38), U(39), U(40), U(42)] },
+  { t: "Тайга", to: "/catalog", still: S("road-taiga"), clip: [U(1), U(9), U(11), U(23)] },
+  { t: "Снег", to: "/catalog", still: S("car-snow"), clip: [U(18), U(24), U(12), U(14)] },
+  { t: "Ночь", to: "/catalog", still: S("road-fog"), clip: [U(16), U(17), U(14), U(3)] },
+  { t: "Свет", to: "/catalog?vehicle=jac-t9", still: S("bullbar"), clip: [U(13), U(15), U(3), U(16)] },
 ];
 export function Frames() {
   return (
     <section className="frames" aria-label="Кадры">
       <div className="frames__head wrap">
         <p className="frames__k">В деле</p>
-        <p className="frames__n num" aria-hidden="true">10 кадров</p>
+        <p className="frames__n num" aria-hidden="true">Наведите на кадр</p>
       </div>
       <div className="frames__track">
         {FRAMES.map((f, i) => (
           <Link key={f.t} className="fr" to={f.to} style={{ "--i": i } as React.CSSProperties} draggable={false}>
             <span className="fr__key">
-              <img className="fr__still" src={S(f.seq[0]!)} alt="" loading="lazy" draggable={false} />
+              <img className="fr__still" src={f.still} alt="" loading="lazy" draggable={false} />
               <span className="fr__clip" aria-hidden="true">
-                {f.seq.map((s) => <img key={s} src={S(s)} alt="" loading="lazy" draggable={false} />)}
+                {f.clip.map((c, k) => <img key={c + k} src={c} alt="" loading="lazy" decoding="async" draggable={false} style={{ "--k": k } as React.CSSProperties} />)}
               </span>
               <span className="fr__rec" aria-hidden="true"><i />REC</span>
               <span className="fr__t">{f.t}</span>
@@ -91,19 +93,41 @@ export function Frames() {
   );
 }
 
-/* ── big photo with the makes running across ── */
-const MAKES = ["JAC", "Haval", "Tank", "Great Wall", "Jetour", "Chery", "Geely", "Changan", "Exeed", "BAIC"];
+/* ── makes over a big photo: hovering a make stops the line, lights the make, writes a caption
+      under it and wipes its own photo in from the right (aaronbrimhall.com «Those who get it») ── */
+type Make = { m: string; note: string; to: string; img: string };
+const MAKES: Make[] = [
+  { m: "JAC", note: "в каталоге", to: "/catalog?vehicle=jac-t9", img: "/img/truck-l.webp" },
+  { m: "Haval", note: "в каталоге", to: "/catalog?vehicle=haval-h3", img: "/img/road-mud.webp" },
+  { m: "Tank", note: "под заказ", to: "/contacts?type=custom", img: U(4) },
+  { m: "Great Wall", note: "под заказ", to: "/contacts?type=custom", img: U(20) },
+  { m: "Jetour", note: "под заказ", to: "/contacts?type=custom", img: U(22) },
+  { m: "Chery", note: "под заказ", to: "/contacts?type=custom", img: U(1) },
+  { m: "Geely", note: "под заказ", to: "/contacts?type=custom", img: U(21) },
+  { m: "Changan", note: "под заказ", to: "/contacts?type=custom", img: U(18) },
+  { m: "Exeed", note: "под заказ", to: "/contacts?type=custom", img: U(16) },
+  { m: "BAIC", note: "под заказ", to: "/contacts?type=custom", img: U(10) },
+];
 export function Marquee() {
-  const row = MAKES.map((m) => <span key={m} className="mq__w">{m}</span>);
+  const row = (dup: boolean) => MAKES.map((x, i) => (
+    <Link key={x.m + dup} className="mq__w" to={x.to} data-i={i} tabIndex={dup ? -1 : undefined} aria-hidden={dup || undefined} draggable={false}>
+      <span className="mq__name">{x.m}</span>
+      <span className="mq__cap">{x.m} <span>{x.note}</span> <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M9.5 9.5 2 2m7.5 7.5H3.3m6.2 0V3.2" /></svg></span>
+    </Link>
+  ));
   return (
     <section className="mq frame" aria-label="Марки">
       <div className="frame__bg mq__bg"><img src="/img/car-dust.webp" alt="" loading="lazy" decoding="async" /></div>
+      <div className="mq__stage" aria-hidden="true">
+        {MAKES.map((x, i) => <img key={x.m} src={x.img} alt="" data-i={i} loading="lazy" decoding="async" />)}
+      </div>
+      <div className="mq__veil" aria-hidden="true" />
       <div className="mq__copy">
         <h2 className="mq__t"><span>Китайские внедорожники</span><span>наша специализация</span></h2>
         <p className="mq__p">{nb("JAC и Haval уже в каталоге, для других марок снимем размеры с вашей машины и сделаем защиту на штатные точки")}</p>
       </div>
-      <div className="mq__run" aria-label={MAKES.join(", ")}>
-        <div className="mq__line" aria-hidden="true">{row}{row}</div>
+      <div className="mq__run">
+        <div className="mq__line">{row(false)}{row(true)}</div>
       </div>
     </section>
   );

@@ -40,50 +40,70 @@
 .film__cue i { width: 1px; height: 36px; background: linear-gradient(var(--steel-100), transparent); animation: cue 1.8s var(--ease-settle) infinite; transform-origin: 50% 0; }
 @keyframes cue { 0% { transform: scaleY(0); } 60% { transform: scaleY(1); } 100% { transform: scaleY(1); opacity: 0; } }
 
-/* ── Frames: tall framed photos rise in, play a clip on hover, drop away when you pass ── */
+/* ── Frames: a keybed of tall photos (aaronbrimhall.com, read frame by frame):
+   in: they rise one by one; hover: the card rises ~52 px, its neighbours 22 and 7 px, colour at
+   once, the clip runs from its first frame, a steel rim glows; out: they drop one by one ── */
 .frames { position: relative; padding: var(--s-8) 0 var(--s-7); overflow: hidden; }
-.frames__head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: var(--s-5); font-size: .75rem; letter-spacing: .1em; text-transform: uppercase; color: var(--text-3); }
+.frames__head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: var(--s-3); font-size: .75rem; letter-spacing: .1em; text-transform: uppercase; color: var(--text-3); }
 .frames__k { color: var(--text-2); }
-.frames__track { display: flex; gap: var(--s-3); padding: 40px var(--edge); overflow-x: auto; scrollbar-width: none; cursor: grab; overscroll-behavior-x: contain; }
+.frames__track { display: flex; gap: var(--s-3); padding: 72px var(--edge) 24px; overflow-x: auto; scrollbar-width: none; cursor: grab; overscroll-behavior-x: contain; }
 .frames__track::-webkit-scrollbar { display: none; }
 .frames__track.is-drag { cursor: grabbing; }
 .frames__track.is-drag a { pointer-events: none; }
-.fr { flex: none; width: clamp(150px, 11.2vw, 210px); aspect-ratio: 1 / 3.4; display: block; text-decoration: none; color: var(--text); opacity: 0; transform: translateY(70%); transition: opacity 700ms var(--ease-settle), transform 900ms var(--ease-forge); transition-delay: calc(var(--i) * 70ms); }
+.fr { position: relative; flex: none; width: clamp(150px, 11.2vw, 210px); aspect-ratio: 1 / 3.4; display: block; text-decoration: none; color: var(--text); opacity: 0; transform: translateY(70%); transition: opacity 700ms var(--ease-settle), transform 900ms var(--ease-forge); transition-delay: calc(var(--i) * 70ms); }
 .frames.is-in .fr { opacity: 1; transform: none; }
 .frames.is-out .fr { opacity: 0; transform: translateY(70%); transition-duration: 500ms, 700ms; transition-delay: calc(var(--i) * 45ms); }
-.fr__key { position: relative; display: block; height: 100%; overflow: hidden; background: var(--obsidian-900); transform: translateY(var(--w, 0px)); transition: transform 500ms var(--ease-settle), box-shadow 500ms var(--ease-settle); --c: 6px; clip-path: var(--chamfer); }
-.fr:hover .fr__key, .fr:focus-visible .fr__key, .fr.is-play .fr__key { transform: translateY(calc(var(--w, 0px) - 14px)); box-shadow: inset 0 0 0 1px var(--steel-100); }
+.fr__key { position: relative; display: block; height: 100%; overflow: hidden; background: var(--obsidian-900); transform: translateY(var(--lift, 0px)); transition: transform 380ms cubic-bezier(.2, .8, .2, 1); --c: 6px; clip-path: var(--chamfer); }
+.fr::before { content: ""; position: absolute; inset: 0; z-index: 2; transform: translateY(var(--lift, 0px)); box-shadow: inset 0 0 0 1px rgb(214 220 226 / 0); transition: transform 380ms cubic-bezier(.2, .8, .2, 1), box-shadow 250ms; pointer-events: none; --c: 6px; clip-path: var(--chamfer); }
+.fr.is-hot::before { box-shadow: inset 0 0 0 1px var(--steel-100); }
+.fr::after { content: ""; position: absolute; inset: 0 -14px -20px; z-index: -1; transform: translateY(var(--lift, 0px)); background: radial-gradient(50% 50% at 50% 50%, rgb(169 186 200 / .4), transparent 72%); filter: blur(8px); opacity: 0; transition: opacity 250ms, transform 380ms cubic-bezier(.2, .8, .2, 1); pointer-events: none; }
+.fr.is-hot::after { opacity: 1; }
 .fr__still, .fr__clip img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; -webkit-user-drag: none; user-select: none; }
-.fr__still { filter: grayscale(1) brightness(.78) contrast(1.08); transition: opacity 600ms var(--ease-settle); }
-.fr__clip img { opacity: 0; transform: scale(1.18); transition: opacity 500ms var(--ease-settle), transform 2600ms linear; filter: saturate(.9) contrast(1.05); }
-.fr__clip img.is-on { opacity: 1; transform: scale(1); }
+.fr__still { filter: grayscale(1) brightness(.75) contrast(1.08); transition: filter 220ms linear, opacity 300ms; }
+.fr.is-hot .fr__still { filter: none; }
+.fr__clip img { opacity: 0; transition: opacity 260ms linear; }
+.fr__clip img.is-on { opacity: 1; animation: push 1400ms linear both; }
 .fr:not(.is-play) .fr__clip img { opacity: 0; }
-.fr.is-play .fr__still { opacity: 0; }
-/* glow sits outside the clipped key */
-.fr { position: relative; }
-.fr::after { content: ""; position: absolute; inset: -6px; z-index: -1; background: radial-gradient(60% 50% at 50% 50%, rgb(169 180 190 / .35), transparent 70%); opacity: 0; transition: opacity 500ms; pointer-events: none; }
-.fr:hover::after, .fr.is-play::after { opacity: 1; }
-.fr__rec { position: absolute; left: 10px; top: 10px; display: flex; gap: 6px; align-items: center; font-size: .625rem; letter-spacing: .1em; opacity: 0; transition: opacity 300ms; }
+.fr.is-play .fr__still { opacity: 0; transition-delay: 120ms; }
+/* each frame drifts like handheld footage */
+@keyframes push { from { transform: scale(1.16) translate3d(2%, 1.5%, 0); } to { transform: scale(1.04) translate3d(-2%, -1%, 0); } }
+.fr__rec { position: absolute; z-index: 1; left: 10px; top: 10px; display: flex; gap: 6px; align-items: center; font-size: .625rem; letter-spacing: .1em; opacity: 0; transition: opacity 200ms; }
 .fr__rec i { width: 6px; height: 6px; border-radius: 50%; background: #e0574b; animation: recblink 1.2s steps(1) infinite; }
 .fr.is-play .fr__rec { opacity: 1; }
-.fr__t { position: absolute; left: 10px; right: 10px; bottom: 10px; font-size: .6875rem; letter-spacing: .1em; text-transform: uppercase; text-shadow: 0 1px 8px rgb(0 0 0 / .6); }
+.fr__t { position: absolute; z-index: 1; left: 10px; right: 10px; bottom: 10px; font-size: .6875rem; letter-spacing: .1em; text-transform: uppercase; text-shadow: 0 1px 8px rgb(0 0 0 / .7); }
 .frames__bar { display: flex; align-items: center; gap: var(--s-4); }
 .frames__prog { position: relative; flex: 1; height: 3px; background: rgb(214 210 200 / .1); }
 .frames__prog i { position: absolute; left: 0; top: 0; height: 100%; background: linear-gradient(90deg, var(--steel-300), var(--steel-100)); box-shadow: 0 0 12px rgb(201 205 209 / .5); }
 .frames__rpm { font-size: .6875rem; letter-spacing: .1em; text-transform: uppercase; color: var(--text-3); }
 
-/* ── Marquee: a big photo, the makes run across it ── */
-.mq { height: min(78svh, 720px); min-height: 520px; margin-top: var(--inset); }
-.mq__bg img { filter: grayscale(1) contrast(1.08) brightness(1.05); transform: scale(1.04); }
-.mq .frame__bg::after { background: linear-gradient(180deg, rgb(11 13 12 / .6), transparent 40%, transparent 60%, rgb(11 13 12 / .5)); }
-.mq__copy { position: absolute; z-index: 2; left: var(--s-6); top: var(--s-6); }
-.mq__t { margin: 0 0 var(--s-4); font: 400 clamp(1.9rem, 3.6vw, 4rem)/.95 var(--font-display); letter-spacing: -.03em; text-transform: uppercase; color: var(--sand-100); }
+/* ── Makes over a big photo: hover stops the line, lights the make, a caption under it, its photo
+   wipes in from the right; leaving fades back (aaronbrimhall.com, «Those who get it») ── */
+.mq { height: min(80svh, 760px); min-height: 540px; margin-top: var(--inset); }
+.mq__bg img { filter: grayscale(1) contrast(1.05) brightness(.72); transform: scale(1.04); }
+.mq .frame__bg::after { display: none; }
+.mq__stage { position: absolute; inset: 0; z-index: 1; }
+.mq__stage img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; clip-path: inset(0 0 0 100%); transition: opacity 500ms var(--ease-settle); filter: saturate(.85) brightness(.7); }
+.mq__stage img.is-on { opacity: 1; animation: wipe 750ms cubic-bezier(.7, 0, .2, 1) forwards; }
+@keyframes wipe { from { clip-path: inset(0 0 0 100%); transform: scale(1.06); } to { clip-path: inset(0 0 0 0); transform: scale(1); } }
+/* the veil keeps the copy readable on any photo */
+.mq__veil { position: absolute; inset: 0; z-index: 2; background: linear-gradient(90deg, rgb(11 13 12 / .86), rgb(11 13 12 / .55) 38%, rgb(11 13 12 / .1) 70%), linear-gradient(0deg, rgb(11 13 12 / .6), transparent 45%); pointer-events: none; }
+.mq__copy { position: absolute; z-index: 3; left: var(--s-6); top: var(--s-6); max-width: 46rem; }
+.mq__t { margin: 0 0 var(--s-4); font: 700 clamp(1.9rem, 3.4vw, 3.8rem)/.98 var(--font-display); letter-spacing: -.03em; text-transform: uppercase; color: var(--sand-100); }
 .mq__t span { display: block; }
-.mq__p { max-width: 30rem; font-size: var(--t-small); line-height: 1.5; color: var(--text); }
-.mq__run { position: absolute; z-index: 2; left: 0; right: 0; top: 58%; overflow: hidden; -webkit-mask: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+.mq__t span + span { color: var(--steel-100); font-weight: 400; }
+.mq__p { max-width: 32rem; font-size: var(--t-body); line-height: 1.55; color: var(--sand-100); }
+.mq__run { position: absolute; z-index: 3; left: 0; right: 0; bottom: 14%; overflow: hidden; padding: 0 0 44px; -webkit-mask: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); mask: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
 .mq__line { display: flex; width: max-content; animation: mq 46s linear infinite; }
-.mq__w { flex: none; padding: 0 clamp(1.6rem, 3.4vw, 3.6rem); font: 700 clamp(2.4rem, 4.6vw, 4.8rem)/1 var(--font-display); letter-spacing: -.03em; text-transform: uppercase; color: rgb(232 229 222 / .92); }
-.mq__w:nth-child(3n + 2) { color: transparent; -webkit-text-stroke: 1.5px rgb(232 229 222 / .85); }
+.mq__w { position: relative; flex: none; padding: 0 clamp(1.6rem, 3.4vw, 3.6rem); text-decoration: none; color: rgb(232 229 222 / .9); transition: color 250ms, opacity 250ms; }
+.mq__name { display: block; font: 700 clamp(2.4rem, 4.6vw, 4.8rem)/1 var(--font-display); letter-spacing: -.03em; text-transform: uppercase; transition: text-shadow 250ms; }
+.mq__w:nth-child(3n + 2) .mq__name { color: transparent; -webkit-text-stroke: 1.5px rgb(232 229 222 / .85); }
+.mq.is-hot .mq__w { opacity: .38; }
+.mq.is-hot .mq__w.is-on { opacity: 1; }
+.mq__w.is-on .mq__name { color: #f1f3f4; -webkit-text-stroke: 0; text-shadow: 0 0 28px rgb(201 210 218 / .6); }
+.mq__cap { position: absolute; left: clamp(1.6rem, 3.4vw, 3.6rem); top: calc(100% + 12px); display: flex; gap: var(--s-2); align-items: center; white-space: nowrap; font-size: .75rem; letter-spacing: .1em; text-transform: uppercase; color: var(--sand-100); opacity: 0; transform: translateY(-6px); transition: opacity 250ms, transform 250ms; }
+.mq__cap span { color: var(--steel-100); }
+.mq__cap svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 1.3; }
+.mq__w.is-on .mq__cap { opacity: 1; transform: none; }
 @keyframes mq { to { transform: translateX(-50%); } }
 
 /* ── Cases: photo with inner parallax, a glass card overlaps it, sides alternate (bb-b) ── */
@@ -130,7 +150,7 @@
   .film__s { font-size: 4.6vw; }
   .hud__spec, .hud__foot span { display: none; }
   .mq__copy { left: var(--s-4); right: var(--s-4); top: var(--s-5); }
-  .mq__run { top: 66%; }
+  .mq__run { bottom: 8%; }
   .case__card, .case--r .case__card { margin: -48px var(--s-2) 0; padding: var(--s-5); }
   .fab { right: var(--s-3); bottom: var(--s-3); height: 48px; padding: 0 13px; }
 }
@@ -143,3 +163,17 @@
   .case__card { opacity: 1; transform: none; }
 }
 .no-js .fr, .no-js .case__card { opacity: 1; transform: none; }
+
+/* ── Bento 02 staged: each small tile opens in turn and stays open, the accent on the newest ── */
+.bento.is-staged .bt--step .bt__img, .bento.is-staged .bt--step .mount, .bento.is-staged .bt--step .bt__vis { transition: opacity 700ms var(--ease-settle), filter 700ms var(--ease-settle); }
+.bento.is-staged .bt--step:not(.is-open) .bt__img, .bento.is-staged .bt--step:not(.is-open) .mount, .bento.is-staged .bt--step:not(.is-open) .bt__vis { opacity: .35; filter: grayscale(1); }
+.bento.is-staged .bt--step > b { transition: opacity 600ms var(--ease-settle); }
+.bento.is-staged .bt--step:not(.is-open) > b { opacity: .45; }
+.bento.is-staged .bt__more > *, .bento.is-staged .tl li { transition: opacity 600ms var(--ease-settle), transform 600ms var(--ease-settle), filter 600ms var(--ease-settle); }
+.bento.is-staged .bt--step:not(.is-open) .bt__more > *, .bento.is-staged .bt--step:not(.is-open) .tl li { opacity: 0; transform: translateY(14px); filter: blur(6px); }
+.bento.is-staged .bt--step.is-open .bt__more > :nth-child(2), .bento.is-staged .bt--step.is-open .tl li:nth-child(2) { transition-delay: 140ms; }
+.bento.is-staged .bt--step.is-open .tl li:nth-child(3) { transition-delay: 280ms; }
+.bento.is-staged .bt--step.is-open .tl li:nth-child(4) { transition-delay: 420ms; }
+.bento.is-staged .bt--step.is-cur { background-color: #141a1e; box-shadow: inset 0 0 0 1px var(--steel-300), inset 0 2px 0 var(--steel-100); }
+
+@media (hover: none) { .frames__n { display: none; } }

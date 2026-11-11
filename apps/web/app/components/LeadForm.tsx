@@ -132,53 +132,47 @@ export function LeadForm({ type: initialType, switchable, items = [], deliveryMe
     <form ref={form} className={`lead ${className}`} onSubmit={submit} onChange={touched} noValidate>
 
       <div className="lead__grid">
-        <div className="field field--full">
-          <label htmlFor={`${id}-name`}>Как к вам обращаться</label>
-          <input id={`${id}-name`} name="name" autoComplete="name" maxLength={80} defaultValue="" {...aria("name")} />
+        {/* name and contact on one row; the way to reach you is a small switch inside the label */}
+        <div className="field field--half">
+          <label htmlFor={`${id}-name`}>Имя<i className="req" aria-hidden="true">*</i></label>
+          <input id={`${id}-name`} name="name" autoComplete="name" maxLength={80} defaultValue="" required {...aria("name")} />
           {err("name")}
         </div>
-
-        <fieldset className="field field--full radios">
-          <legend>Как удобнее связаться</legend>
-          <label><input type="radio" name="preferred" value="phone" checked={preferred === "phone"} onChange={() => setPreferred("phone")} /><span>Позвонить</span></label>
-          <label><input type="radio" name="preferred" value="email" checked={preferred === "email"} onChange={() => setPreferred("email")} /><span>Написать на email</span></label>
-        </fieldset>
-
         {preferred === "phone" ? (
-          <div className="field field--full">
-            <label htmlFor={`${id}-phone`}>Телефон</label>
-            <input id={`${id}-phone`} name="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="+7 (900) 000-00-00" value={phone} onChange={(e) => setPhone(e.target.value ? maskPhone(e.target.value) : "")} {...aria("contact.phone")} />
+          <div className="field field--half">
+            <label htmlFor={`${id}-phone`}>Телефон<i className="req" aria-hidden="true">*</i><button type="button" className="lead__alt" onClick={() => setPreferred("email")}>или email</button></label>
+            <input id={`${id}-phone`} name="phone" type="tel" inputMode="tel" autoComplete="tel" required placeholder="+7 (900) 000-00-00" value={phone} onChange={(e) => setPhone(e.target.value ? maskPhone(e.target.value) : "")} {...aria("contact.phone")} />
             {err("contact.phone")}
           </div>
         ) : (
-          <div className="field field--full">
-            <label htmlFor={`${id}-email`}>Email</label>
-            <input id={`${id}-email`} name="email" type="email" inputMode="email" autoComplete="email" maxLength={254} placeholder="name@mail.ru" {...aria("contact.email")} />
+          <div className="field field--half">
+            <label htmlFor={`${id}-email`}>Email<i className="req" aria-hidden="true">*</i><button type="button" className="lead__alt" onClick={() => setPreferred("phone")}>или телефон</button></label>
+            <input id={`${id}-email`} name="email" type="email" inputMode="email" autoComplete="email" required maxLength={254} placeholder="name@mail.ru" {...aria("contact.email")} />
             {err("contact.email")}
           </div>
         )}
 
         {switchable ? (
           <>
-            <p className="lead__hint field--full">Машина <em>необязательно</em><span>{"Укажите марку и модель, если нужна защита под заказ"}</span></p>
-            <div className="field">
-              <label htmlFor={`${id}-make`}>Марка</label>
-              <input id={`${id}-make`} name="make" maxLength={60} defaultValue={prefill.make} placeholder="Tank" {...aria("vehicle.make")} />
+            <p className="lead__hint">Машина, если нужна защита под заказ</p>
+            <div className="field field--sm">
+              <label htmlFor={`${id}-make`} className="sr">Марка</label>
+              <input id={`${id}-make`} name="make" maxLength={60} defaultValue={prefill.make} placeholder="Марка" {...aria("vehicle.make")} />
               {err("vehicle.make")}
             </div>
-            <div className="field">
-              <label htmlFor={`${id}-model`}>Модель</label>
-              <input id={`${id}-model`} name="model" maxLength={60} defaultValue={prefill.model} placeholder="300" {...aria("vehicle.model")} />
+            <div className="field field--sm">
+              <label htmlFor={`${id}-model`} className="sr">Модель</label>
+              <input id={`${id}-model`} name="model" maxLength={60} defaultValue={prefill.model} placeholder="Модель" {...aria("vehicle.model")} />
               {err("vehicle.model")}
             </div>
-            <div className="field">
-              <label htmlFor={`${id}-year`}>Год</label>
-              <input id={`${id}-year`} name="year" inputMode="numeric" maxLength={4} placeholder="2024" {...aria("vehicle.year")} />
+            <div className="field field--sm">
+              <label htmlFor={`${id}-year`} className="sr">Год</label>
+              <input id={`${id}-year`} name="year" inputMode="numeric" maxLength={4} placeholder="Год" {...aria("vehicle.year")} />
               {err("vehicle.year")}
             </div>
             <div className="field field--full">
-              <label htmlFor={`${id}-text`}>Ваш вопрос или что нужно изготовить <em className="req">обязательно</em></label>
-              <textarea id={`${id}-text`} name="text" maxLength={2000} rows={4} required defaultValue={prefill.request} placeholder="Например, подойдет ли защита к машине с фаркопом, или передняя дуга с площадкой под лебедку" {...aria("text")} />
+              <label htmlFor={`${id}-text`}>Вопрос или что нужно изготовить<i className="req" aria-hidden="true">*</i></label>
+              <textarea id={`${id}-text`} name="text" maxLength={2000} rows={3} required defaultValue={prefill.request} placeholder="Например, подойдет ли защита к машине с фаркопом, или передняя дуга с площадкой под лебедку" {...aria("text")} />
               {err("text")}
             </div>
           </>
@@ -195,7 +189,7 @@ export function LeadForm({ type: initialType, switchable, items = [], deliveryMe
               {err("vehicle.model")}
             </div>
             <div className="field">
-              <label htmlFor={`${id}-year`}>Год выпуска <em>необязательно</em></label>
+              <label htmlFor={`${id}-year`}>Год выпуска</label>
               <input id={`${id}-year`} name="year" inputMode="numeric" maxLength={4} placeholder="2024" {...aria("vehicle.year")} />
               {err("vehicle.year")}
             </div>
@@ -226,8 +220,8 @@ export function LeadForm({ type: initialType, switchable, items = [], deliveryMe
         ) : null}
 
         {type !== "general" && !switchable ? (
-          <div className="field field--full">
-            <label htmlFor={`${id}-comment`}>Комментарий <em>необязательно</em></label>
+          <div className="field field--full field--sm">
+            <label htmlFor={`${id}-comment`}>Комментарий</label>
             <textarea id={`${id}-comment`} name="comment" maxLength={1000} rows={2} defaultValue={prefill.comment} {...aria("comment")} />
             {err("comment")}
           </div>

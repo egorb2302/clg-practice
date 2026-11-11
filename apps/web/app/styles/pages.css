@@ -219,6 +219,7 @@
 }
 /* ── Phone ── */
 @media (max-width: 599px) {
+  .lead__grid > .field--half { grid-column: 1 / -1; }
   .cat__bar { position: static; padding: var(--s-3); }
   .cat__sum { margin-left: 0; width: 100%; justify-content: space-between; }
   .fl__o { padding: 0 var(--s-3); }
