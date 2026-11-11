@@ -37,7 +37,6 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     <>
       <Hero vehicles={vehicles} products={products} />
       <Showcase vehicles={vehicles} products={products} />
-      <Plates />
       <Story models={vehicles.length} items={products.length} />
       <Flow chip={["03", "Путь комплекта"]} title={["От листа стали", "до вашей дороги"]} steps={STEPS} />
       <Adv chip={["04", "Преимущество"]} title="Не универсальная, а ваша" img="/img/road-taiga.webp" items={ADV} />
@@ -205,32 +204,6 @@ function Showcase({ vehicles, products }: { vehicles: Vehicle[]; products: Card[
           </div>
         )}
       </div>
-    </section>
-  );
-}
-
-/* ── Three promises stamped into steel plates (replaces the lit sentence, round 11) ── */
-const PLATES = [
-  { n: "01", word: "Не ржавеет", text: "AISI 304 переживает соль, реагенты и мойки, даже на сколах", pos: "20% 30%" },
-  { n: "02", word: "Не сверлим", text: "Кронштейны встают в заводские отверстия рамы", pos: "70% 60%" },
-  { n: "03", word: "Не на глаз", text: "Каждый комплект гнем по замерам конкретной модели", pos: "45% 85%" },
-];
-function Plates() {
-  return (
-    <section className="sec wrap plates" aria-label="Три обещания">
-      <div className="head" data-in="">
-        <Tt a="Три обещания" b="выбитые в стали" />
-      </div>
-      <ul className="plates__row" data-stagger="">
-        {PLATES.map((p) => (
-          <li key={p.n} className="plate" data-in="" style={{ "--pos": p.pos } as React.CSSProperties}>
-            <span className="plate__rv" aria-hidden="true"><i /><i /><i /><i /></span>
-            <span className="plate__n num">{p.n}</span>
-            <b className="plate__w">{p.word}</b>
-            <p className="plate__t">{nb(p.text)}</p>
-          </li>
-        ))}
-      </ul>
     </section>
   );
 }
