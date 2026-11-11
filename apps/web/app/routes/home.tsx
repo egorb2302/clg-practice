@@ -3,6 +3,7 @@ import { useState } from "react";
 import { data, Link, useRouteLoaderData } from "react-router";
 import type { Route } from "./+types/home";
 import { ProductCard } from "../components/ProductCard";
+import { Cases, FilmHero, Frames, Marquee } from "../components/film";
 import { Adv, ContactPlate, Faq, Flow, Rail, Stats } from "../components/sections";
 import { Chip, Icon, Img, Sbtn, Tt } from "../components/ui";
 import { api, PUBLIC_CACHE } from "../lib/api.server";
@@ -35,77 +36,20 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const meta = root?.meta;
   return (
     <>
-      <Hero vehicles={vehicles} products={products} />
+      <FilmHero />
+      <Frames />
       <Showcase vehicles={vehicles} products={products} />
+      <Marquee />
       <Story models={vehicles.length} items={products.length} />
       <Flow chip={["03", "Путь комплекта"]} title={["От листа стали", "до вашей дороги"]} steps={STEPS} />
       <Adv chip={["04", "Преимущество"]} title="Не универсальная, а ваша" img="/img/road-taiga.webp" items={ADV} />
       <div className="gap-s" />
       <Stats chip={["05", "В цифрах"]} title={["Мы отвечаем за эти цифры", "в каждом комплекте"]} lead="Каждый комплект проходит одни и те же проверки: марка стали, посадка на раму, швы и покрытие" img="/img/steel-wrenches.webp" items={STATS} />
+      <Cases />
       <Custom />
       {meta ? <Faq chip={["07", "Вопросы"]} items={FAQ} phone={meta.contacts.phone} /> : null}
       {meta ? <ContactPlate meta={meta} chip={["08", "Контакты"]} title={["Обсудим вашу машину", "и подберем защиту"]} img="/img/road-fog.webp" /> : null}
     </>
-  );
-}
-
-/* ── Hero: the first action is the vehicle picker; ready kits and facts fill the frame ── */
-const HERO = [
-  { k: "a", src: "/img/hero-forest.webp", alt: "Внедорожник с включенными фарами на лесной дороге в тумане", w: 1600, h: 1000 },
-  { k: "b", src: "/img/hero-wet.webp", alt: "Черный пикап с фарами на мокрой лесной дороге", w: 1600, h: 1067 },
-];
-function Hero({ vehicles, products }: { vehicles: Vehicle[]; products: Card[] }) {
-  const [v, setV] = useState("a");
-  return (
-    <section className="hero frame" data-hero={v}>
-      {HERO.map((h, i) => (
-        <div key={h.k} className={`hero__v hero__v--${h.k}`} aria-hidden={h.k !== v}>
-          <Img src={h.src} alt={h.alt} w={h.w} h={h.h} eager={i === 0} />
-        </div>
-      ))}
-      <div className="hero__shade" aria-hidden="true" />
-      <div className="hero__grid">
-        <div className="hero__head">
-          <Chip n="ARMORIX">Сталь для бездорожья</Chip>
-          <h1 className="hero__title">
-            <span className="ln"><span>Защита бамперов</span></span>
-            <span className="ln"><span>для внедорожников</span></span>
-            <span className="ln"><span className="mute">и пикапов</span></span>
-          </h1>
-          <p className="hero__lead fade-in">{nb("Готовые комплекты для JAC T9 и Haval H3 из нержавеющей стали AISI 304 ставятся на штатные точки рамы, без сверления кузова")}</p>
-        </div>
-
-        {/* round 10: the picker is gone, the brand word is back as the second anchor (never louder than the H1) */}
-        <p className="hero__brand fade-in" aria-hidden="true">ARMORIX<sup>®</sup></p>
-
-        <div className="hero__kits fade-in" aria-label="Готовые комплекты">
-          <p className="hero__kits-t"><span>Готовые комплекты</span><Link className="tlink" to="/catalog">Весь каталог</Link></p>
-          {vehicles.map((x) => {
-            const ps = products.filter((p) => p.vehicle.slug === x.slug);
-            const img = ps.find((p) => p.position === "kit")?.image ?? ps[0]?.image;
-            return (
-              <Link key={x.slug} className="hk glass" to={`/catalog?vehicle=${x.slug}`}>
-                {img ? <Img src={img.url} alt="" sizes="120px" /> : null}
-                <span className="hk__t"><b>{x.label}</b><span>{ps.length} {plural(ps.length, ["позиция", "позиции", "позиций"])}</span></span>
-                <span className="hk__p num">{priceFrom(minPrice(ps))}</span>
-                <Icon name="arrow" vb="0 0 20 20" />
-              </Link>
-            );
-          })}
-        </div>
-
-        <ul className="hero__facts fade-in">
-          <li><Icon name="nodrill" /><span><b>Кузов без сверления</b>крепеж в заводские точки</span></li>
-          <li><Icon name="gem" /><span><b>AISI 304</b>зеркальная полировка</span></li>
-          <li><Icon name="wrench" /><span><b>2,5 часа</b>установка у нас</span></li>
-          <li><Icon name="truck" /><span><b>Вся Россия</b>доставка в коробке</span></li>
-        </ul>
-      </div>
-      <div className="hero__pick" role="group" aria-label="Кадр первого экрана, пока нет видео">
-        <span className="label">Кадр</span>
-        {HERO.map((h, i) => <button key={h.k} type="button" aria-pressed={v === h.k} onClick={() => setV(h.k)}>{`H${i === 0 ? 1 : 3}`}</button>)}
-      </div>
-    </section>
   );
 }
 

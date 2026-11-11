@@ -8,10 +8,13 @@ import { NotFoundView } from "./components/NotFoundView";
 import { SPRITE } from "./components/sprite";
 import { api, PUBLIC_CACHE, siteOrigin } from "./lib/api.server";
 import { initMotion } from "./lib/motion";
+import { initFilm } from "./lib/film";
+import { MailFab } from "./components/film";
 import tokens from "./styles/tokens.css?url";
 import base from "./styles/base.css?url";
 import site from "./styles/site.css?url";
 import pages from "./styles/pages.css?url";
+import film from "./styles/film.css?url";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preload", href: "/fonts/ibm-plex-sans-700.woff", as: "font", type: "font/woff", crossOrigin: "anonymous" },
@@ -20,6 +23,7 @@ export const links: Route.LinksFunction = () => [
   { rel: "stylesheet", href: base },
   { rel: "stylesheet", href: site },
   { rel: "stylesheet", href: pages },
+  { rel: "stylesheet", href: film },
   { rel: "icon", href: "/logo/favicon.svg", type: "image/svg+xml" },
 ];
 
@@ -68,6 +72,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Header features={meta.features} vehicles={root?.vehicles ?? []} />
         <main id="main">{children}</main>
         <Footer meta={meta} />
+        <MailFab />
         <ScrollRestoration />
         <Scripts />
       </body>
@@ -104,6 +109,7 @@ function NavProgress() {
 export default function App() {
   const { pathname, search } = useLocation();
   useEffect(() => initMotion(), [pathname, search]);
+  useEffect(() => initFilm(), [pathname]);
   return <Outlet />;
 }
 
