@@ -167,11 +167,27 @@ function Showcase({ vehicles, products }: { vehicles: Vehicle[]; products: Card[
           )}
         </div>
 
-        <div className="show__tabs" role="tablist" aria-label="Автомобиль">
+        <div
+          className="show__tabs"
+          role="tablist"
+          aria-label="Автомобиль"
+          onKeyDown={(e) => {
+            const keys: Record<string, number> = { ArrowRight: 1, ArrowLeft: -1 };
+            const at = tabs.findIndex((t) => t.slug === cur);
+            let next = -1;
+            if (e.key in keys) next = (at + keys[e.key]! + tabs.length) % tabs.length;
+            else if (e.key === "Home") next = 0;
+            else if (e.key === "End") next = tabs.length - 1;
+            if (next < 0) return;
+            e.preventDefault();
+            setCur(tabs[next]!.slug);
+            e.currentTarget.querySelectorAll<HTMLElement>("[role=tab]")[next]?.focus();
+          }}
+        >
           {tabs.map((t) => {
             const s = SCENE[t.slug] ?? SCENE.custom!;
             return (
-              <button key={t.slug} type="button" role="tab" aria-selected={cur === t.slug} aria-controls="show-panel" className="show__tab" onClick={() => setCur(t.slug)}>
+              <button key={t.slug} id={`show-tab-${t.slug}`} type="button" role="tab" aria-selected={cur === t.slug} tabIndex={cur === t.slug ? 0 : -1} aria-controls="show-panel" className="show__tab" onClick={() => setCur(t.slug)}>
                 <span className="show__thumb"><img src={(s.thumb ?? s.img.replace(/\.webp$/, "-s.webp"))} alt="" loading="lazy" /></span>
                 <span>{t.label}</span>
               </button>
@@ -180,7 +196,7 @@ function Showcase({ vehicles, products }: { vehicles: Vehicle[]; products: Card[
         </div>
       </div>
 
-      <div className="show__panel wrap" id="show-panel" role="tabpanel" aria-label={label}>
+      <div className="show__panel wrap" id="show-panel" role="tabpanel" aria-labelledby={`show-tab-${cur}`}>
         {cur === "custom" ? (
           <ol className="how" data-stagger="">
             {[

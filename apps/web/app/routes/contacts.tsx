@@ -38,7 +38,7 @@ export default function Contacts() {
             ))}
           </ul>
         </div>
-        <div className="lg" data-in="">
+        <div className="lg">
           <div className="lg__in">
             <Tt a={type === "custom" ? "Изготовим под вашу модель" : "Задайте вопрос"} b={type === "custom" ? "расскажите о машине" : "или опишите, что изготовить"} />
             <LeadForm type={type} switchable submitLabel="Отправить" />

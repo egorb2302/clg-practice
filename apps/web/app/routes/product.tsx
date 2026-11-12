@@ -29,7 +29,7 @@ export const meta: Route.MetaFunction = ({ data: d, matches }) =>
     description: `${d.product.title} для ${d.product.vehicle.label}, ${priceFrom(d.product.priceFrom)}, ${d.product.code}`,
     path: `/catalog/${d.product.slug}`,
     origin: rootOrigin(matches),
-    image: d.product.image?.url,
+    image: "/og/armorix-product-v1.jpg",
   }) : [{ title: "Товар не найден | ARMORIX" }];
 
 const sentences = (s: string | null) => (s ?? "").split(/(?<=[.!?])\s+/).map((x) => x.replace(/\.$/, "").trim()).filter(Boolean);

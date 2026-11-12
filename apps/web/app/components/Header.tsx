@@ -12,6 +12,8 @@ export function Header({ features, vehicles = [] }: { features: Features; vehicl
   const items = useSelection();
   const count = items.reduce((n, i) => n + i.quantity, 0);
   const [open, setOpen] = useState(false);
+  const [ddShut, setDdShut] = useState(false);
+  const [ddOpen, setDdOpen] = useState(false);
   const menu = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const { pathname } = useLocation();
@@ -53,19 +55,27 @@ export function Header({ features, vehicles = [] }: { features: Features; vehicl
   // desktop: «Каталог» opens the models on hover and keyboard focus
   const desk = nav.map((n) =>
     n.to === "/catalog" && vehicles.length ? (
-      <li key={n.to} className="bar__dd">
-        <NavLink to={n.to} prefetch="intent" aria-haspopup="true">{n.label}<Icon name="chev" vb="0 0 20 20" /></NavLink>
-        <div className="dd" role="menu" aria-label="Модели в каталоге">
+      <li
+        key={n.to}
+        className={`bar__dd${ddShut ? " is-shut" : ""}`}
+        onMouseEnter={() => { setDdShut(false); setDdOpen(true); }}
+        onMouseLeave={() => setDdOpen(false)}
+        onFocus={() => setDdOpen(!ddShut)}
+        onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) { setDdShut(false); setDdOpen(false); } }}
+        onKeyDown={(e) => { if (e.key === "Escape") { setDdShut(true); setDdOpen(false); e.currentTarget.querySelector<HTMLElement>("a")?.focus(); } }}
+      >
+        <NavLink to={n.to} prefetch="intent" aria-expanded={ddOpen} aria-controls="dd-models">{n.label}<Icon name="chev" vb="0 0 20 20" /></NavLink>
+        <div className="dd" id="dd-models" aria-label="Модели в каталоге">
           <div className="dd__in">
             {vehicles.map((v) => (
-              <Link key={v.slug} role="menuitem" className="dd__car" to={`/catalog?vehicle=${v.slug}`} prefetch="intent">
+              <Link key={v.slug} className="dd__car" to={`/catalog?vehicle=${v.slug}`} prefetch="intent">
                 <img src={THUMB[v.slug] ?? "/img/car-snow-s.webp"} alt="" loading="lazy" />
                 <span><b>{v.label}</b><small>Защита бампера</small></span>
               </Link>
             ))}
             <div className="dd__side">
-              <Link role="menuitem" to="/catalog">Весь каталог <Icon name="arrow" vb="0 0 20 20" /></Link>
-              <Link role="menuitem" to="/contacts?type=custom">Под вашу модель <Icon name="arrow" vb="0 0 20 20" /></Link>
+              <Link to="/catalog">Весь каталог <Icon name="arrow" vb="0 0 20 20" /></Link>
+              <Link to="/contacts?type=custom">Под вашу модель <Icon name="arrow" vb="0 0 20 20" /></Link>
             </div>
           </div>
         </div>

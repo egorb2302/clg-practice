@@ -55,11 +55,12 @@ export function ProductCard({ p, back }: { p: Card; back?: string }) {
           {inSel ? (
             <Link className="pc__add is-in" to="/selection"><Icon name="check" />В подборке</Link>
           ) : (
-            <button className="pc__add" type="button" onClick={add} disabled={state === "busy"} aria-label={`В подборку: ${p.title}, ${p.vehicle.label}`}>
-              <Icon name={state === "busy" ? "clock" : "plus"} />{state === "error" ? "Повторить" : "В подборку"}
+            <button className="pc__add" type="button" onClick={add} disabled={state === "busy"} aria-label={`${state === "busy" ? "Добавляем" : state === "error" ? "Повторить" : "В подборку"}: ${p.title}, ${p.vehicle.label}`}>
+              <Icon name={state === "busy" ? "clock" : "plus"} />{state === "busy" ? "Добавляем" : state === "error" ? "Повторить" : "В подборку"}
             </button>
           )}
         </div>
+        <p className="pc__err" role="status" aria-live="polite">{state === "error" ? "Не получилось добавить, проверьте связь и нажмите «Повторить»" : null}</p>
       </div>
     </article>
   );

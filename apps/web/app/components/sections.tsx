@@ -172,7 +172,7 @@ export function ContactPlate({ meta, chip, title, img, type = "general", id = "c
           {c.address ? <li><Icon name="pin" /><span>Мастерская</span><em>{c.address}</em></li> : null}
         </ul>
       </div>
-      <div className="lg" data-in="">
+      <div className="lg">
         <div className="lg__in">
           <Tt a={title[0]} b={title[1]} />
           <LeadForm type={type} switchable submitLabel="Отправить" />

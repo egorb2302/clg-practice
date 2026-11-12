@@ -106,9 +106,16 @@
   --d-hover: 240ms;
   --d-move: 900ms;
   --d-enter: 1100ms;
+
+  --z-sticky: 5;
+  --z-drawer: 49;
+  --z-header: 50;
+  --z-progress: 80;
+  --z-intro: 90;
+  --z-skip: 100;
 }
 
-html { font-size: clamp(15px, calc(10px + .42vw), 18px); }
+html { font-size: clamp(16px, calc(10px + .42vw), 18px); }
 
 @media (max-width: 1023px) { :root { --cols: 8; --gutter: 16px; --edge: 32px; } }
 @media (max-width: 599px)  { :root { --cols: 4; --gutter: 16px; --edge: 16px; --t-h1: 3.052rem; --t-mega: 4.768rem; --t-h2: 2.441rem; } }

@@ -96,6 +96,8 @@ export function initMotion(): () => void {
     upd();
   });
 
-  root.classList.add("is-ready");
+  const introRunning = !root.classList.contains("no-intro") && !root.classList.contains("intro-done");
+  if (introRunning) on(window, "app:ready", () => root.classList.add("is-ready"));
+  else root.classList.add("is-ready");
   return () => off.forEach((f) => f());
 }

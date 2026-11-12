@@ -45,13 +45,24 @@ export function LeadForm({ type: initialType, switchable, items = [], deliveryMe
   const [status, setStatus] = useState<Status>({ s: "idle" });
   const key = useRef<string | null>(null);
   const shownAt = useRef(0);
+  const tried = useRef(false);
+  const summary = useRef<HTMLDivElement>(null);
+  const [edits, setEdits] = useState(0);
 
   useEffect(() => { shownAt.current = performance.now(); }, []);
   useEffect(() => setType(initialType), [initialType]);
   // a new idempotency key only after the user changes the selection or the form
   const itemsSig = items.map((i) => `${i.variantId}:${i.quantity}:${i.snapshot.priceFrom}`).join("|");
   useEffect(() => { key.current = null; }, [itemsSig, type]);
-  const touched = () => { key.current = null; if (status.s !== "sending" && status.s !== "idle" && status.s !== "ok") setStatus({ s: "idle" }); };
+  const touched = () => { key.current = null; setEdits((n) => n + 1); if (status.s !== "sending" && status.s !== "idle" && status.s !== "ok" && status.s !== "invalid") setStatus({ s: "idle" }); };
+  useEffect(() => {
+    if (!tried.current || !form.current) return;
+    const now = clientErrors() ?? {};
+    setErrors((prev) => Object.fromEntries(Object.keys(prev).filter((k) => k in now).map((k) => [k, now[k]!])));
+  }, [edits, phone, email, delivery, preferred]);
+  useEffect(() => {
+    if (tried.current && Object.keys(errors).length === 0) setStatus((st) => (st.s === "invalid" ? { s: "idle" } : st));
+  }, [errors]);
 
   function body(): LeadRequest {
     const f = new FormData(form.current!);
@@ -74,33 +85,39 @@ export function LeadForm({ type: initialType, switchable, items = [], deliveryMe
     return { type, ...base, message: s("message") } as LeadRequest;
   }
 
-  function showErrors(fe: Record<string, string>) {
+  function normalize(fe: Record<string, string>) {
     const itemKey = Object.keys(fe).find((k) => k.startsWith("items."));
     if (itemKey && !fe.items) fe = { ...fe, items: ITEMS_ERROR };
     if (switchable) {
       const t = fe.message ?? fe.request;
       if (t) fe = { ...fe, text: "Напишите вопрос или что нужно изготовить" };
     }
-    setErrors(fe);
+    return fe;
+  }
+
+  function clientErrors(): Record<string, string> | null {
+    const check = leadRequestSchema.safeParse(body());
+    const needDelivery = type === "catalog" && deliveryMethods.length > 1 && !delivery;
+    if (check.success && !needDelivery) return null;
+    const fe: Record<string, string> = {};
+    for (const i of check.success ? [] : check.error.issues) fe[i.path.join(".")] ??= i.message;
+    if (needDelivery) fe.deliveryMethod ??= "Выберите способ получения";
+    return normalize(fe);
+  }
+
+  function showErrors(fe: Record<string, string>) {
+    tried.current = true;
+    setErrors(normalize(fe));
     setStatus({ s: "invalid" });
-    requestAnimationFrame(() => {
-      const first = Object.keys(fe).map((k) => form.current?.querySelector<HTMLElement>(`[data-field="${k}"]`)).find(Boolean);
-      first?.focus();
-    });
+    requestAnimationFrame(() => summary.current?.focus());
   }
 
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (status.s === "sending") return; // double submit blocked
     const b = body();
-    const check = leadRequestSchema.safeParse(b);
-    const needDelivery = type === "catalog" && deliveryMethods.length > 1 && !delivery;
-    if (!check.success || needDelivery) {
-      const fe: Record<string, string> = {};
-      for (const i of check.success ? [] : check.error.issues) fe[i.path.join(".")] ??= i.message;
-      if (needDelivery) fe.deliveryMethod ??= "Выберите способ получения";
-      return showErrors(fe);
-    }
+    const fe = clientErrors();
+    if (fe) return showErrors(fe);
     const sent = items.map((i) => ({ variantId: i.variantId, quantity: i.quantity }));
     setErrors({});
     key.current ??= uuid(); // same key on retry after a timeout or a network error
@@ -120,6 +137,11 @@ export function LeadForm({ type: initialType, switchable, items = [], deliveryMe
   const err = (k: string) => errors[k] ? <span className="field__err" id={`${id}-${k}-e`}>{errors[k]}</span> : null;
   const aria = (k: string) => ({ "data-field": k, "aria-invalid": errors[k] ? true : undefined, "aria-describedby": errors[k] ? `${id}-${k}-e` : undefined });
   const busy = status.s === "sending";
+  const FIELD_IDS: Record<string, string> = {
+    name: "name", "contact.phone": "phone", "contact.email": "email", deliveryMethod: "delivery", items: "items",
+    "vehicle.make": "make", "vehicle.model": "model", "vehicle.year": "year", text: "text", request: "req", message: "msg", comment: "comment",
+  };
+  const listed = Object.keys(errors).filter((k) => k in FIELD_IDS && !(switchable && (k === "message" || k === "request")));
 
   if (status.s === "ok") {
     return (
@@ -138,6 +160,16 @@ export function LeadForm({ type: initialType, switchable, items = [], deliveryMe
 
   return (
     <form ref={form} className={`lead ${className}`} onSubmit={submit} onChange={touched} noValidate>
+      {status.s === "invalid" && listed.length ? (
+        <div className="lead__sum" ref={summary} tabIndex={-1} role="group" aria-labelledby={`${id}-sum-t`}>
+          <p id={`${id}-sum-t`}><b>Проверьте поля</b></p>
+          <ul>
+            {listed.map((k) => (
+              <li key={k}><a href={`#${id}-${FIELD_IDS[k]}`} onClick={(e) => { e.preventDefault(); document.getElementById(`${id}-${FIELD_IDS[k]}`)?.focus(); }}>{errors[k]}</a></li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       <div className="lead__grid">
         <div className="field field--full">
@@ -227,7 +259,7 @@ export function LeadForm({ type: initialType, switchable, items = [], deliveryMe
           <fieldset className="field field--full radios radios--col">
             <legend>Способ получения</legend>
             {deliveryMethods.map((m, n) => (
-              <label key={m.code}><input type="radio" name="delivery" value={m.code} checked={delivery === m.code} onChange={() => setDelivery(m.code)} {...(n === 0 ? aria("deliveryMethod") : {})} /><span>{m.label}</span></label>
+              <label key={m.code}><input type="radio" name="delivery" value={m.code} checked={delivery === m.code} onChange={() => setDelivery(m.code)} {...(n === 0 ? { ...aria("deliveryMethod"), id: `${id}-delivery` } : {})} /><span>{m.label}</span></label>
             ))}
             {err("deliveryMethod")}
           </fieldset>
@@ -246,11 +278,17 @@ export function LeadForm({ type: initialType, switchable, items = [], deliveryMe
           <label htmlFor={`${id}-website`}>Сайт</label>
           <input id={`${id}-website`} name="website" tabIndex={-1} autoComplete="off" />
         </div>
-        {errors.items ? <p className="field__err field--full" data-field="items" tabIndex={-1}>{errors.items}</p> : null}
+        {errors.items ? <p className="field__err field--full" id={`${id}-items`} data-field="items" tabIndex={-1}>{errors.items}</p> : null}
       </div>
 
       <div className="lead__send">
-        <Sbtn type="submit" className="sbtn--lg" busy={busy}>{busy ? "Отправляем…" : status.s === "failed" ? "Повторить" : submitLabel}</Sbtn>
+        <Sbtn type="submit" className="sbtn--lg" busy={busy}>
+          <span className="lbls">
+            {[submitLabel, "Отправляем…", "Повторить"].map((l, n) => (
+              <span key={l} className={n === (busy ? 1 : status.s === "failed" ? 2 : 0) ? "" : "is-off"}>{l}</span>
+            ))}
+          </span>
+        </Sbtn>
         <p>Нажимая кнопку, вы соглашаетесь с <Link to="/privacy">обработкой данных</Link></p>
       </div>
       <p className={`lead__status${status.s === "idle" || status.s === "sending" ? "" : " is-shown"}`} role="status" aria-live="polite">

@@ -82,10 +82,15 @@ function Intro() {
     if (h.classList.contains("no-intro")) return;
     // tied to real work: the fonts and the first screen's image
     const hero = document.querySelector<HTMLImageElement>("main img");
-    const ready = Promise.all([document.fonts?.ready, hero?.decode?.().catch(() => undefined)]);
-    const min = new Promise((r) => setTimeout(r, 1400));
+    const bar = document.querySelector<HTMLElement>(".intro__bar i");
+    let done = 0;
+    const step = <T,>(p: Promise<T> | undefined) => Promise.resolve(p).finally(() => { done += 1; bar?.style.setProperty("--p", String(Math.min(0.9, done / 3))); });
+    const ready = Promise.all([step(document.fonts?.ready), step(hero?.decode?.().catch(() => undefined))]);
+    const min = step(new Promise((r) => setTimeout(r, 1400)));
     Promise.race([Promise.all([ready, min]), new Promise((r) => setTimeout(r, 4000))]).then(() => {
+      bar?.style.setProperty("--p", "1");
       h.classList.add("intro-done");
+      window.dispatchEvent(new Event("app:ready"));
       try { sessionStorage.setItem("armorix-intro", "1"); } catch { /* fine */ }
     });
   }, []);
@@ -130,8 +135,8 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
       <title>Ошибка | ARMORIX</title>
       <meta name="robots" content="noindex" />
       <h1 className="tt"><span>Что-то пошло не так</span><span className="mute">{msg}</span></h1>
-      <p className="t-lead">Обновите страницу или вернитесь на главную</p>
-      <p><a className="tlink" href="/">На главную</a></p>
+      <p className="t-lead">Попробуйте еще раз или вернитесь на главную</p>
+      <p className="err__acts"><button className="btn-line" type="button" onClick={() => window.location.reload()}>Повторить</button><a className="tlink" href="/">На главную</a></p>
     </section>
   );
 }

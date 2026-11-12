@@ -3,7 +3,7 @@ import type { MetaDescriptor } from "react-router";
 type Opts = { title: string; description: string; path: string; origin?: string; image?: string; noindex?: boolean };
 
 /** title, description, canonical, Open Graph and Twitter Card for every public page */
-export function seo({ title, description, path, origin = "", image = "/img/truck.webp", noindex }: Opts): MetaDescriptor[] {
+export function seo({ title, description, path, origin = "", image = "/og/armorix-default-v1.jpg", noindex }: Opts): MetaDescriptor[] {
   const url = `${origin}${path}`;
   const img = image.startsWith("http") ? image : `${origin}${image}`;
   const full = title.includes("ARMORIX") ? title : `${title} | ARMORIX`;
@@ -18,6 +18,8 @@ export function seo({ title, description, path, origin = "", image = "/img/truck
     { property: "og:description", content: description },
     { property: "og:url", content: url },
     { property: "og:image", content: img },
+    { property: "og:image:width", content: "1200" },
+    { property: "og:image:height", content: "630" },
     { name: "twitter:card", content: "summary_large_image" },
     { name: "twitter:title", content: full },
     { name: "twitter:description", content: description },
