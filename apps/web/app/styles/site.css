@@ -216,7 +216,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .pc__img img { width: 100%; height: 100%; object-fit: cover; transition: transform 420ms var(--ease-settle); }
 .pc:hover .pc__img img { transform: scale(1.04); }
 /* soft wide glint on photos (round 11: the old band was too sharp) */
-.pc__img::after { content: ""; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 15%, rgb(238 240 242 / .07) 40%, rgb(238 240 242 / .1) 50%, rgb(238 240 242 / .05) 60%, transparent 85%) 140% 0 / 300% 100% no-repeat; transition: background-position 700ms var(--ease-settle); pointer-events: none; }
+.pc__img::after { content: ""; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 15%, rgb(238 240 242 / .07) 40%, rgb(238 240 242 / .1) 50%, rgb(238 240 242 / .05) 60%, transparent 85%) 140% 0 / 300% 100% no-repeat; transition: background-position 400ms var(--ease-settle); pointer-events: none; }
 .pc:hover .pc__img::after { background-position: -50% 0; }
 .pc__none { position: absolute; inset: 0; display: grid; place-items: center; color: var(--text-3); font-size: var(--t-small); }
 .pc__tag { position: absolute; left: var(--s-2); top: var(--s-2); padding: 4px 8px; background: rgb(11 13 12 / .66); color: var(--text-2); font-size: .75rem; }
@@ -518,7 +518,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 [data-in].is-in { opacity: 1; transform: none; }
 :is(.head, .show__head, .nums__head, .adv__title)[data-in] { opacity: 1; transform: none; clip-path: inset(0 0 100% 0); transition: clip-path var(--d-enter) var(--ease-forge); }
 :is(.head, .show__head, .nums__head, .adv__title)[data-in].is-in { clip-path: inset(-2em -2em -2em -2em); }
-.no-js [data-in] { opacity: 1; transform: none; clip-path: none; }
+.no-js [data-in], .no-js :is(.head, .show__head, .nums__head, .adv__title)[data-in] { opacity: 1; transform: none; clip-path: none; }
 
 /* preloader: the mark drawn from the dark, a real-work bar, then the plate lifts */
 .intro { position: fixed; inset: 0; z-index: var(--z-intro); display: grid; place-items: center; align-content: center; gap: var(--s-5); background: var(--obsidian-950); clip-path: inset(0 0 0 0); animation: intro-failsafe 600ms 4500ms var(--ease-forge) forwards; }
@@ -574,7 +574,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 
 /* ── round 11 ── */
 /* one form: the optional car row and the one required text */
-.lead__hint { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px var(--s-2); align-items: baseline; margin: var(--s-2) 0 calc(var(--s-1) * -1); font-size: .8125rem; color: var(--text); }
+.lead__hint { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px var(--s-2); align-items: baseline; margin: var(--s-2) 0 calc(var(--s-1) * -1); font-size: var(--t-small); color: var(--text); }
 .lead__hint em { font-style: normal; color: var(--text-3); }
 .lead__hint span { flex-basis: 100%; color: var(--text-3); }
 .field label em.req { color: var(--steel-100); }

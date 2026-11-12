@@ -58,7 +58,7 @@ export function LeadForm({ type: initialType, switchable, items = [], deliveryMe
   useEffect(() => {
     if (!tried.current || !form.current) return;
     const now = clientErrors() ?? {};
-    setErrors((prev) => Object.fromEntries(Object.keys(prev).filter((k) => k in now).map((k) => [k, now[k]!])));
+    setErrors(now);
   }, [edits, phone, email, delivery, preferred]);
   useEffect(() => {
     if (tried.current && Object.keys(errors).length === 0) setStatus((st) => (st.s === "invalid" ? { s: "idle" } : st));

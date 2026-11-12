@@ -46,7 +46,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 export const headers: Route.HeadersFunction = ({ loaderHeaders }) => loaderHeaders;
 
 /* preloader once per session, skipped before first paint when already seen or motion is off */
-const INTRO_GATE = `try{if(sessionStorage.getItem('armorix-intro')||matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.classList.add('no-intro')}catch(e){document.documentElement.classList.add('no-intro')}document.documentElement.classList.remove('no-js');setTimeout(function(){var h=document.documentElement;if(!h.classList.contains('is-ready'))h.classList.add('no-js')},6000)`;
+const INTRO_GATE = `try{if(sessionStorage.getItem('armorix-intro')||matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.classList.add('no-intro')}catch(e){document.documentElement.classList.add('no-intro')}document.documentElement.classList.remove('no-js');setTimeout(function(){var h=document.documentElement;if(!h.classList.contains('is-ready'))h.classList.add('no-js')},8000)`;
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const root = useRouteLoaderData<typeof loader>("root");
@@ -84,13 +84,15 @@ function Intro() {
     const hero = document.querySelector<HTMLImageElement>("main img");
     const bar = document.querySelector<HTMLElement>(".intro__bar i");
     let done = 0;
-    const step = <T,>(p: Promise<T> | undefined) => Promise.resolve(p).finally(() => { done += 1; bar?.style.setProperty("--p", String(Math.min(0.9, done / 3))); });
+    let finished = false;
+    const step = <T,>(p: Promise<T> | undefined) => Promise.resolve(p).finally(() => { done += 1; if (!finished) bar?.style.setProperty("--p", String(Math.min(0.9, done / 3))); });
     const ready = Promise.all([step(document.fonts?.ready), step(hero?.decode?.().catch(() => undefined))]);
     const min = step(new Promise((r) => setTimeout(r, 1400)));
     Promise.race([Promise.all([ready, min]), new Promise((r) => setTimeout(r, 4000))]).then(() => {
+      finished = true;
       bar?.style.setProperty("--p", "1");
       h.classList.add("intro-done");
-      window.dispatchEvent(new Event("app:ready"));
+      setTimeout(() => window.dispatchEvent(new Event("app:ready")), 900);
       try { sessionStorage.setItem("armorix-intro", "1"); } catch { /* fine */ }
     });
   }, []);
