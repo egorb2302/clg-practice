@@ -13,6 +13,7 @@ export function Header({ features, vehicles = [] }: { features: Features; vehicl
   const count = items.reduce((n, i) => n + i.quantity, 0);
   const [open, setOpen] = useState(false);
   const [ddShut, setDdShut] = useState(false);
+  const shutRef = useRef(false);
   const [ddOpen, setDdOpen] = useState(false);
   const menu = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -58,14 +59,14 @@ export function Header({ features, vehicles = [] }: { features: Features; vehicl
       <li
         key={n.to}
         className={`bar__dd${ddShut ? " is-shut" : ""}`}
-        onMouseEnter={() => { setDdShut(false); setDdOpen(true); }}
-        onMouseLeave={() => setDdOpen(false)}
-        onFocus={() => setDdOpen(!ddShut)}
-        onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) { setDdShut(false); setDdOpen(false); } }}
-        onKeyDown={(e) => { if (e.key === "Escape") { setDdShut(true); setDdOpen(false); e.currentTarget.querySelector<HTMLElement>("a")?.focus(); } }}
+        onMouseEnter={() => { shutRef.current = false; setDdShut(false); setDdOpen(true); }}
+        onMouseLeave={(e) => { if (!e.currentTarget.contains(document.activeElement)) setDdOpen(false); }}
+        onFocus={() => setDdOpen(!shutRef.current)}
+        onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) { shutRef.current = false; setDdShut(false); setDdOpen(false); } }}
+        onKeyDown={(e) => { if (e.key === "Escape") { shutRef.current = true; setDdShut(true); setDdOpen(false); e.currentTarget.querySelector<HTMLElement>("a")?.focus(); } }}
       >
         <NavLink to={n.to} prefetch="intent" aria-expanded={ddOpen} aria-controls="dd-models">{n.label}<Icon name="chev" vb="0 0 20 20" /></NavLink>
-        <div className="dd" id="dd-models" aria-label="Модели в каталоге">
+        <div className="dd" id="dd-models" role="group" aria-label="Модели в каталоге">
           <div className="dd__in">
             {vehicles.map((v) => (
               <Link key={v.slug} className="dd__car" to={`/catalog?vehicle=${v.slug}`} prefetch="intent">

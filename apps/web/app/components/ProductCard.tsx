@@ -60,7 +60,7 @@ export function ProductCard({ p, back }: { p: Card; back?: string }) {
             </button>
           )}
         </div>
-        <p className="pc__err" role="status" aria-live="polite">{state === "error" ? "Не получилось добавить, проверьте связь и нажмите «Повторить»" : null}</p>
+        {state === "error" ? <p className="pc__err" role="alert">Не получилось добавить, проверьте связь и нажмите «Повторить»</p> : null}
       </div>
     </article>
   );

@@ -109,7 +109,7 @@ export function LeadForm({ type: initialType, switchable, items = [], deliveryMe
     tried.current = true;
     setErrors(normalize(fe));
     setStatus({ s: "invalid" });
-    requestAnimationFrame(() => summary.current?.focus());
+    requestAnimationFrame(() => (summary.current ?? form.current?.querySelector<HTMLElement>("[aria-invalid='true'], [data-field]"))?.focus());
   }
 
   async function submit(e: FormEvent) {

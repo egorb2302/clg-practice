@@ -227,6 +227,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .pc__t { font: 700 var(--t-lead)/1.2 var(--font-display); letter-spacing: -.01em; }
 .pc__t a { text-decoration: none; }
 .pc__t a::after { content: ""; position: absolute; inset: 0; z-index: 1; }
+.pc__err { color: var(--err); font-size: var(--t-small); }
 .pc__foot { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); margin-top: var(--s-3); }
 .pc__price { font: 700 var(--t-body)/1.2 var(--font-display); }
 .pc__price.is-ask { color: var(--steel-100); font-weight: 400; }
@@ -515,8 +516,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 /* ── Reveal ── */
 [data-in] { opacity: 0; transform: translateY(12px); transition: opacity 600ms var(--ease-settle), transform 600ms var(--ease-settle); transition-delay: calc(var(--i, 0) * 70ms); }
 [data-in].is-in { opacity: 1; transform: none; }
-:is(.head, .show__head, .nums__head, .adv__title, .faqs__side, .cta__side)[data-in] { opacity: 1; transform: none; clip-path: inset(0 0 100% 0); transition: clip-path var(--d-enter) var(--ease-forge); }
-:is(.head, .show__head, .nums__head, .adv__title, .faqs__side, .cta__side)[data-in].is-in { clip-path: inset(-.2em -1em -.4em -1em); }
+:is(.head, .show__head, .nums__head, .adv__title)[data-in] { opacity: 1; transform: none; clip-path: inset(0 0 100% 0); transition: clip-path var(--d-enter) var(--ease-forge); }
+:is(.head, .show__head, .nums__head, .adv__title)[data-in].is-in { clip-path: inset(-2em -2em -2em -2em); }
 .no-js [data-in] { opacity: 1; transform: none; clip-path: none; }
 
 /* preloader: the mark drawn from the dark, a real-work bar, then the plate lifts */
