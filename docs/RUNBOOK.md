@@ -10,7 +10,23 @@ Commands run from the repository root in Git Bash unless noted. Connection strin
 | API and admin | Vercel `armorix-api` → https://armorix-api.vercel.app | Vercel preview deployments of `armorix-api` |
 | Database and storage | Supabase `armorix-prod` | Supabase `armorix-staging` |
 
-Until the public launch the Vercel production env points at `armorix-staging` (see `STATUS.md`). After the switch, update the `DATABASE_BACKUP_URL`, `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` GitHub secrets to the prod project as well.
+Production env vars point at `armorix-prod`; preview env vars of `armorix-api` point at `armorix-staging`, and preview deployments of `armorix-web` use mock data (`API_MOCK=1`, `ALLOW_MOCK=1`). The backup secrets (`DATABASE_BACKUP_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`) point at `armorix-prod`.
+
+## Deleting a person's data on request
+
+`/privacy` promises deletion within 10 working days. Find the leads by phone or email in the admin, then clear them in the Supabase SQL editor of `armorix-prod` (replace the references):
+
+```sql
+update app.leads set name = 'Данные удалены', phone = null, email = null, request = null, message = null, comment = null,
+  close_comment = null, anonymized_at = now(), updated_at = now(), version = version + 1
+where reference in ('AX-000000');
+delete from app.outbox where dedupe_key like 'lead:%'
+  and split_part(dedupe_key, ':', 2) in (select id::text from app.leads where reference in ('AX-000000'));
+```
+
+If the person also has a cabinet or a newsletter subscription (release 2), disable the user and unsubscribe the address as well.
+
+Leads older than 365 days are cleared automatically by the job runner.
 
 ## Release
 

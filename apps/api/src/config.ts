@@ -50,7 +50,7 @@ const schema = z.object({
   TELEGRAM_WEBHOOK_SECRET: z.string().min(16).optional(),
   TELEGRAM_STAFF_CHAT_IDS: list,
   TELEGRAM_LOGIN_CLIENT_ID: z.string().regex(/^\d+$/).optional(),
-  CONSENT_TEXT_VERSION: z.string().default("2026-11-10"),
+  CONSENT_TEXT_VERSION: z.string().default("2026-11-12"),
 
   STORAGE_DRIVER: z.enum(["local", "supabase"]).default("local"),
   LOCAL_MEDIA_DIR: z.string().default(".local/media"),
@@ -67,6 +67,7 @@ const schema = z.object({
 
   LEAD_LIMIT_IP_PER_HOUR: z.coerce.number().int().positive().default(10),
   LEAD_LIMIT_CONTACT_PER_HOUR: z.coerce.number().int().positive().default(5),
+  LEAD_RETENTION_DAYS: z.coerce.number().int().positive().default(365),
   LEAD_MIN_FILL_MS: z.coerce.number().int().nonnegative().default(3000),
 });
 

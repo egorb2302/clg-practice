@@ -3,6 +3,7 @@ import type { Deps } from "../deps.js";
 import { notFound } from "../http/errors.js";
 import { safeEqual } from "../security/crypto.js";
 import { dispatchCampaigns } from "../services/campaigns.js";
+import { anonymizeExpiredLeads } from "../services/leads.js";
 import { expirePoints } from "../services/loyalty.js";
 import { runDailyMonitor } from "../services/monitor.js";
 import { runJobs } from "../services/outbox.js";
@@ -26,7 +27,8 @@ export function internalRoutes(deps: Deps) {
     const campaignJobs = deps.cfg.FEATURE_CAMPAIGNS ? await guarded("campaigns", dispatchCampaigns(deps)) : 0;
     const expired = deps.cfg.FEATURE_LOYALTY ? await guarded("expiry", expirePoints(deps.sql)) : 0;
     await deps.sql`delete from oidc_nonces where expires_at < now() - interval '1 day'`.catch(() => {});
-    const result = { ...(await runJobs(deps, { budgetMs: 40_000 })), monitor, campaignJobs, expired };
+    const anonymized = await guarded("retention", anonymizeExpiredLeads(deps));
+    const result = { ...(await runJobs(deps, { budgetMs: 40_000 })), monitor, campaignJobs, expired, anonymized };
     await deps.sql`delete from rate_limits where window_start < now() - interval '1 day'`;
     await deps.sql`delete from idempotency_keys where expires_at < now()`;
     await deps.sql`delete from login_challenges where expires_at < now() - interval '1 day'`;

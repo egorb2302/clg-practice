@@ -21,11 +21,15 @@ Deployed 2026-11-10. A push to `main` deploys both Vercel projects (Git integrat
 | --- | --- |
 | Site | `armorix-web` → https://armorix-web.vercel.app (root `apps/web`) |
 | API and admin | `armorix-api` → https://armorix-api.vercel.app (root `apps/api`); admin also at https://armorix-web.vercel.app/admin through the site proxy |
-| Database and storage | Supabase `armorix-staging` (eu-west-1) and `armorix-prod` (eu-west-3), both migrated to 0004; staging has the demo catalog |
-| Background jobs | `pg_cron` on staging calls `POST /api/v1/internal/jobs/run` every minute (`apps/api/supabase/setup.sql`) |
+| Database and storage | Supabase `armorix-prod` (eu-west-3) for production, `armorix-staging` (eu-west-1) for preview API deployments; both migrated to 0005 |
+| Background jobs | `pg_cron` on `armorix-prod` calls `POST /api/v1/internal/jobs/run` every minute (`apps/api/supabase/setup.sql`) |
 | Telegram | webhook `https://armorix-api.vercel.app/api/v1/webhooks/telegram` |
 
-Until the `/privacy` text exists and the staging checks pass, the Vercel production environment points at the **staging** database. Switching to `armorix-prod` means: seed reference data there (without demo products), run `setup.sql` against it, swap the Vercel env vars, redeploy.
+Opened on production 2026-11-12 (Egor: «открываем»). This is a hackathon build for the company that wrote the brief, so production carries the demo catalog: products, "from" prices and site illustrations labeled «Иллюстрация», because the company has no product photos or confirmed data yet. Public contacts are the Telegram bot and working hours. Preview deployments of `armorix-api` use the staging database; preview deployments of `armorix-web` run on local mock data (`API_MOCK=1`), so no preview touches production data.
+
+Welcome bonus values (Egor delegated the choice, 2026-11-12): 1000 points, 1 point = 1 ₽, points valid 180 days, at most 20 % of a sale paid with points, guest contact confirmation within 30 days. Stored as `loyalty_rules` version 1 in both databases; inactive in practice while `FEATURE_LOYALTY=false`.
+
+Lead retention: contacts and free text of leads older than `LEAD_RETENTION_DAYS` (365) are cleared by the job runner, with their notification jobs; `/privacy` promises this.
 
 In production the API refuses to start with log/local adapters (`NODE_ENV=production` requires SMTP, Telegram HTTP, Supabase storage and secure cookies) unless `ALLOW_DEV_ADAPTERS=true` is set for a staging project.
 

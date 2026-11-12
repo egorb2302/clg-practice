@@ -253,3 +253,17 @@ function leadNotifications(deps: Deps, lead: { id: string; reference: string }, 
 export function afterLead(deps: Deps, jobIds: string[]) {
   kick(deps, jobIds);
 }
+
+export async function anonymizeExpiredLeads(deps: Deps) {
+  return deps.sql.begin(async (tx) => {
+    const rows = await tx<{ id: string }[]>`
+      update leads set name = 'Данные удалены', phone = null, email = null, request = null, message = null, comment = null,
+        close_comment = null, anonymized_at = now(), updated_at = now(), version = version + 1
+      where anonymized_at is null and created_at < now() - make_interval(days => ${deps.cfg.LEAD_RETENTION_DAYS})
+      returning id`;
+    if (rows.length) {
+      await tx`delete from outbox where dedupe_key like 'lead:%' and split_part(dedupe_key, ':', 2) in ${tx(rows.map((r) => r.id))}`;
+    }
+    return rows.length;
+  });
+}

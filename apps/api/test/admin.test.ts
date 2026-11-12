@@ -119,6 +119,30 @@ describe("admin leads", () => {
     expect(second.status).toBe(409);
   });
 
+  it("removes contacts from leads past the retention period and keeps recent ones", async () => {
+    const v1 = await variantId(ctx, "jac-t9-front-tube", "Без защиты картера");
+    const fresh = await ctx.http().post("/api/v1/leads").set("Idempotency-Key", key()).send(leadBody([{ variantId: v1, quantity: 1 }]));
+    await ctx.settle();
+    await ctx.sql`update app.leads set created_at = now() - interval '366 days' where reference = ${ref}`;
+    const run = await ctx.http().post("/api/v1/internal/jobs/run").set("Authorization", "Bearer jobs-secret-for-tests-0123456789");
+    expect(run.status).toBe(200);
+    expect(run.body.anonymized).toBe(1);
+    const rows = await ctx.sql<{ reference: string; name: string; phone: string | null; email: string | null; comment: string | null; anonymized: boolean; jobs: number }[]>`
+      select l.reference, l.name, l.phone, l.email, l.comment, l.anonymized_at is not null as anonymized,
+        (select count(*)::int from app.outbox o where o.dedupe_key like 'lead:' || l.id || ':%') as jobs
+      from app.leads l order by l.number`;
+    const old = rows.find((r) => r.reference === ref)!;
+    expect(old).toMatchObject({ name: "Данные удалены", phone: null, email: null, comment: null, anonymized: true, jobs: 0 });
+    const recent = rows.find((r) => r.reference === fresh.body.reference)!;
+    expect(recent.anonymized).toBe(false);
+    expect(recent.phone ?? recent.email).not.toBeNull();
+    expect(recent.jobs).toBeGreaterThan(0);
+    const again = await ctx.http().post("/api/v1/internal/jobs/run").set("Authorization", "Bearer jobs-secret-for-tests-0123456789");
+    expect(again.body.anonymized).toBe(0);
+    const card = await as(ctx, manager).get(`/api/v1/admin/leads/${ref}`);
+    expect(card.status).toBe(200);
+  });
+
   it("refuses to confirm a sale on a closed lead until the lead is reopened", async () => {
     const draft = await as(ctx, manager).post(`/api/v1/admin/leads/${ref}/sale`);
     const d = await as(ctx, manager).get(`/api/v1/admin/leads/${ref}`);
