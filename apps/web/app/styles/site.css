@@ -228,7 +228,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .pc__t a { text-decoration: none; }
 .pc__t a::after { content: ""; position: absolute; inset: 0; z-index: 1; }
 .pc__err { color: var(--err); font-size: var(--t-small); }
-.pc__foot { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); margin-top: var(--s-3); }
+.pc__foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-2) var(--s-3); margin-top: var(--s-3); }
+.pc__price, .pc__add { white-space: nowrap; }
 .pc__price { font: 700 var(--t-body)/1.2 var(--font-display); }
 .pc__price.is-ask { color: var(--steel-100); font-weight: 400; }
 .pc__add { position: relative; z-index: 2; display: inline-flex; align-items: center; gap: var(--s-2); min-height: 44px; padding: 0 var(--s-3); border: 0; background: rgb(214 210 200 / .08); color: var(--text); font: 400 var(--t-small)/1 var(--font-text); text-decoration: none; cursor: pointer; transition: background var(--d-hover); }
