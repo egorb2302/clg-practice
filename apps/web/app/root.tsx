@@ -117,6 +117,8 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
         <meta property="og:title" content="Страница не найдена | ARMORIX" />
         <meta property="og:description" content="Такой страницы нет, перейдите в каталог защиты бамперов ARMORIX или на главную" />
         <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content="Страница не найдена | ARMORIX" />
+        <meta name="twitter:description" content="Такой страницы нет, перейдите в каталог защиты бамперов ARMORIX или на главную" />
         <meta name="robots" content="noindex" />
         <NotFoundView />
       </>

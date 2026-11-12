@@ -29,7 +29,7 @@ export function ProductCard({ p, back }: { p: Card; back?: string }) {
       const vs = data.product.variants.filter((v) => v.available && v.vehicleSlug === p.vehicle.slug);
       const v = vs.find((x) => x.priceFrom === p.priceFrom) ?? vs[0];
       if (!v) throw new Error("none");
-      refocus.current = hadFocus;
+      refocus.current = hadFocus && (document.activeElement === document.body || !!foot.current?.contains(document.activeElement));
       selection.add({
         variantId: v.id, productSlug: p.slug, vehicleSlug: v.vehicleSlug,
         snapshot: { title: p.title, priceFrom: v.priceFrom, imageUrl: p.image?.url ?? null, variantTitle: v.title, vehicleLabel: p.vehicle.label },

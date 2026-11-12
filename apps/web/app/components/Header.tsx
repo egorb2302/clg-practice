@@ -22,16 +22,18 @@ export function Header({ features, vehicles = [] }: { features: Features; vehicl
   useEffect(() => {
     if (!open) return;
     const el = menu.current;
-    const focusables = () => [...(el?.querySelectorAll<HTMLElement>("a, button") ?? []), ...(trigger.current ? [trigger.current] : [])];
-    focusables()[0]?.focus();
+    const focusables = () => [...(trigger.current ? [trigger.current] : []), ...(el?.querySelectorAll<HTMLElement>("a, button") ?? [])];
+    focusables()[1]?.focus();
     document.documentElement.classList.add("is-locked");
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") { setOpen(false); trigger.current?.focus(); return; }
       if (e.key !== "Tab") return;
-      const f = focusables(), first = f[0], last = f[f.length - 1];
-      if (!first || !last) return;
-      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      const f = focusables();
+      if (!f.length) return;
+      e.preventDefault();
+      const at = f.indexOf(document.activeElement as HTMLElement);
+      const next = at === -1 ? 0 : (at + (e.shiftKey ? -1 : 1) + f.length) % f.length;
+      f[next]!.focus();
     };
     document.addEventListener("keydown", onKey);
     return () => { document.removeEventListener("keydown", onKey); document.documentElement.classList.remove("is-locked"); };

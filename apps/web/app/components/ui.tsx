@@ -58,8 +58,11 @@ export function Tt({ a, b, as: As = "h2", className = "" }: { a: ReactNode; b?: 
 
 const STORED = /-(\d+)\.webp$/;
 
-export const thumbUrl = (src: string) =>
-  src.startsWith("/img/") && src.endsWith(".webp") ? src.replace(/\.webp$/, "-s.webp") : STORED.test(src) ? src.replace(STORED, "-480.webp") : src;
+export function thumbUrl(src: string) {
+  if (src.startsWith("/img/") && src.endsWith(".webp")) return src.replace(/\.webp$/, "-s.webp");
+  const m = STORED.exec(src);
+  return m && Number(m[1]) > 480 ? src.replace(STORED, "-480.webp") : src;
+}
 
 function srcSetOf(src: string, w?: number) {
   if (src.startsWith("/img/") && src.endsWith(".webp")) return `${src.replace(/\.webp$/, "-s.webp")} 800w, ${src} 1600w`;

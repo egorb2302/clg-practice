@@ -34,7 +34,6 @@ export function Flow({ chip, title, steps, id = "flow" }: { chip: [string, strin
               {steps.map((s, i) => <img key={s.name} src={s.img.replace(/\.webp$/, "-s.webp")} alt="" data-i={i} className={i === 0 ? "is-on" : ""} loading="lazy" />)}
             </div>
             <div className="panel__top">
-              
               <Tt a={title[0]} b={title[1]} />
               <span className="marks" aria-hidden="true"><i /><i /><i /><i /></span>
               <span className="ruler" aria-hidden="true" />
@@ -91,7 +90,6 @@ export function Stats({ chip, title, lead, img, items }: { chip: [string, string
       <div className="frame__bg"><Img src={img} alt="" /></div>
       <div className="nums__in">
         <div className="nums__head" data-in="">
-          
           <Tt a={title[0]} b={title[1]} />
           <p className="t-lead">{nb(lead)}</p>
         </div>
@@ -116,7 +114,6 @@ export function Faq({ chip, items, phone }: { chip: [string, string]; items: QA[
   return (
     <section className="sec wrap faqs" id="faq" aria-label={chip[1]}>
       <div className="faqs__side" data-in="">
-        
         <Tt a="Частые вопросы" b="перед заказом" />
         <div className="faqs__ask">
           <b>Не нашли свой вопрос?</b>
@@ -167,7 +164,6 @@ export function ContactPlate({ meta, chip, title, img, type = "general", id = "c
       <div className="frame__bg"><Img src={img} alt="" /></div>
       <svg className="cta__logo" viewBox="0 0 407.2 94.5" aria-hidden="true"><use href="#lock-h" /></svg>
       <div className="cta__side" data-in="">
-        
         <ul className="cta__ch">
           {c.phone ? <li><Icon name="phone" /><span>Телефон</span><a className="num" href={`tel:${c.phone.replace(/[^\d+]/g, "")}`}>{c.phone}</a></li> : null}
           {c.telegram ? <li><Icon name="tg" /><span>Телеграм</span><a href={telegramLink(c.telegram).href} rel="noopener">{telegramLink(c.telegram).label}</a></li> : null}
