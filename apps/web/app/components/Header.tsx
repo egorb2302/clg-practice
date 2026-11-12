@@ -1,5 +1,6 @@
 import type { Features, Vehicle } from "@armorix/contracts";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link, NavLink, useLocation } from "react-router";
 import { useSelection } from "../lib/selection";
 import { Icon, Logo, Sbtn } from "./ui";
@@ -21,7 +22,7 @@ export function Header({ features, vehicles = [] }: { features: Features; vehicl
   useEffect(() => {
     if (!open) return;
     const el = menu.current;
-    const focusables = () => [...(el?.querySelectorAll<HTMLElement>("a, button") ?? [])];
+    const focusables = () => [...(el?.querySelectorAll<HTMLElement>("a, button") ?? []), ...(trigger.current ? [trigger.current] : [])];
     focusables()[0]?.focus();
     document.documentElement.classList.add("is-locked");
     const onKey = (e: KeyboardEvent) => {
@@ -85,12 +86,15 @@ export function Header({ features, vehicles = [] }: { features: Features; vehicl
           <i /><i />
         </button>
       </div>
-      {open ? (
-        <div className="menu" id="menu" ref={menu} role="dialog" aria-modal="true" aria-label="Меню">
-          <ul>{links}<li><NavLink to="/selection">Подборка{count ? `: ${count}` : ""}</NavLink></li></ul>
-          <Sbtn to="/catalog" className="sbtn--lg">Подобрать защиту</Sbtn>
-        </div>
-      ) : null}
+      {open
+        ? createPortal(
+            <div className="menu" id="menu" ref={menu} role="dialog" aria-modal="true" aria-label="Меню">
+              <ul>{links}<li><NavLink to="/selection">Подборка{count ? `: ${count}` : ""}</NavLink></li></ul>
+              <Sbtn to="/catalog" className="sbtn--lg">Подобрать защиту</Sbtn>
+            </div>,
+            document.body,
+          )
+        : null}
     </header>
   );
 }

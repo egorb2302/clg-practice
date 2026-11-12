@@ -4,7 +4,7 @@ import { data, Link, useRouteLoaderData } from "react-router";
 import type { Route } from "./+types/home";
 import { ProductCard } from "../components/ProductCard";
 import { Adv, ContactPlate, Faq, Flow, Rail, Stats } from "../components/sections";
-import { Chip, Icon, Img, Sbtn, Tt } from "../components/ui";
+import { Icon, Img, Sbtn, Tt } from "../components/ui";
 import { api, PUBLIC_CACHE } from "../lib/api.server";
 import { ADV, CUSTOM, FAQ, STATS, STEPS } from "../lib/content";
 import { nb, plural, POSITION_LABEL, priceFrom } from "../lib/format";
@@ -66,7 +66,6 @@ function Hero({ vehicles, products }: { vehicles: Vehicle[]; products: Card[] })
       <div className="hero__shade" aria-hidden="true" />
       <div className="hero__grid">
         <div className="hero__head">
-          <Chip n="ARMORIX">Сталь для бездорожья</Chip>
           <h1 className="hero__title">
             <span className="ln"><span>Защита бамперов</span></span>
             <span className="ln"><span>для внедорожников</span></span>
@@ -134,7 +133,6 @@ function Showcase({ vehicles, products }: { vehicles: Vehicle[]; products: Card[
         <span className="show__word" aria-hidden="true" key={cur}>{(SCENE[cur] ?? SCENE.custom!).word}</span>
 
         <div className="show__head" data-in="">
-          <Chip n="01">Готовые комплекты</Chip>
           <Tt a="Выберите свою машину" b="и посмотрите, что на нее есть" />
         </div>
 
@@ -213,7 +211,7 @@ function Story({ models, items }: { models: number; items: number }) {
   return (
     <section className="sec wrap story" aria-label="О компании">
       <div className="head" data-in="">
-        <div><Chip n="02">О компании</Chip><Tt a="Ставим эту защиту" b="и на свои машины" /></div>
+        <div><Tt a="Ставим эту защиту" b="и на свои машины" /></div>
         <Link className="tlink" to="/about">Подробнее о производстве <Icon name="arrow" vb="0 0 20 20" /></Link>
       </div>
       <div className="bento" data-stagger="">
@@ -233,7 +231,7 @@ function Story({ models, items }: { models: number; items: number }) {
         </div>
         {/* the three small tiles share one structure: label, a visual of one height, title, text */}
         <div className="bt bt--mat bt--step" data-in="">
-          <p className="bt__lbl"><span className="num">01</span>Материал</p>
+          <p className="bt__lbl">Материал</p>
           <div className="bt__img"><Img src="/img/tex-brushed.webp" alt="" sizes="33vw" /><span className="bt__stamp num">AISI 304</span></div>
           <b>Нержавеющая сталь</b>
           <div className="bt__more">
@@ -242,7 +240,7 @@ function Story({ models, items }: { models: number; items: number }) {
           </div>
         </div>
         <div className="bt bt--mount bt--step" data-in="">
-          <p className="bt__lbl"><span className="num">02</span>Крепление</p>
+          <p className="bt__lbl">Крепление</p>
           <svg className="mount" viewBox="0 0 320 150" aria-hidden="true">
             <path className="mount__bumper" d="M20 60 Q160 20 300 60 L290 110 Q160 130 30 110 Z" />
             <path className="mount__bar" d="M30 52 Q160 8 290 52" />
@@ -255,7 +253,7 @@ function Story({ models, items }: { models: number; items: number }) {
           </div>
         </div>
         <div className="bt bt--time bt--step" data-in="">
-          <p className="bt__lbl"><span className="num">03</span>Установка</p>
+          <p className="bt__lbl">Установка</p>
           <div className="bt__vis" aria-hidden="true"><span className="bt__num num">2,5</span></div>
           <b>Установка за 2,5 часа</b>
           <ol className="tl bt__more">
@@ -275,7 +273,7 @@ function Custom() {
   return (
     <section className="sec custom" aria-label="Индивидуальное изготовление">
       <div className="wrap head" data-in="">
-        <div><Chip n="06">Под вашу модель</Chip><Tt a="Нет вашей машины в каталоге?" b="Изготовим по замерам" /></div>
+        <div><Tt a="Нет вашей машины в каталоге?" b="Изготовим по замерам" /></div>
         <div className="custom__r">
           <p>{nb("Опишите машину и задачу, мы проверим, можно ли поставить защиту на штатные точки, и назовем цену до начала работ")}</p>
           <Sbtn to="/contacts?type=custom" className="sbtn--lg">Обсудить свою модель</Sbtn>

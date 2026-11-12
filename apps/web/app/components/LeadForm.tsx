@@ -6,6 +6,8 @@ import { postLead, uuid } from "../lib/leads";
 import type { SelectionItem } from "../lib/selection";
 import { Icon, Sbtn } from "./ui";
 
+const ITEMS_ERROR = "Проверьте количество позиций в подборке";
+
 export type LeadType = "catalog" | "custom" | "general";
 type Props = {
   type: LeadType;
@@ -15,7 +17,7 @@ type Props = {
   items?: SelectionItem[];
   deliveryMethods?: MetaResponse["deliveryMethods"];
   prefill?: { make?: string; model?: string; request?: string; comment?: string };
-  onSuccess?: (reference: string, submittedIds: string[]) => void;
+  onSuccess?: (reference: string, submitted: { variantId: string; quantity: number }[]) => void;
   onCatalogChanged?: (changes: CatalogChange[]) => void;
   submitLabel?: string;
   changedMessage?: string;
@@ -37,6 +39,7 @@ export function LeadForm({ type: initialType, switchable, items = [], deliveryMe
   const [type, setType] = useState<LeadType>(initialType);
   const [preferred, setPreferred] = useState<"phone" | "email">("phone");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [delivery, setDelivery] = useState<DeliveryMethodCode | "">(deliveryMethods.length === 1 ? deliveryMethods[0]!.code : "");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<Status>({ s: "idle" });
@@ -53,7 +56,7 @@ export function LeadForm({ type: initialType, switchable, items = [], deliveryMe
   function body(): LeadRequest {
     const f = new FormData(form.current!);
     const s = (k: string) => String(f.get(k) ?? "").trim();
-    const contact = { preferred, ...(preferred === "phone" ? { phone: phone ? phoneE164(phone) : undefined } : { email: s("email") || undefined }) };
+    const contact = { preferred, ...(preferred === "phone" ? { phone: phone ? phoneE164(phone) : undefined } : { email: email.trim() || undefined }) };
     const base = { name: s("name"), contact, website: s("website"), fillMs: Math.round(performance.now() - shownAt.current) };
     if (type === "catalog") {
       return { type, ...base, items: items.map((i) => ({ variantId: i.variantId, quantity: i.quantity, seenPriceFrom: i.snapshot.priceFrom })), deliveryMethod: delivery || undefined, comment: s("comment") || undefined } as LeadRequest;
@@ -72,6 +75,8 @@ export function LeadForm({ type: initialType, switchable, items = [], deliveryMe
   }
 
   function showErrors(fe: Record<string, string>) {
+    const itemKey = Object.keys(fe).find((k) => k.startsWith("items."));
+    if (itemKey && !fe.items) fe = { ...fe, items: ITEMS_ERROR };
     if (switchable) {
       const t = fe.message ?? fe.request;
       if (t) fe = { ...fe, text: "Напишите вопрос или что нужно изготовить" };
@@ -89,18 +94,21 @@ export function LeadForm({ type: initialType, switchable, items = [], deliveryMe
     if (status.s === "sending") return; // double submit blocked
     const b = body();
     const check = leadRequestSchema.safeParse(b);
-    if (!check.success) {
+    const needDelivery = type === "catalog" && deliveryMethods.length > 1 && !delivery;
+    if (!check.success || needDelivery) {
       const fe: Record<string, string> = {};
-      for (const i of check.error.issues) fe[i.path.join(".")] ??= i.message;
+      for (const i of check.success ? [] : check.error.issues) fe[i.path.join(".")] ??= i.message;
+      if (needDelivery) fe.deliveryMethod ??= "Выберите способ получения";
       return showErrors(fe);
     }
+    const sent = items.map((i) => ({ variantId: i.variantId, quantity: i.quantity }));
     setErrors({});
     key.current ??= uuid(); // same key on retry after a timeout or a network error
     setStatus({ s: "sending" });
     const r = await postLead(b, key.current);
     if (r.kind === "ok") {
       setStatus({ s: "ok", ref: r.data.reference });
-      onSuccess?.(r.data.reference, items.map((i) => i.variantId));
+      onSuccess?.(r.data.reference, sent);
     } else if (r.kind === "invalid") showErrors(r.fieldErrors);
     else if (r.kind === "changed") { key.current = null; setStatus({ s: "changed" }); onCatalogChanged?.(r.changes); }
     else if (r.kind === "mismatch") { key.current = null; setStatus({ s: "failed" }); }
@@ -145,15 +153,15 @@ export function LeadForm({ type: initialType, switchable, items = [], deliveryMe
         </fieldset>
 
         {preferred === "phone" ? (
-          <div className="field field--full">
+          <div className="field field--full" key="phone">
             <label htmlFor={`${id}-phone`}>Телефон</label>
             <input id={`${id}-phone`} name="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="+7 (900) 000-00-00" value={phone} onChange={(e) => setPhone(e.target.value ? maskPhone(e.target.value) : "")} {...aria("contact.phone")} />
             {err("contact.phone")}
           </div>
         ) : (
-          <div className="field field--full">
+          <div className="field field--full" key="email">
             <label htmlFor={`${id}-email`}>Email</label>
-            <input id={`${id}-email`} name="email" type="email" inputMode="email" autoComplete="email" maxLength={254} placeholder="name@mail.ru" {...aria("contact.email")} />
+            <input id={`${id}-email`} name="email" type="email" inputMode="email" autoComplete="email" maxLength={254} placeholder="name@mail.ru" value={email} onChange={(e) => setEmail(e.target.value)} {...aria("contact.email")} />
             {err("contact.email")}
           </div>
         )}
@@ -218,8 +226,8 @@ export function LeadForm({ type: initialType, switchable, items = [], deliveryMe
         {type === "catalog" && deliveryMethods.length > 1 ? (
           <fieldset className="field field--full radios radios--col">
             <legend>Способ получения</legend>
-            {deliveryMethods.map((m) => (
-              <label key={m.code}><input type="radio" name="delivery" value={m.code} checked={delivery === m.code} onChange={() => setDelivery(m.code)} /><span>{m.label}</span></label>
+            {deliveryMethods.map((m, n) => (
+              <label key={m.code}><input type="radio" name="delivery" value={m.code} checked={delivery === m.code} onChange={() => setDelivery(m.code)} {...(n === 0 ? aria("deliveryMethod") : {})} /><span>{m.label}</span></label>
             ))}
             {err("deliveryMethod")}
           </fieldset>
@@ -238,7 +246,7 @@ export function LeadForm({ type: initialType, switchable, items = [], deliveryMe
           <label htmlFor={`${id}-website`}>Сайт</label>
           <input id={`${id}-website`} name="website" tabIndex={-1} autoComplete="off" />
         </div>
-        {errors.items ? <p className="field__err field--full">{errors.items}</p> : null}
+        {errors.items ? <p className="field__err field--full" data-field="items" tabIndex={-1}>{errors.items}</p> : null}
       </div>
 
       <div className="lead__send">

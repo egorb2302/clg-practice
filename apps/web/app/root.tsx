@@ -21,6 +21,7 @@ export const links: Route.LinksFunction = () => [
   { rel: "stylesheet", href: site },
   { rel: "stylesheet", href: pages },
   { rel: "icon", href: "/logo/favicon.svg", type: "image/svg+xml" },
+  { rel: "apple-touch-icon", href: "/logo/apple-touch-icon.png", sizes: "180x180" },
 ];
 
 const FALLBACK_META: MetaResponse = {
@@ -112,6 +113,10 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
     return (
       <>
         <title>Страница не найдена | ARMORIX</title>
+        <meta name="description" content="Такой страницы нет, перейдите в каталог защиты бамперов ARMORIX или на главную" />
+        <meta property="og:title" content="Страница не найдена | ARMORIX" />
+        <meta property="og:description" content="Такой страницы нет, перейдите в каталог защиты бамперов ARMORIX или на главную" />
+        <meta name="twitter:card" content="summary" />
         <meta name="robots" content="noindex" />
         <NotFoundView />
       </>

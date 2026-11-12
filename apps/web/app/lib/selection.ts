@@ -61,9 +61,10 @@ export const selection = {
   remove(variantId: string) {
     write(read().filter((i) => i.variantId !== variantId));
   },
-  /** after success: clear only what was submitted */
-  removeMany(ids: string[]) {
-    write(read().filter((i) => !ids.includes(i.variantId)));
+  /** after success: take away only the submitted quantities */
+  removeSubmitted(sent: { variantId: string; quantity: number }[]) {
+    const q = new Map(sent.map((s) => [s.variantId, s.quantity]));
+    write(read().map((i) => ({ ...i, quantity: i.quantity - (q.get(i.variantId) ?? 0) })).filter((i) => i.quantity > 0));
   },
   has(variantId: string) {
     return read().some((i) => i.variantId === variantId);

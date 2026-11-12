@@ -219,7 +219,8 @@ let seq = 122;
 async function lead(raw: unknown, key: string | null): Promise<{ status: number; body: unknown }> {
   await new Promise((r) => setTimeout(r, 700));
   if (!key) return { status: 400, body: { code: "IDEMPOTENCY_KEY_REQUIRED", message: "Нет ключа", requestId: rid() } };
-  const hash = JSON.stringify(raw);
+  const { fillMs: _fill, ...business } = (raw ?? {}) as Record<string, unknown>;
+  const hash = JSON.stringify(business);
   const seen = keys.get(key);
   if (seen) return seen.hash === hash
     ? { status: 201, body: { reference: seen.reference, status: "received" } }

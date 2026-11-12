@@ -3,7 +3,7 @@ import { useId, useState, type ReactNode } from "react";
 import { Link } from "react-router";
 import { nb, telegramLink } from "../lib/format";
 import { LeadForm, type LeadType } from "./LeadForm";
-import { Chip, Icon, Img, Sbtn, Tt } from "./ui";
+import { Icon, Img, Sbtn, Tt } from "./ui";
 
 /* ── The lit sentence: words light up as you read, photos open inside the line,
       steel words take the mirror gradient ── */
@@ -34,7 +34,7 @@ export function Flow({ chip, title, steps, id = "flow" }: { chip: [string, strin
               {steps.map((s, i) => <img key={s.name} src={s.img.replace(/\.webp$/, "-s.webp")} alt="" data-i={i} className={i === 0 ? "is-on" : ""} loading="lazy" />)}
             </div>
             <div className="panel__top">
-              <Chip n={chip[0]}>{chip[1]}</Chip>
+              
               <Tt a={title[0]} b={title[1]} />
               <span className="marks" aria-hidden="true"><i /><i /><i /><i /></span>
               <span className="ruler" aria-hidden="true" />
@@ -70,7 +70,7 @@ export function Adv({ chip, title, img, items }: { chip: [string, string]; title
   return (
     <section className="adv frame" aria-label={chip[1]}>
       <div className="frame__bg"><Img src={img} alt="" /></div>
-      <div className="adv__title" data-in=""><Chip n={chip[0]}>{chip[1]}</Chip><h2 className="tt">{nb(title)}</h2></div>
+      <div className="adv__title" data-in=""><h2 className="tt">{nb(title)}</h2></div>
       <div className="adv__cards" data-stagger="">
         {items.map(([ic, t, d]) => (
           <div key={t} className="glass" data-in="">
@@ -91,14 +91,14 @@ export function Stats({ chip, title, lead, img, items }: { chip: [string, string
       <div className="frame__bg"><Img src={img} alt="" /></div>
       <div className="nums__in">
         <div className="nums__head" data-in="">
-          <Chip n={chip[0]}>{chip[1]}</Chip>
+          
           <Tt a={title[0]} b={title[1]} />
           <p className="t-lead">{nb(lead)}</p>
         </div>
         <div className="nums__grid" data-stagger="">
           {items.map((s) => (
             <div key={s.title} className="nums__i" data-in="">
-              <p className="nums__tag" aria-hidden="true"><span className="num">{s.code}</span><span>{s.tag}</span><i /></p>
+              <p className="nums__tag" aria-hidden="true"><span>{s.tag}</span><i /></p>
               <b className="num"><span data-count={s.count}>{s.shown}</span>{s.unit ? <small>{s.unit}</small> : null}</b>
               <span className="nums__pic" aria-hidden="true"><img src={s.img} alt="" loading="lazy" /></span>
               <div><h3>{nb(s.title)}</h3><p>{nb(s.text)}</p></div>
@@ -116,7 +116,7 @@ export function Faq({ chip, items, phone }: { chip: [string, string]; items: QA[
   return (
     <section className="sec wrap faqs" id="faq" aria-label={chip[1]}>
       <div className="faqs__side" data-in="">
-        <Chip n={chip[0]}>{chip[1]}</Chip>
+        
         <Tt a="Частые вопросы" b="перед заказом" />
         <div className="faqs__ask">
           <b>Не нашли свой вопрос?</b>
@@ -167,7 +167,7 @@ export function ContactPlate({ meta, chip, title, img, type = "general", id = "c
       <div className="frame__bg"><Img src={img} alt="" /></div>
       <svg className="cta__logo" viewBox="0 0 407.2 94.5" aria-hidden="true"><use href="#lock-h" /></svg>
       <div className="cta__side" data-in="">
-        <Chip n={chip[0]}>{chip[1]}</Chip>
+        
         <ul className="cta__ch">
           {c.phone ? <li><Icon name="phone" /><span>Телефон</span><a className="num" href={`tel:${c.phone.replace(/[^\d+]/g, "")}`}>{c.phone}</a></li> : null}
           {c.telegram ? <li><Icon name="tg" /><span>Телеграм</span><a href={telegramLink(c.telegram).href} rel="noopener">{telegramLink(c.telegram).label}</a></li> : null}

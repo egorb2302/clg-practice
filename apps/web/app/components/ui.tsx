@@ -56,14 +56,27 @@ export function Tt({ a, b, as: As = "h2", className = "" }: { a: ReactNode; b?: 
   );
 }
 
+const STORED = /-(\d+)\.webp$/;
+
+export const thumbUrl = (src: string) =>
+  src.startsWith("/img/") && src.endsWith(".webp") ? src.replace(/\.webp$/, "-s.webp") : STORED.test(src) ? src.replace(STORED, "-480.webp") : src;
+
+function srcSetOf(src: string, w?: number) {
+  if (src.startsWith("/img/") && src.endsWith(".webp")) return `${src.replace(/\.webp$/, "-s.webp")} 800w, ${src} 1600w`;
+  const m = STORED.exec(src);
+  if (!m) return undefined;
+  const max = Number(m[1]);
+  return [480, 960, 1600].filter((x) => x < max).map((x) => `${src.replace(STORED, `-${x}.webp`)} ${x}w`).concat(`${src} ${w ?? max}w`).join(", ");
+}
+
 export function Img({ src, alt, w, h, className, eager, sizes }: { src: string; alt: string; w?: number; h?: number; className?: string; eager?: boolean; sizes?: string }) {
-  const small = src.startsWith("/img/") && src.endsWith(".webp") ? src.replace(/\.webp$/, "-s.webp") : null;
+  const set = srcSetOf(src, w);
   return (
     <img
       className={className}
       src={src}
-      srcSet={small ? `${small} 800w, ${src} 1600w` : undefined}
-      sizes={small ? sizes ?? "100vw" : undefined}
+      srcSet={set}
+      sizes={set ? sizes ?? "100vw" : undefined}
       alt={alt}
       width={w}
       height={h}

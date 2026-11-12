@@ -1,7 +1,7 @@
 import { data, useRouteLoaderData } from "react-router";
 import type { Route } from "./+types/about";
 import { Adv, ContactPlate, Flow, Say } from "../components/sections";
-import { Chip, Icon, Img, Sbtn, Tt } from "../components/ui";
+import { Icon, Img, Sbtn, Tt } from "../components/ui";
 import { PUBLIC_CACHE } from "../lib/api.server";
 import { ADV, STEPS } from "../lib/content";
 import { nb } from "../lib/format";
@@ -39,7 +39,7 @@ export default function About() {
       <Flow chip={["01", "Производство"]} title={["От листа стали", "до вашей дороги"]} steps={STEPS} />
 
       <section className="sec wrap mats" aria-label="Материалы">
-        <div className="head" data-in=""><div><Chip n="02">Материалы</Chip><Tt a="Две отделки на выбор" b="и одна сталь под нагрузку" /></div></div>
+        <div className="head" data-in=""><div><Tt a="Две отделки на выбор" b="и одна сталь под нагрузку" /></div></div>
         <div className="mats__grid" data-stagger="">
           {[
             { img: "/img/steel-chrome.webp", t: "AISI 304, зеркальная полировка", d: "Нержавеющая сталь, не ржавеет даже на сколах, блестит как хром и переживает зимы с реагентами", tags: ["Не ржавеет", "Блеск", "Дороже"] },
@@ -54,7 +54,7 @@ export default function About() {
       </section>
 
       <section className="sec wrap deliv" id="delivery" aria-label="Установка и доставка">
-        <div className="head" data-in=""><div><Chip n="03">Установка и доставка</Chip><Tt a="Поставим у себя" b="или отправим в любой регион" /></div></div>
+        <div className="head" data-in=""><div><Tt a="Поставим у себя" b="или отправим в любой регион" /></div></div>
         <div className="deliv__grid" data-stagger="">
           {[
             ["wrench", "Установка у нас", "Около 2,5 часа в мастерской по записи, машину забираете в тот же день"],

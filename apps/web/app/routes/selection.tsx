@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { data, Link, useRouteLoaderData } from "react-router";
 import type { Route } from "./+types/selection";
 import { LeadForm } from "../components/LeadForm";
-import { Chip, Icon, Sbtn } from "../components/ui";
+import { Chip, Icon, Sbtn, thumbUrl } from "../components/ui";
 import { PUBLIC_CACHE } from "../lib/api.server";
 import { PRICE_NOTE, priceFrom } from "../lib/format";
 import { selection, useSelection } from "../lib/selection";
@@ -58,11 +58,11 @@ export default function Selection() {
                 const ch = change(i.variantId);
                 return (
                   <li key={i.variantId} className={`sl__i${ch ? " is-changed" : ""}`}>
-                    <Link className="sl__img" to={`/catalog/${i.productSlug}`} tabIndex={-1} aria-hidden="true">
-                      {i.snapshot.imageUrl ? <img src={i.snapshot.imageUrl.replace(/\.webp$/, "-s.webp")} alt="" loading="lazy" /> : null}
+                    <Link className="sl__img" to={`/catalog/${i.productSlug}?vehicle=${encodeURIComponent(i.vehicleSlug)}`} tabIndex={-1} aria-hidden="true">
+                      {i.snapshot.imageUrl ? <img src={thumbUrl(i.snapshot.imageUrl)} alt="" loading="lazy" onError={(e) => { e.currentTarget.hidden = true; }} /> : null}
                     </Link>
                     <div className="sl__t">
-                      <Link to={`/catalog/${i.productSlug}`}><b>{i.snapshot.title}</b></Link>
+                      <Link to={`/catalog/${i.productSlug}?vehicle=${encodeURIComponent(i.vehicleSlug)}`}><b>{i.snapshot.title}</b></Link>
                       <span>{i.snapshot.vehicleLabel ?? i.vehicleSlug}{i.snapshot.variantTitle ? `, ${i.snapshot.variantTitle}` : ""}</span>
                       <span className="sl__p num">{priceFrom(i.snapshot.priceFrom)}</span>
                       {ch ? (
@@ -103,7 +103,7 @@ export default function Selection() {
               type="catalog"
               items={items}
               deliveryMethods={root?.meta.deliveryMethods ?? []}
-              onSuccess={(ref, ids) => { setDone(ref); selection.removeMany(ids); }}
+              onSuccess={(ref, sent) => { setDone(ref); selection.removeSubmitted(sent); }}
               onCatalogChanged={setChanges}
             />
           </aside>

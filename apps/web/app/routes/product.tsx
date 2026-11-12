@@ -48,6 +48,11 @@ export default function Product({ loaderData }: Route.ComponentProps) {
   const [askPrice, setAskPrice] = useState<{ id: string; priceFrom: number | null; available: boolean } | null>(null);
   const sel = useSelection();
   const inSel = variant ? sel.some((i) => i.variantId === variant.id) : false;
+  const acts = useRef<HTMLDivElement>(null);
+  const refocus = useRef(false);
+  useEffect(() => {
+    if (inSel && refocus.current) { refocus.current = false; acts.current?.querySelector<HTMLElement>("a, button")?.focus(); }
+  }, [inSel]);
   const dlg = useRef<HTMLDialogElement>(null);
 
   useEffect(() => { setShot(0); setVid(firstOk?.id ?? ""); }, [p.slug]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -108,11 +113,11 @@ export default function Product({ loaderData }: Route.ComponentProps) {
               <b className={`num${variant?.priceFrom == null ? " is-ask" : ""}`}>{priceFrom(variant?.priceFrom ?? null)}</b>
               <p>{PRICE_NOTE}</p>
             </div>
-            <div className="pd__acts">
+            <div className="pd__acts" ref={acts}>
               {inSel ? (
                 <Sbtn to="/selection" className="sbtn--lg">В подборке, открыть</Sbtn>
               ) : (
-                <Sbtn className="sbtn--lg" onClick={() => { const it = item(); if (it) selection.add(it); }} disabled={!variant?.available}>В подборку</Sbtn>
+                <Sbtn className="sbtn--lg" onClick={() => { const it = item(); if (it) { refocus.current = true; selection.add(it); } }} disabled={!variant?.available}>В подборку</Sbtn>
               )}
               <button className="btn-line" type="button" onClick={ask}>Уточнить комплектацию</button>
             </div>
