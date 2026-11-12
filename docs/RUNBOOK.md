@@ -22,6 +22,10 @@ update app.leads set name = 'Данные удалены', phone = null, email =
 where reference in ('AX-000000');
 delete from app.outbox where dedupe_key like 'lead:%'
   and split_part(dedupe_key, ':', 2) in (select id::text from app.leads where reference in ('AX-000000'));
+update app.sales set contact_phone = null, contact_email = null
+where lead_id in (select id from app.leads where reference in ('AX-000000'));
+update app.lead_events set note = null
+where lead_id in (select id from app.leads where reference in ('AX-000000')) and note is not null;
 ```
 
 If the person also has a cabinet or a newsletter subscription (release 2), disable the user and unsubscribe the address as well.

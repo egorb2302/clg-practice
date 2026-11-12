@@ -259,10 +259,16 @@ export async function anonymizeExpiredLeads(deps: Deps) {
     const rows = await tx<{ id: string }[]>`
       update leads set name = 'Данные удалены', phone = null, email = null, request = null, message = null, comment = null,
         close_comment = null, anonymized_at = now(), updated_at = now(), version = version + 1
-      where anonymized_at is null and created_at < now() - make_interval(days => ${deps.cfg.LEAD_RETENTION_DAYS})
+      where id in (
+        select id from leads
+        where anonymized_at is null and created_at < now() - make_interval(days => ${deps.cfg.LEAD_RETENTION_DAYS})
+        order by created_at limit 500)
       returning id`;
     if (rows.length) {
-      await tx`delete from outbox where dedupe_key like 'lead:%' and split_part(dedupe_key, ':', 2) in ${tx(rows.map((r) => r.id))}`;
+      const ids = rows.map((r) => r.id);
+      await tx`delete from outbox where dedupe_key like 'lead:%' and split_part(dedupe_key, ':', 2) in ${tx(ids)}`;
+      await tx`update sales set contact_phone = null, contact_email = null where lead_id in ${tx(ids)}`;
+      await tx`update lead_events set note = null where lead_id in ${tx(ids)} and note is not null`;
     }
     return rows.length;
   });

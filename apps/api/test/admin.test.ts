@@ -123,6 +123,9 @@ describe("admin leads", () => {
     const v1 = await variantId(ctx, "jac-t9-front-tube", "Без защиты картера");
     const fresh = await ctx.http().post("/api/v1/leads").set("Idempotency-Key", key()).send(leadBody([{ variantId: v1, quantity: 1 }]));
     await ctx.settle();
+    expect((await as(ctx, manager).post(`/api/v1/admin/leads/${ref}/notes`).send({ text: "Перезвонить на +79001234567" })).status).toBeLessThan(300);
+    const draft = await as(ctx, manager).post(`/api/v1/admin/leads/${ref}/sale`);
+    expect(draft.status).toBe(201);
     await ctx.sql`update app.leads set created_at = now() - interval '366 days' where reference = ${ref}`;
     const run = await ctx.http().post("/api/v1/internal/jobs/run").set("Authorization", "Bearer jobs-secret-for-tests-0123456789");
     expect(run.status).toBe(200);
@@ -137,6 +140,12 @@ describe("admin leads", () => {
     expect(recent.anonymized).toBe(false);
     expect(recent.phone ?? recent.email).not.toBeNull();
     expect(recent.jobs).toBeGreaterThan(0);
+    const [sale] = await ctx.sql<{ contact_phone: string | null; contact_email: string | null }[]>`
+      select contact_phone, contact_email from app.sales where id = ${draft.body.saleId}`;
+    expect(sale).toEqual({ contact_phone: null, contact_email: null });
+    const notes = await ctx.sql`
+      select 1 from app.lead_events e join app.leads l on l.id = e.lead_id where l.reference = ${ref} and e.note is not null`;
+    expect(notes).toHaveLength(0);
     const again = await ctx.http().post("/api/v1/internal/jobs/run").set("Authorization", "Bearer jobs-secret-for-tests-0123456789");
     expect(again.body.anonymized).toBe(0);
     const card = await as(ctx, manager).get(`/api/v1/admin/leads/${ref}`);
