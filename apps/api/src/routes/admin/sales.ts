@@ -172,6 +172,9 @@ export function adminSaleRoutes(deps: Deps) {
         const [lead] = s.lead_id
           ? await tx<{ status: string }[]>`select status from leads where id = ${s.lead_id} for update`
           : [];
+        if (lead?.status === "closed") {
+          throw new HttpError(409, "INVALID_TRANSITION", "Заявка закрыта. Верните её в работу, чтобы подтвердить продажу");
+        }
         const rows = await tx`
           update sales set status = 'confirmed', amount_kopecks = ${body.amountKopecks}, sold_on = ${body.soldOn},
             external_id = ${body.externalId}, source = ${body.source}, confirmed_by = ${actor}, confirmed_at = now(),

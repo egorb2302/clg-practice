@@ -68,7 +68,7 @@ export async function verifyTelegramIdToken(
   let jwk = pick(await opts.jwks());
   if (!jwk && opts.refetch) jwk = pick(await opts.refetch());
   if (!jwk) throw new TokenError("unknown key");
-  let ok = false;
+  let ok: boolean;
   try {
     const key = createPublicKey({ key: jwk, format: "jwk" });
     ok = verify(alg.hash, Buffer.from(`${h}.${p}`), alg.dsa ? { key, dsaEncoding: alg.dsa } : key, b64(s));

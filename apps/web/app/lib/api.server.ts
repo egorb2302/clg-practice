@@ -31,7 +31,7 @@ export async function apiRaw(method: string, path: string, search = "", body?: u
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   const text = await res.text();
-  let parsed: unknown = null;
+  let parsed: unknown;
   try { parsed = text ? JSON.parse(text) : null; } catch { parsed = { code: "INTERNAL", message: text.slice(0, 200) }; }
   return { status: res.status, body: parsed, headers: res.headers };
 }

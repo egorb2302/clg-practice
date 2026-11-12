@@ -32,6 +32,7 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
       - run: pnpm -r typecheck
       - run: pnpm --filter @armorix/api test
       - run: pnpm --filter @armorix/admin build

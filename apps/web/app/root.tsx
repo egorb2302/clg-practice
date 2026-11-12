@@ -108,10 +108,20 @@ export default function App() {
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  if (isRouteErrorResponse(error) && error.status === 404) return <NotFoundView />;
+  if (isRouteErrorResponse(error) && error.status === 404) {
+    return (
+      <>
+        <title>Страница не найдена | ARMORIX</title>
+        <meta name="robots" content="noindex" />
+        <NotFoundView />
+      </>
+    );
+  }
   const msg = isRouteErrorResponse(error) ? `${error.status}` : "Ошибка";
   return (
     <section className="sec wrap err">
+      <title>Ошибка | ARMORIX</title>
+      <meta name="robots" content="noindex" />
       <h1 className="tt"><span>Что-то пошло не так</span><span className="mute">{msg}</span></h1>
       <p className="t-lead">Обновите страницу или вернитесь на главную</p>
       <p><a className="tlink" href="/">На главную</a></p>

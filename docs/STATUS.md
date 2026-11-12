@@ -1,6 +1,6 @@
 # ARMORIX — release status
 
-Updated 2026-11-10.
+Updated 2026-11-12.
 
 ## What `main` contains
 
@@ -37,6 +37,15 @@ In production the API refuses to start with log/local adapters (`NODE_ENV=produc
 - Supabase Storage with an `sb_secret_…` key: signed upload, read and public upload all work (HTTP 200).
 - Admin SPA: `public/admin` ships inside the function (`functions.includeFiles` in `apps/api/vercel.json`); `/admin`, deep links and hashed assets return 200, missing files 404, `index.html` is `no-store` and `noindex`.
 - Live lead AX-000001 through the site: stored, Telegram staff notice and customer email (Gmail SMTP) sent on the first attempt; the bot answers `/start` through the webhook.
+
+## Verified 2026-11-12
+
+- Backups: `backup.yml` enabled (`BACKUP_ENABLED`, four secrets set), a manual run finished green; the dump, media download and GPG round trip also ran locally against staging.
+- Restore drill: the staging dump restored into a scratch database in the staging project, 42 tables with identical row counts, migrations up to date on the copy; scratch database dropped. Procedure in [RUNBOOK.md](RUNBOOK.md).
+- Photo upload on production: signed upload of an original to Supabase, processing on the Vercel function (three WebP widths in about 2 s), public WebP served; test media, objects and the temporary editor removed afterwards.
+- Daily monitor runs every day (`monitor_runs` rows for 10, 11 and 12 November); it sends a Telegram message only when it finds a problem, and found none.
+- Site at 320, 390, 768, 1024 and 1440 px: no horizontal scroll on home, catalog, product, selection, about, contacts, privacy, 404 and admin login; public pages carry title, description, canonical and Open Graph.
+- CI runs ESLint (`pnpm lint`) before typecheck and tests.
 
 ## Deliberate deferrals
 

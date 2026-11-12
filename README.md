@@ -1,6 +1,6 @@
 # ARMORIX
 
-Сайт подбора защиты бамперов: витрина, каталог, заявки, админка. ТЗ — [docs/SPEC.md](docs/SPEC.md), бриф фронтенда — [docs/FRONTEND-BRIEF.md](docs/FRONTEND-BRIEF.md), что готово и что нет — [docs/STATUS.md](docs/STATUS.md).
+Сайт подбора защиты бамперов: витрина, каталог, заявки, админка. ТЗ — [docs/SPEC.md](docs/SPEC.md), бриф фронтенда — [docs/FRONTEND-BRIEF.md](docs/FRONTEND-BRIEF.md), что готово и что нет — [docs/STATUS.md](docs/STATUS.md), релиз, откат и восстановление из копии — [docs/RUNBOOK.md](docs/RUNBOOK.md).
 
 ## Структура
 

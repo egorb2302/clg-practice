@@ -119,6 +119,67 @@ describe("admin leads", () => {
     expect(second.status).toBe(409);
   });
 
+  it("refuses to confirm a sale on a closed lead until the lead is reopened", async () => {
+    const draft = await as(ctx, manager).post(`/api/v1/admin/leads/${ref}/sale`);
+    const d = await as(ctx, manager).get(`/api/v1/admin/leads/${ref}`);
+    const closed = await as(ctx, manager)
+      .post(`/api/v1/admin/leads/${ref}/status`)
+      .send({ to: "closed", version: d.body.lead.version, reason: "price" });
+    expect(closed.status).toBe(200);
+    const body = { version: 1, amountKopecks: 100, soldOn: "2026-11-10", externalId: "S-CLOSED" };
+    const refused = await as(ctx, manager).post(`/api/v1/admin/sales/${draft.body.saleId}/confirm`).send(body);
+    expect(refused.status).toBe(409);
+    expect(refused.body.code).toBe("INVALID_TRANSITION");
+    expect(refused.body.message).toContain("Заявка закрыта");
+    const [sale] = await ctx.sql<{ status: string }[]>`select status from app.sales where id = ${draft.body.saleId}`;
+    expect(sale!.status).toBe("draft");
+    const reopened = await as(ctx, manager)
+      .post(`/api/v1/admin/leads/${ref}/status`)
+      .send({ to: "in_progress", version: closed.body.version });
+    expect(reopened.status).toBe(200);
+    expect((await as(ctx, manager).post(`/api/v1/admin/sales/${draft.body.saleId}/confirm`).send(body)).status).toBe(200);
+    const after = await as(ctx, manager).get(`/api/v1/admin/leads/${ref}`);
+    expect(after.body.lead.status).toBe("sale_confirmed");
+  });
+
+  it("locks the lead before the sale when confirming", async () => {
+    const draft = await as(ctx, manager).post(`/api/v1/admin/leads/${ref}/sale`);
+    const id = draft.body.saleId as string;
+    let release!: () => void;
+    const held = new Promise<void>((r) => (release = r));
+    let markLocked!: () => void;
+    const locked = new Promise<void>((r) => (markLocked = r));
+    const holder = ctx.sql.begin(async (tx) => {
+      await tx`select 1 from app.leads where reference = ${ref} for update`;
+      markLocked();
+      await held;
+    });
+    await locked;
+    const confirm = as(ctx, manager)
+      .post(`/api/v1/admin/sales/${id}/confirm`)
+      .send({ version: 1, amountKopecks: 100, soldOn: "2026-11-10", externalId: "S-ORDER" })
+      .then((r) => r);
+    try {
+      let waiting = 0;
+      for (let i = 0; i < 40 && waiting === 0; i++) {
+        await new Promise((r) => setTimeout(r, 50));
+        const [w] = await ctx.sql<{ n: number }[]>`
+          select count(*)::int as n from pg_stat_activity where wait_event_type = 'Lock' and datname = current_database()`;
+        waiting = w!.n;
+      }
+      expect(waiting).toBeGreaterThan(0);
+      const probe = await ctx.sql.begin(async (tx) => {
+        await tx`set local lock_timeout = '300ms'`;
+        return tx`select id from app.sales where id = ${id} for update`;
+      });
+      expect(probe).toHaveLength(1);
+    } finally {
+      release();
+      await holder;
+    }
+    expect((await confirm).status).toBe(200);
+  });
+
   it("masks contacts for staff with a sales grant but no contacts grant", async () => {
     await createStaff(ctx, "seller@armorix.test", ["editor", "sales_confirm"]);
     const seller = await loginStaff(ctx, "seller@armorix.test");

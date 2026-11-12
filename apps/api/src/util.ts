@@ -24,4 +24,4 @@ export function maskEmail(e: string | null) {
 }
 
 export const formatRub = (kopecks: number) =>
-  `${new Intl.NumberFormat("ru-RU").format(Math.round(kopecks / 100)).replace(/ /g, " ")} ₽`;
+  `${new Intl.NumberFormat("ru-RU").format(Math.round(kopecks / 100)).replace(/\u00a0/g, " ")} ₽`;
