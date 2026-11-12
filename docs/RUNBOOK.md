@@ -30,7 +30,8 @@ Release 2 features ship dark: every `FEATURE_*` env var stays `false` until it i
 
 ## Rollback
 
-- **Code.** In the Vercel dashboard open the project → Deployments, pick the last good production deployment → "Instant Rollback". Do it for `armorix-api` and/or `armorix-web` separately. A rollback does not touch the database. A later push to `main` deploys again, so revert the bad commit with `git revert` before the next push.
+- **Code.** In the Vercel dashboard open the project → Deployments → "Instant Rollback". Do it for `armorix-api` and/or `armorix-web` separately. On the Hobby plan only the previous production deployment can be restored this way; for an older one, `git revert` the bad commits and push. A rollback does not touch the database and does not rebuild, so env var changes made since that deployment are not applied.
+- **After a rollback** Vercel stops promoting new pushes to production ([Vercel docs](https://vercel.com/docs/instant-rollback)). Fix forward with `git revert` or a fix commit, push, wait for the preview build, then promote that deployment in the dashboard ("Promote"); promoting restores automatic production deploys.
 - **Feature flag.** Set the `FEATURE_*` variable back to `false` in `armorix-api` and redeploy. Data written while the flag was on stays in the database.
 - **Migration.** Never edit or delete an applied migration. Undo a schema change with a new compensating migration. If a migration destroyed data, restore from backup (below) into a scratch database and copy the affected rows back, or restore the whole schema during a maintenance window.
 
@@ -47,15 +48,17 @@ Run before a release with a migration and at least once a month. Verified 2026-1
 
 1. Download the latest `armorix-backup` artifact from the backup workflow run and decrypt it:
 
+   Keep secrets out of shell history: read them into variables with `read -rs` instead of typing them into the command.
+
    ```bash
-   gpg --batch --pinentry-mode loopback --passphrase '<BACKUP_PASSPHRASE>' --decrypt --output armorix.tar.gz armorix-<stamp>.tar.gz.gpg && tar -xzf armorix.tar.gz
+   read -rs BACKUP_PASSPHRASE && gpg --batch --pinentry-mode loopback --passphrase-fd 0 --decrypt --output armorix.tar.gz armorix-<stamp>.tar.gz.gpg <<< "$BACKUP_PASSPHRASE" && tar -xzf armorix.tar.gz
    ```
 
 2. Create a scratch database in the staging project (Supabase SQL editor): `create database restore_drill;`
 3. Restore into it through the staging session pooler, with the database name `restore_drill` in the URL:
 
    ```bash
-   pg_restore --dbname '<staging session pooler URL with /restore_drill>' --no-owner --no-privileges --exit-on-error backup/armorix.dump
+   read -rs DRILL_URL && pg_restore --dbname "$DRILL_URL" --no-owner --no-privileges --exit-on-error backup/armorix.dump
    ```
 
 4. Compare row counts of a few tables (`leads`, `products`, `sales`, `users`) with the source, and run a pending migration against the copy with `DATABASE_MIGRATION_URL` set to the same URL.
@@ -66,7 +69,7 @@ Run before a release with a migration and at least once a month. Verified 2026-1
 
 1. Put the site into a safe state: set `FEATURE_*` flags to `false`, and expect lead submissions to fail while the database is restored.
 2. Restore the dump into the production project's `app` schema after renaming the damaged one (`alter schema app rename to app_damaged;`), using the same `pg_restore` command against the production session pooler URL.
-3. Re-run `apps/api/supabase/setup.sql` if `pg_cron` jobs or Vault secrets were lost.
+3. The dump covers only the `app` schema. The `pg_cron` job, Vault secrets and storage buckets survive unless the whole Supabase project was lost. If they were, check what is missing (`select jobname from cron.job`, `select name from vault.secrets`, the Storage page) and run only the missing statements from `apps/api/supabase/setup.sql`. `vault.create_secret` fails when the secret already exists. Put the real API origin and jobs secret into the statements in the SQL editor and do not save the query.
 4. Check `/api/v1/meta`, the catalog, one test lead and the admin login, then drop `app_damaged` once the restore is confirmed.
 
 Targets from the spec: at most one day of lost data, restore within four hours.

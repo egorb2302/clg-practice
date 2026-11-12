@@ -158,13 +158,14 @@ describe("admin leads", () => {
     const confirm = as(ctx, manager)
       .post(`/api/v1/admin/sales/${id}/confirm`)
       .send({ version: 1, amountKopecks: 100, soldOn: "2026-11-10", externalId: "S-ORDER" })
-      .then((r) => r);
+      .then((r) => r.status, () => -1);
     try {
       let waiting = 0;
       for (let i = 0; i < 40 && waiting === 0; i++) {
         await new Promise((r) => setTimeout(r, 50));
         const [w] = await ctx.sql<{ n: number }[]>`
-          select count(*)::int as n from pg_stat_activity where wait_event_type = 'Lock' and datname = current_database()`;
+          select count(*)::int as n from pg_stat_activity
+          where wait_event_type = 'Lock' and datname = current_database() and pid <> pg_backend_pid() and query ilike '%from leads%'`;
         waiting = w!.n;
       }
       expect(waiting).toBeGreaterThan(0);
@@ -177,7 +178,7 @@ describe("admin leads", () => {
       release();
       await holder;
     }
-    expect((await confirm).status).toBe(200);
+    expect(await confirm).toBe(200);
   });
 
   it("masks contacts for staff with a sales grant but no contacts grant", async () => {
