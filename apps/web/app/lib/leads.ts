@@ -1,8 +1,8 @@
 import { API_PREFIX, type CatalogChange, type LeadCreatedResponse, type LeadRequest } from "@armorix/contracts";
-import { csrf } from "./account";
+import { csrf, setCsrf } from "./account";
 
 export type LeadResult =
-  | { kind: "ok"; data: LeadCreatedResponse }
+  | { kind: "ok"; data: LeadCreatedResponse; authed: boolean }
   | { kind: "invalid"; fieldErrors: Record<string, string> }
   | { kind: "changed"; changes: CatalogChange[] }
   | { kind: "mismatch" }
@@ -12,8 +12,10 @@ export type LeadResult =
 
 export async function postLead(body: LeadRequest, key: string): Promise<LeadResult> {
   let res: Response;
+  let token: string | null;
   try {
-    const token = await csrf();
+    setCsrf(undefined);
+    token = await Promise.race([csrf(), new Promise<null>((r) => setTimeout(() => r(null), 5_000))]);
     const ctl = new AbortController();
     const t = setTimeout(() => ctl.abort(), 20_000);
     res = await fetch(`${API_PREFIX}/leads`, {
@@ -28,7 +30,7 @@ export async function postLead(body: LeadRequest, key: string): Promise<LeadResu
     return { kind: "failed" };
   }
   const data = (await res.json().catch(() => null)) as Record<string, unknown> | null;
-  if (res.status === 201 && data) return { kind: "ok", data: data as unknown as LeadCreatedResponse };
+  if (res.status === 201 && data) return { kind: "ok", data: data as unknown as LeadCreatedResponse, authed: !!token };
   if (res.status === 422) return { kind: "invalid", fieldErrors: (data?.fieldErrors as Record<string, string>) ?? {} };
   if (res.status === 409 && data?.code === "CATALOG_CHANGED") return { kind: "changed", changes: (data.changes as CatalogChange[]) ?? [] };
   if (res.status === 409 && data?.code === "IDEMPOTENCY_MISMATCH") return { kind: "mismatch" };

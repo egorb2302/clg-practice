@@ -60,7 +60,7 @@ export function LeadForm(props: Props) {
   const [failed, setFailed] = useState(false);
   const [changed, setChanged] = useState(false);
   const [limitMin, setLimitMin] = useState(0);
-  const [result, setResult] = useState<{ ref: string; mail: "sent" | "failed" | null; pending: boolean } | null>(null);
+  const [result, setResult] = useState<{ ref: string; mail: "sent" | "failed" | null; pending: boolean; authed: boolean } | null>(null);
   const key = useRef<string | null>(null);
   const started = useRef<number | null>(null);
   const mounted = useRef(Date.now());
@@ -149,7 +149,7 @@ export function LeadForm(props: Props) {
     const r = await postLead(body(), key.current);
     if (r.kind === "ok") {
       const mail = f.pref === "email" && f.mail && meta.features.campaigns ? await subscribe(f.email.trim()) : null;
-      setResult({ ref: r.data.reference, mail, pending: meta.features.loyalty && r.data.loyaltyStatus === "pending" });
+      setResult({ ref: r.data.reference, mail, pending: meta.features.loyalty && r.data.loyaltyStatus === "pending", authed: r.authed });
       setState("done");
       setFailed(false);
       key.current = null;
@@ -162,7 +162,8 @@ export function LeadForm(props: Props) {
       let other = "";
       for (const [k, m] of Object.entries(r.fieldErrors)) {
         const field = SERVER_KEY[k];
-        if (field) fe[field] = field === "phone" ? "Сервер не принял этот номер, проверьте его" : m;
+        if (field === "delivery" && !pickDelivery) other ||= m;
+        else if (field) fe[field] = field === "phone" ? "Сервер не принял этот номер, проверьте его" : m;
         else other ||= m;
       }
       focusBad.current = true;
@@ -203,7 +204,8 @@ export function LeadForm(props: Props) {
         <p>{text}</p>
         {result.mail === "sent" ? <p className="small">Про рассылку: отправили на {f.email.trim()} письмо со ссылкой. Нажмите ее, и начнем присылать акции</p> : null}
         {result.mail === "failed" ? <p className="small">Подписаться на рассылку сейчас не получилось, это можно сделать внизу страницы</p> : null}
-        {result.pending ? <p className="small">Баллы станут доступны после <Link className="flink" to="/login?next=%2Faccount%3Ftab%3Dbonus">входа</Link> и подтверждения контакта</p> : null}
+        {result.pending && !result.authed ? <p className="small">Баллы станут доступны после <Link className="flink" to="/login?next=%2Faccount%3Ftab%3Dbonus">входа</Link> и подтверждения контакта</p> : null}
+        {result.pending && result.authed ? <p className="small">Баллы начислим после подтверждения контакта в <Link className="flink" to="/account?tab=profile">кабинете</Link></p> : null}
         <button type="button" className="flink small" style={{ alignSelf: "flex-start" }} onClick={again}>Отправить еще одну заявку</button>
       </div>
     );

@@ -12,7 +12,7 @@ export function MobileBar() {
   return (
     <nav className="bb" aria-label="Быстрые действия">
       {tel ? <a href={tel}><Icon name="phone" /><span className="bb__l">Позвонить</span></a> : null}
-      <button type="button" onClick={() => ui.setContact(!contact)} aria-expanded={contact} aria-haspopup="dialog">
+      <button type="button" onClick={() => ui.setContact(!contact)} aria-expanded={contact} aria-haspopup="dialog" aria-controls="contact-p">
         <Icon name="mail" /><span className="bb__l">Связаться</span>
       </button>
       <button type="button" onClick={() => ui.toggleDrawer()} aria-expanded={drawer} aria-controls="drawer">

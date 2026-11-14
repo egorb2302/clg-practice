@@ -71,7 +71,7 @@ export function useModal(ref: RefObject<HTMLElement | null>, open: boolean, onCl
       if (lockScroll) unlock();
       const back = opener && opener.isConnected && !opener.closest("[inert]") && visible(opener)
         ? opener
-        : fallback ? document.querySelector<HTMLElement>(fallback) : null;
+        : fallback ? ([...document.querySelectorAll<HTMLElement>(fallback)].find(visible) ?? null) : null;
       if (back && (el.contains(document.activeElement) || document.activeElement === document.body)) back.focus({ preventScroll: true });
     };
   }, [open, ref, fallback, lockScroll]);

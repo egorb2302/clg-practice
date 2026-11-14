@@ -25,7 +25,7 @@ export function ContactFab() {
   const key = useRef<string | null>(null);
   const started = useRef<number | null>(null);
   const close = () => ui.setContact(false);
-  useModal(ref, open, close, { fallback: ".fab__btn" });
+  useModal(ref, open, close, { fallback: ".fab__btn, .bb [aria-controls='contact-p']" });
 
   const ok = useRef<HTMLDivElement>(null);
   useEffect(() => { if (state === "done") ok.current?.focus(); }, [state]);
@@ -83,7 +83,7 @@ export function ContactFab() {
     <>
       <button type="button" className={`scrim scrim--clear${open ? " is-on" : ""}`} tabIndex={-1} aria-hidden="true" onClick={close} />
       <div className={`fab${open ? " is-open" : ""}`}>
-        <div ref={ref} id={`${id}-p`} className={`fab__p ol${open ? " is-open" : ""}`} role="dialog" aria-modal="true" aria-labelledby={`${id}-h`} inert={!open}>
+        <div ref={ref} id="contact-p" className={`fab__p ol${open ? " is-open" : ""}`} role="dialog" aria-modal="true" aria-labelledby={`${id}-h`} inert={!open}>
           <div className="fab__h"><h2 id={`${id}-h`} tabIndex={-1}>Связаться</h2>{c.hours ? <span>{c.hours}</span> : null}</div>
           {tel && c.phone ? (
             <a className="fab__i" href={tel}><span className="ar ol" aria-hidden="true"><Icon name="phone" size={18} /></span><span><b>Позвонить</b><small>{c.phone}</small></span></a>
@@ -139,7 +139,7 @@ export function ContactFab() {
         </div>
         <div className="fab__row">
           <span className="fab__lbl" aria-hidden="true">Связаться</span>
-          <button type="button" className="fab__btn ol" aria-label="Связаться с нами" aria-expanded={open} aria-controls={`${id}-p`} onClick={() => ui.setContact(!open)}>
+          <button type="button" className="fab__btn ol" aria-label="Связаться с нами" aria-expanded={open} aria-controls="contact-p" onClick={() => ui.setContact(!open)}>
             <Icon name={open ? "close" : "mail"} />
           </button>
         </div>

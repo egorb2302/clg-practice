@@ -5,9 +5,9 @@ export async function fetchAllCards(): Promise<Card[]> {
   const first = await api.catalog(new URLSearchParams());
   const pages = Math.min(1000, Math.ceil(first.total / Math.max(1, first.pageSize)));
   const items = [...first.items];
-  if (pages > 1) {
-    const rest = await Promise.all(Array.from({ length: pages - 1 }, (_, i) => api.catalog(new URLSearchParams({ page: String(i + 2) }))));
-    for (const r of rest) items.push(...r.items);
+  for (let p = 2; p <= pages; p += 4) {
+    const batch = Array.from({ length: Math.min(4, pages - p + 1) }, (_, i) => api.catalog(new URLSearchParams({ page: String(p + i) })));
+    for (const r of await Promise.all(batch)) items.push(...r.items);
   }
   return items;
 }

@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { Icon, Illustration, LeadForm, type LeadItem } from "../site";
 import { plural, POSITION_LABEL, priceFrom, rubles } from "../../lib/format";
-import { selection, setDelivery, useDelivery, useSelection } from "../../lib/selection";
+import { selection, useDelivery, useSelection } from "../../lib/selection";
 import { telHref, useSite } from "../../lib/site";
 import type { Vehicle } from "../../lib/vehicle";
 import { coatShort, type Kit, priced, splitCar } from "./data";
@@ -196,25 +196,11 @@ export function Quiz({ kits, car, req }: { kits: Kit[]; car: Vehicle; req: numbe
         ) : selMode || cur === "contact" ? (
           <div className="home-quiz__pane" key={selMode ? "sel" : "contact"}>
             <h3 tabIndex={-1}>Как с вами связаться?</h3>
-            {selMode && meta.deliveryMethods.length > 1 ? (
-              <div className="fld">
-                <span className="fld__l" id="home-dlv">Как получить</span>
-                <div className="rdos" role="radiogroup" aria-labelledby="home-dlv">
-                  {meta.deliveryMethods.map((m) => (
-                    <label key={m.code} className="rdo">
-                      <input className="vh" type="radio" name="home-dlv" value={m.code} checked={delivery === m.code} onChange={() => setDelivery(m.code)} />
-                      <i aria-hidden="true" />{m.label}
-                    </label>
-                  ))}
-                </div>
-              </div>
-            ) : null}
             {selMode ? (
               <LeadForm
                 key="sel"
                 type="catalog"
                 items={selItems}
-                deliveryMethod={delivery}
                 submitLabel={`Отправить подборку (${sel.length})`}
                 onSuccess={onSuccess}
                 onCatalogChanged={onChanged}
