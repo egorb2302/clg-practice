@@ -47,12 +47,12 @@ export function ProductCard({ p, back, kitDiscountPct, sizes = "(max-width: 767p
 
   return (
     <div className="pc-w" data-in="">
-      {kitDiscountPct ? <span className="pc-deal">Комплектом дешевле на {kitDiscountPct}%</span> : null}
       <article className="pc ol" aria-labelledby={titleId}>
         <Link className="pc-cover" to={to} state={state} prefetch="intent" tabIndex={-1} aria-hidden="true" />
         <div className="pc__img" style={{ position: "relative" }}>
           <Illustration src={p.image?.url ?? productArt(p.position)} alt={p.image?.alt ?? ""} sizes={sizes} eager={eager} />
           <span className={`pc__st tag${p.status === "available" ? "" : " tag--line"}`}>{p.status === "available" ? "В наличии" : "Под заказ"}</span>
+          {kitDiscountPct ? <span className="pc-deal">Комплектом дешевле на {kitDiscountPct}%</span> : null}
         </div>
         <div className="pc__b">
           <p className="pc__meta">{p.vehicle.label} · {p.code}</p>

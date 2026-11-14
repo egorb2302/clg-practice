@@ -17,7 +17,7 @@
 .home-sq.ar:hover, .home-sq.ar:focus-visible { --fill: var(--t-1); --lc: var(--t-1); color: #111; }
 
 .home-hero {
-  --side: clamp(400px, 30.7vw, 590px);
+  --side: clamp(420px, 32vw, 620px);
   --mx: 0;
   --my: 0;
   display: grid;
@@ -142,7 +142,7 @@
 .home-hero__cta { position: absolute; left: 50%; bottom: 5.5cqh; z-index: 3; translate: -50% 0; }
 .home-hero__cta .btn { box-shadow: 0 14px 30px rgb(0 0 0 / .18); }
 
-.home-hero__side { position: relative; z-index: 2; display: flex; flex-direction: column; min-height: 0; padding: calc(var(--hd-h) + 5.5svh) clamp(28px, 2.5vw, 48px) clamp(24px, 3.7svh, 40px); }
+.home-hero__side { position: relative; z-index: 2; display: flex; flex-direction: column; min-height: 0; padding: calc(var(--hd-h) + 5.5svh) clamp(28px, 2.5vw, 48px) clamp(24px, 3.7svh, 40px); padding-right: var(--gut); }
 .home-hero__h1 { display: flex; gap: 18px; }
 .home-hero__h1::before { content: ""; width: 4px; flex-shrink: 0; background: var(--t-1); }
 .home-hero__h1 h1 { font-size: clamp(26px, 1.4vw + 12px, 42px); letter-spacing: .1em; line-height: 1.04; }

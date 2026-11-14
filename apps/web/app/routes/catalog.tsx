@@ -33,11 +33,13 @@ export { pageHeaders as headers } from "../lib/headers";
 
 export const meta: Route.MetaFunction = ({ data: d, matches }) => {
   const v = d?.ok ? d.view.vehicle : null;
+  const min = d?.ok ? d.view.baseMin : null;
+  const from = min != null ? `, цены от ${rubles(min)}` : "";
   return seo({
     title: v ? `Защита бампера ${v.label}` : "Каталог защиты бамперов",
     description: v
-      ? `Передняя, задняя защита и комплекты для ${v.label}: нержавейка AISI 304 или черная порошковая, на штатные точки без сверления, цены от`
-      : "Каталог стальной защиты бамперов для китайских внедорожников: передняя, задняя и комплекты, на штатные точки без сверления, цены от",
+      ? `Передняя, задняя защита и комплекты для ${v.label}: нержавейка AISI 304 или черная порошковая, на штатные точки без сверления${from}`
+      : `Каталог стальной защиты бамперов для китайских внедорожников: передняя, задняя и комплекты, на штатные точки без сверления${from}`,
     path: v ? `/catalog?vehicle=${encodeURIComponent(v.slug)}` : "/catalog",
     origin: rootOrigin(matches),
   });

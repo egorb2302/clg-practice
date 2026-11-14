@@ -66,7 +66,8 @@
 .abt-mat dl > div { display: grid; grid-template-columns: minmax(70px, 120px) minmax(0, 1fr); gap: 16px; padding: 14px 0; border-top: 1px solid var(--p-1); transition: background-color var(--d-2); }
 .abt-mat dt, .abt-mat dd { margin: 0; font-size: 16px; line-height: 1.5; }
 .abt-mat dt { color: var(--g-2); }
-.abt-mat dd { color: var(--ink); }
+.abt-mat dd { min-width: 0; color: var(--ink); overflow-wrap: anywhere; }
+@media (max-width: 479px) { .abt-mat dl > div { grid-template-columns: minmax(0, 1fr); gap: 4px; } }
 .abt-mats__n { margin-top: 24px; }
 
 .abt-get { background: var(--p-1); color: var(--ink); }

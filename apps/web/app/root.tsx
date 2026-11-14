@@ -37,7 +37,8 @@ export async function loader({ request }: Route.LoaderArgs) {
   return data({ meta, vehicles, origin: siteOrigin(request) }, { headers: { "Cache-Control": fresh ? PUBLIC_CACHE : "no-store" } });
 }
 
-export const headers: Route.HeadersFunction = ({ loaderHeaders }) => loaderHeaders;
+export const headers: Route.HeadersFunction = ({ loaderHeaders, errorHeaders }) =>
+  errorHeaders ? new Headers({ "Cache-Control": errorHeaders.get("Cache-Control") ?? "no-store" }) : loaderHeaders;
 
 const INTRO_GATE = `try{if(sessionStorage.getItem('armorix-intro')||matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.classList.add('no-intro')}catch(e){document.documentElement.classList.add('no-intro')}document.documentElement.classList.remove('no-js');setTimeout(function(){var h=document.documentElement;if(!h.classList.contains('is-ready'))h.classList.add('no-js')},8000)`;
 

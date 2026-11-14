@@ -48,9 +48,13 @@ export async function send<T = unknown>(method: string, path: string, body?: unk
 }
 
 export function safeNext(raw: string | null | undefined, fallback = "/account"): string {
-  if (!raw || !raw.startsWith("/") || raw.startsWith("//") || raw.startsWith("/\\")) return fallback;
-  if (/^\/(login|api|admin)(\/|\?|$)/.test(raw)) return fallback;
-  return raw;
+  if (!raw || !raw.startsWith("/") || raw.includes("\\") || [...raw].some((ch) => ch.charCodeAt(0) < 32 || ch.charCodeAt(0) === 127)) return fallback;
+  let u: URL;
+  try { u = new URL(raw, "http://x.invalid"); } catch { return fallback; }
+  if (u.origin !== "http://x.invalid") return fallback;
+  const path = u.pathname + u.search + u.hash;
+  if (path.startsWith("//") || /^\/(login|api|admin)(\/|\?|#|$)/.test(path)) return fallback;
+  return path;
 }
 
 export function loginHref(next: string, reauth = false): string {

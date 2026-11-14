@@ -81,7 +81,7 @@ export default function Selection({ loaderData }: Route.ComponentProps) {
   function sendNewPrice(item: SelectionItem, ch: CatalogChange) {
     selection.setPrice(item.variantId, ch.priceFrom);
     dropChange(item.variantId);
-    const left = openChanges.filter((c) => c.variantId !== item.variantId && c.available).length;
+    const left = openChanges.filter((c) => c.variantId !== item.variantId).length;
     if (!left) window.setTimeout(() => panel.current?.querySelector("form")?.requestSubmit(), 140);
   }
 
@@ -106,7 +106,7 @@ export default function Selection({ loaderData }: Route.ComponentProps) {
           <div className="sel-head">
             <div data-in="">
               <h1 className="ph__t">Подборка</h1>
-              <p className="ph__sub num" aria-live="polite">{sub}</p>
+              {empty ? null : <p className="ph__sub num" aria-live="polite">{sub}</p>}
             </div>
             <Link className="lnk" to="/catalog" data-in="">
               <span className="lnk__t">Добавить из каталога</span>

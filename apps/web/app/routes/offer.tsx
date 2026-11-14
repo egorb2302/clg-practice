@@ -104,14 +104,6 @@ export default function Offer({ loaderData }: Route.ComponentProps) {
             <ol className="of-how" data-stagger="">
               {how.map((t, i) => <li key={t} className="ol" data-in=""><span className="D">{String(i + 1).padStart(2, "0")}</span><span>{t}</span></li>)}
             </ol>
-            {kits.length && st !== "ended" ? (
-              <>
-                <h2 className="of-h2" data-in="">{cars.length ? "Подходящие комплекты" : "Комплекты из каталога"}</h2>
-                <div className="of-kits" data-stagger="">
-                  {kits.map((k) => <ProductCard key={`${k.slug}-${k.vehicle.slug}`} p={k} back={`/offers/${p.slug}`} sizes="(max-width: 767px) 100vw, 33vw" />)}
-                </div>
-              </>
-            ) : null}
           </div>
 
           <aside className="of-panel ol" aria-label="Выгода" data-in="">
@@ -141,6 +133,14 @@ export default function Offer({ loaderData }: Route.ComponentProps) {
             <span className="of-panel__f">На сайте ничего не оплачивается. Скидку применяет менеджер при подтверждении сделки, условия фиксируются в покупке</span>
           </aside>
         </div>
+        {kits.length && st !== "ended" ? (
+          <div className="wrap of-kitsec">
+            <h2 className="of-h2" data-in="">{cars.length ? "Подходящие комплекты" : "Комплекты из каталога"}</h2>
+            <div className="of-kits" data-stagger="">
+              {kits.map((k) => <ProductCard key={`${k.slug}-${k.vehicle.slug}`} p={k} back={`/offers/${p.slug}`} sizes="(max-width: 767px) 100vw, (max-width: 1279px) 50vw, 33vw" />)}
+            </div>
+          </div>
+        ) : null}
       </section>
     </>
   );

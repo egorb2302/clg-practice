@@ -318,6 +318,16 @@ describe("admin system", () => {
     expect(ok.status).toBe(200);
   });
 
+  it("accepts only https VK links for the VK contact", async () => {
+    for (const vk of ["https://evil.com/club1", "http://vk.com/club1", "https://vk.com.evil.com/club1"]) {
+      expect((await as(ctx, admin).put("/api/v1/admin/settings/contacts").send({ vk })).status).toBe(422);
+    }
+    for (const vk of ["https://vk.ru/club243269750", "https://vk.com/armorix", "https://m.vk.com/armorix"]) {
+      expect((await as(ctx, admin).put("/api/v1/admin/settings/contacts").send({ vk })).status).toBe(200);
+    }
+    expect((await ctx.http().get("/api/v1/meta")).body.contacts.vk).toBe("https://m.vk.com/armorix");
+  });
+
   it("filters leads by business-day dates", async () => {
     const [row] = await ctx.sql<{ day: string }[]>`
       select to_char(created_at at time zone 'Europe/Moscow', 'YYYY-MM-DD') as day from app.leads where reference = ${ref}`;

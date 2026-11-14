@@ -1,6 +1,6 @@
 import { data, Link } from "react-router";
 import type { Route } from "./+types/news-post";
-import { coverOf, type Post, PostBody, readMinutes } from "../components/account/post";
+import { assignArt, coverOf, type Post, PostBody, readMinutes } from "../components/account/post";
 import { Crumbs, Icon, Illustration } from "../components/site";
 import { fmtDate, fmtLong } from "../lib/account";
 import { apiRaw, PUBLIC_CACHE } from "../lib/api.server";
@@ -35,7 +35,8 @@ export const meta: Route.MetaFunction = ({ data: d, matches, params }) => {
 
 export default function NewsPost({ loaderData }: Route.ComponentProps) {
   const { post: p, more } = loaderData;
-  const cv = coverOf(p, "news");
+  const art = assignArt([p, ...more], "news");
+  const cv = coverOf(p, "news", art);
   const min = readMinutes(`${p.summary} ${p.body ?? ""}`);
   const date = p.publishedAt ?? p.startsAt;
 
@@ -82,7 +83,7 @@ export default function NewsPost({ loaderData }: Route.ComponentProps) {
             <h2 className="nw-next__t" data-in="">Читать еще</h2>
             <ul className="nw-grid nw-grid--next" data-stagger="">
               {more.map((m) => {
-                const c = coverOf(m, "news");
+                const c = coverOf(m, "news", art);
                 return (
                   <li key={m.slug} data-in="">
                     <Link className="nw-card ol" to={`/news/${m.slug}`} prefetch="intent">

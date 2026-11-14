@@ -304,10 +304,12 @@ export function Quiz({ kits, car, req }: { kits: Kit[]; car: Vehicle; req: numbe
               <b className="D">{meta.contacts.phone}</b>
             </a>
           ) : null}
-          <Link className="home-quiz__map ol" to="/contacts">
-            <span><b className="D">Как добраться<br />до мастерской</b><small>{meta.contacts.address ? `${meta.contacts.address}, карта и маршрут` : "Карта и маршрут"}</small></span>
-            <span className="home-quiz__arr cut" aria-hidden="true"><Icon name="arrow" /></span>
-          </Link>
+          {meta.contacts.address ? (
+            <Link className="home-quiz__map ol" to="/contacts">
+              <span><b className="D">Как добраться<br />до мастерской</b><small>{meta.contacts.address}, карта и маршрут</small></span>
+              <span className="home-quiz__arr cut" aria-hidden="true"><Icon name="arrow" /></span>
+            </Link>
+          ) : null}
         </div>
       </div>
     </section>

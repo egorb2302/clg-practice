@@ -3,7 +3,7 @@ import { api } from "../../lib/api.server";
 
 export async function fetchAllCards(): Promise<Card[]> {
   const first = await api.catalog(new URLSearchParams());
-  const pages = Math.min(10, Math.ceil(first.total / Math.max(1, first.pageSize)));
+  const pages = Math.min(1000, Math.ceil(first.total / Math.max(1, first.pageSize)));
   const items = [...first.items];
   if (pages > 1) {
     const rest = await Promise.all(Array.from({ length: pages - 1 }, (_, i) => api.catalog(new URLSearchParams({ page: String(i + 2) }))));

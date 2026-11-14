@@ -1,4 +1,5 @@
 import { API_PREFIX, type CatalogChange, type LeadCreatedResponse, type LeadRequest } from "@armorix/contracts";
+import { csrf } from "./account";
 
 export type LeadResult =
   | { kind: "ok"; data: LeadCreatedResponse }
@@ -12,11 +13,13 @@ export type LeadResult =
 export async function postLead(body: LeadRequest, key: string): Promise<LeadResult> {
   let res: Response;
   try {
+    const token = await csrf();
     const ctl = new AbortController();
     const t = setTimeout(() => ctl.abort(), 20_000);
     res = await fetch(`${API_PREFIX}/leads`, {
       method: "POST",
-      headers: { "content-type": "application/json", "Idempotency-Key": key },
+      credentials: "same-origin",
+      headers: { "content-type": "application/json", "Idempotency-Key": key, ...(token ? { "x-csrf-token": token } : {}) },
       body: JSON.stringify(body),
       signal: ctl.signal,
     });

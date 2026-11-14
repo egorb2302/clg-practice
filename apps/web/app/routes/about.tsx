@@ -28,12 +28,12 @@ const RULES = [
 ];
 
 const STEPS = [
-  ["Замер", "По машине в мастерской или по фото и размерам, которые вы пришлете", "/img/install-rack.webp"],
+  ["Замер", "По машине в мастерской или по фото и размерам, которые вы пришлете", "/img/install-hands.webp"],
   ["Чертеж", "Показываем чертеж и примерный вид до оплаты, правим по вашим пожеланиям", "/img/tex-brushed.webp"],
-  ["Резка и гибка", "Труба 63 или 76 мм, гнем по линии штатного бампера", "/img/steel-tubes.webp"],
+  ["Резка и гибка", "Труба 63 или 76 мм, гнем по линии штатного бампера", "/img/shop-grinder.webp"],
   ["Сварка", "Каждый шов проверяет мастер, геометрию сверяем по шаблону", "/img/shop-sparks.webp"],
-  ["Покрытие", "Зеркальная полировка нержавейки или порошковая окраска", "/img/steel-chrome.webp"],
-  ["Примерка", "Ставим на машину до выдачи, если не встает, исправляем", "/img/install-hands.webp"],
+  ["Покрытие", "Зеркальная полировка нержавейки или порошковая окраска", "/img/steel-plates.webp"],
+  ["Примерка", "Ставим на машину до выдачи, если не встает, исправляем", "/img/bumper.webp"],
 ];
 
 const MATS = [
@@ -159,19 +159,21 @@ export default function About() {
                 </div>
               );
             })}
-            <div data-in="" className="abt-get__map">
-              <Link className="abt-map ol" to="/contacts">
-                <span className="abt-map__road" aria-hidden="true" />
-                <span className="cap">Мастерская</span>
-                <span className="abt-map__b">
-                  <span>
-                    <b>Как добраться<br />до мастерской</b>
-                    <small>{c.address ?? "Адрес, часы работы и карта на странице контактов"}</small>
+            {c.address ? (
+              <div data-in="" className="abt-get__map">
+                <Link className="abt-map ol" to="/contacts">
+                  <span className="abt-map__road" aria-hidden="true" />
+                  <span className="cap">Мастерская</span>
+                  <span className="abt-map__b">
+                    <span>
+                      <b>Как добраться<br />до мастерской</b>
+                      <small>{c.address}</small>
+                    </span>
+                    <span className="ol ar" aria-hidden="true"><Icon name="arrow" className="ico--go" /></span>
                   </span>
-                  <span className="ol ar" aria-hidden="true"><Icon name="arrow" className="ico--go" /></span>
-                </span>
-              </Link>
-            </div>
+                </Link>
+              </div>
+            ) : null}
           </div>
         </div>
       </section>

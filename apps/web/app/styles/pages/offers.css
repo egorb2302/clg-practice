@@ -84,7 +84,8 @@
 .of-how li { --c: var(--c-m); --lc: var(--p-2); --fill: #fff; display: flex; flex-direction: column; gap: 10px; padding: 22px 22px 26px; font-size: 17px; line-height: 1.5; }
 .of-how li:hover { --lc: var(--ink); }
 .of-how .D { font-size: 15px; color: var(--g-2); }
-.of-kits { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr)); gap: 28px 16px; margin-top: 8px; }
+.of-kitsec { margin-top: clamp(24px, 3vw, 48px); }
+.of-kits { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px 16px; margin-top: 8px; }
 
 .of-panel {
   --c: var(--c-l);
@@ -113,7 +114,7 @@
 .of-panel__f { font-size: var(--fs-xs); line-height: 1.5; color: var(--g-2); }
 
 @media (max-width: 1279px) {
-  .of-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .of-grid, .of-kits { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .of-dgrid { grid-template-columns: minmax(0, 1fr) minmax(300px, 420px); }
 }
 @media (max-width: 1023px) {
@@ -124,7 +125,7 @@
   .of-panel { position: static; order: -1; }
 }
 @media (max-width: 767px) {
-  .of-grid { grid-template-columns: minmax(0, 1fr); }
+  .of-grid, .of-kits { grid-template-columns: minmax(0, 1fr); }
   .of-meta > span { flex-direction: column; gap: 2px; }
   .of-meta > span > span:last-child { text-align: left; }
   .of-terms li { grid-template-columns: 40px minmax(0, 1fr); gap: 10px; font-size: 16px; }

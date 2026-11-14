@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { data, Link } from "react-router";
 import type { Route } from "./+types/news";
-import { coverOf, type Post } from "../components/account/post";
+import { assignArt, coverOf, type Post } from "../components/account/post";
 import { Crumbs, Icon, Illustration } from "../components/site";
 import { fmtDate } from "../lib/account";
 import { apiRaw, PUBLIC_CACHE } from "../lib/api.server";
@@ -33,6 +33,7 @@ export default function News({ loaderData }: Route.ComponentProps) {
   const prev = useRef(STEP);
   const [feat, ...rest] = items;
   const shown = rest.slice(0, n);
+  const art = assignArt(items, "news");
 
   useEffect(() => {
     if (n > prev.current) grid.current?.querySelectorAll<HTMLElement>("a")[prev.current]?.focus({ preventScroll: true });
@@ -57,7 +58,7 @@ export default function News({ loaderData }: Route.ComponentProps) {
           {feat ? (
             <>
               <Link className="nw-feat ol" to={`/news/${feat.slug}`} prefetch="intent" data-in="">
-                {(() => { const cv = coverOf(feat, "news"); return <Illustration src={cv.src} alt="" label={cv.own} ratio="16 / 10" eager className="nw-feat__img" sizes="(max-width: 1023px) 100vw, 60vw" />; })()}
+                {(() => { const cv = coverOf(feat, "news", art); return <Illustration src={cv.src} alt="" label={cv.own} ratio="16 / 10" eager className="nw-feat__img" sizes="(max-width: 1023px) 100vw, 60vw" />; })()}
                 <span className="nw-feat__b">
                   <time className="nw-meta" dateTime={feat.publishedAt ?? undefined}>{when(feat)}</time>
                   <span className="nw-feat__t D">{feat.title}</span>
@@ -68,7 +69,7 @@ export default function News({ loaderData }: Route.ComponentProps) {
               {shown.length ? (
                 <ul className="nw-grid" ref={grid} data-stagger="">
                   {shown.map((p) => {
-                    const cv = coverOf(p, "news");
+                    const cv = coverOf(p, "news", art);
                     return (
                       <li key={p.slug} data-in="">
                         <Link className="nw-card ol" to={`/news/${p.slug}`} prefetch="intent">

@@ -1,7 +1,9 @@
 import { API_PREFIX, type CatalogChange, type DeliveryMethodCode, type LeadCreatedResponse, type LeadRequest } from "@armorix/contracts";
 import { type FormEvent, type ReactNode, useEffect, useId, useRef, useState } from "react";
+import { Link } from "react-router";
 import { maskPhone, phoneE164, plural } from "../../lib/format";
 import { postLead, uuid } from "../../lib/leads";
+import { setDelivery, useDelivery } from "../../lib/selection";
 import { useSite } from "../../lib/site";
 import { ui } from "../../lib/ui";
 import { useVehicle } from "../../lib/vehicle";
@@ -22,11 +24,11 @@ type Props = {
   className?: string;
 };
 
-type Field = "name" | "phone" | "email" | "make" | "model" | "year" | "request" | "message" | "comment";
+type Field = "name" | "phone" | "email" | "make" | "model" | "year" | "request" | "message" | "comment" | "delivery";
 type Errors = Partial<Record<Field, string>>;
 const SERVER_KEY: Record<string, Field> = {
   name: "name", "contact.phone": "phone", "contact.email": "email", "vehicle.make": "make", "vehicle.model": "model",
-  "vehicle.year": "year", request: "request", message: "message", comment: "comment",
+  "vehicle.year": "year", request: "request", message: "message", comment: "comment", deliveryMethod: "delivery",
 };
 
 const digits = (v: string) => v.replace(/\D/g, "");
@@ -37,6 +39,12 @@ export function LeadForm(props: Props) {
   const { type, items = [], deliveryMethod, submitLabel = "Отправить заявку", onSuccess, onCatalogChanged, className = "" } = props;
   const { meta } = useSite();
   const chosen = useVehicle();
+  const stored = useDelivery();
+  const methods = meta.deliveryMethods;
+  const pickDelivery = type === "catalog" && !deliveryMethod && methods.length > 1;
+  const dm: DeliveryMethodCode | undefined = deliveryMethod
+    ?? methods.find((m) => m.code === stored)?.code
+    ?? (methods.length === 1 ? methods[0]!.code : undefined);
   const id = useId().replace(/:/g, "");
   const form = useRef<HTMLFormElement>(null);
   const done = useRef<HTMLDivElement>(null);
@@ -52,7 +60,7 @@ export function LeadForm(props: Props) {
   const [failed, setFailed] = useState(false);
   const [changed, setChanged] = useState(false);
   const [limitMin, setLimitMin] = useState(0);
-  const [result, setResult] = useState<{ ref: string; mail: "sent" | "failed" | null } | null>(null);
+  const [result, setResult] = useState<{ ref: string; mail: "sent" | "failed" | null; pending: boolean } | null>(null);
   const key = useRef<string | null>(null);
   const started = useRef<number | null>(null);
   const mounted = useRef(Date.now());
@@ -101,6 +109,7 @@ export function LeadForm(props: Props) {
       if (f.request.trim().length < 3) e.request = "Опишите, что нужно изготовить";
     }
     if (type === "general" && f.message.trim().length < 3) e.message = "Напишите, чем помочь";
+    if (pickDelivery && !dm) e.delivery = "Выберите, как получить заказ";
     return e;
   }
 
@@ -110,7 +119,7 @@ export function LeadForm(props: Props) {
       : { preferred: "email" as const, email: f.email.trim() };
     const base = { name: f.name.trim(), contact, website: f.website, fillMs: Date.now() - (started.current ?? mounted.current) };
     const comment = f.comment.trim() || undefined;
-    if (type === "catalog") return { type, ...base, items, deliveryMethod, comment };
+    if (type === "catalog") return { type, ...base, items, deliveryMethod: dm, comment };
     if (type === "custom") {
       return { type, ...base, vehicle: { make: f.make.trim(), model: f.model.trim(), year: f.year.trim() ? Number(f.year) : undefined }, request: f.request.trim(), comment };
     }
@@ -140,7 +149,7 @@ export function LeadForm(props: Props) {
     const r = await postLead(body(), key.current);
     if (r.kind === "ok") {
       const mail = f.pref === "email" && f.mail && meta.features.campaigns ? await subscribe(f.email.trim()) : null;
-      setResult({ ref: r.data.reference, mail });
+      setResult({ ref: r.data.reference, mail, pending: meta.features.loyalty && r.data.loyaltyStatus === "pending" });
       setState("done");
       setFailed(false);
       key.current = null;
@@ -194,6 +203,7 @@ export function LeadForm(props: Props) {
         <p>{text}</p>
         {result.mail === "sent" ? <p className="small">Про рассылку: отправили на {f.email.trim()} письмо со ссылкой. Нажмите ее, и начнем присылать акции</p> : null}
         {result.mail === "failed" ? <p className="small">Подписаться на рассылку сейчас не получилось, это можно сделать внизу страницы</p> : null}
+        {result.pending ? <p className="small">Баллы станут доступны после <Link className="flink" to="/login?next=%2Faccount%3Ftab%3Dbonus">входа</Link> и подтверждения контакта</p> : null}
         <button type="button" className="flink small" style={{ alignSelf: "flex-start" }} onClick={again}>Отправить еще одну заявку</button>
       </div>
     );
@@ -241,6 +251,35 @@ export function LeadForm(props: Props) {
           {field("model", "Модель", <input {...inProps("model")} className="in" autoComplete="off" value={f.model} onChange={(e) => set("model", e.target.value)} />)}
           {field("year", <>Год выпуска <em>необязательно</em></>, <input {...inProps("year")} className="in" inputMode="numeric" maxLength={4} placeholder="2023" value={f.year} onChange={(e) => set("year", digits(e.target.value).slice(0, 4))} />)}
           {field("request", "Что изготовить", <textarea {...inProps("request")} className="in" placeholder="Например, передняя защита с площадкой под лебедку" value={f.request} onChange={(e) => set("request", e.target.value)} />, true)}
+        </div>
+      ) : null}
+
+      {pickDelivery ? (
+        <div className="fld" role="radiogroup" aria-labelledby={fid("dlv")} aria-describedby={err.delivery ? fid("delivery-e") : undefined}>
+          <span className="fld__l" id={fid("dlv")}>Как получить</span>
+          <div className="rdos">
+            {methods.map((m, i) => (
+              <label key={m.code} className="rdo">
+                <input
+                  className="vh"
+                  type="radio"
+                  name={fid("dlv")}
+                  value={m.code}
+                  checked={dm === m.code}
+                  aria-invalid={err.delivery && i === 0 ? true : undefined}
+                  onChange={() => {
+                    touch();
+                    setDelivery(m.code);
+                    key.current = null;
+                    setFailed(false);
+                    setErr((e) => { const n = { ...e }; delete n.delivery; return n; });
+                  }}
+                />
+                <i aria-hidden="true" />{m.label}
+              </label>
+            ))}
+          </div>
+          {err.delivery ? <small className="ferr" id={fid("delivery-e")}>{err.delivery}</small> : null}
         </div>
       ) : null}
 

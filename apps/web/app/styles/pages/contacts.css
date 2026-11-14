@@ -5,6 +5,9 @@
 .cnt-main { padding-top: clamp(40px, 5vw, 80px); }
 .cnt-grid { display: grid; grid-template-columns: minmax(0, 560px) minmax(0, 1fr); gap: clamp(16px, 2vw, 24px); align-items: stretch; }
 .cnt-art { --c: var(--c-xl); min-height: 320px; clip-path: polygon(var(--c) 0, 100% 0, 100% calc(100% - var(--c)), calc(100% - var(--c)) 100%, 0 100%, 0 var(--c)); }
+.cnt-art { position: relative; min-height: 0; }
+@media (max-width: 1023px) { .cnt-art { min-height: 240px; } }
+.cnt-art > .ill { position: absolute; inset: 0; height: 100%; aspect-ratio: auto; }
 .cnt-art:hover .ill img { transform: scale(1.04); }
 @media (max-width: 1023px) { .cnt-grid { grid-template-columns: minmax(0, 1fr); } }
 .cnt-list { list-style: none; display: flex; flex-direction: column; gap: 12px; }

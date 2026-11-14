@@ -16,6 +16,12 @@
 .nf-p { max-width: 56ch; font-size: var(--fs-l); line-height: 1.55; color: var(--ink-2); }
 .nf-acts { display: flex; flex-direction: column; align-items: center; gap: 20px; margin-top: 14px; }
 .nf-acts .lnk { font-size: 17px; }
+@media (max-width: 479px) {
+  .nf-acts { width: 100%; text-align: center; }
+  .nf-acts .lift { width: 100%; }
+  .nf-acts .btn { width: 100%; justify-content: center; }
+  .nf-acts .lnk { justify-content: center; text-align: center; flex-wrap: wrap; }
+}
 .nf-pop { margin-top: clamp(64px, 6vw, 112px); }
 .nf-pop__t { margin-bottom: 28px; font-size: clamp(28px, 20px + 1.3vw, 44px); line-height: 1; }
 .nf-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 44px var(--gap); padding-top: 18px; }

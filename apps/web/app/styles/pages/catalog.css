@@ -15,13 +15,7 @@
 .cat-main { min-width: 0; }
 
 .cat-side {
-  position: sticky;
-  top: calc(var(--hd-h) + 20px);
-  max-height: calc(100vh - var(--hd-h) - 40px);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-width: thin;
-  scrollbar-color: var(--p-4) transparent;
+  align-self: start;
   padding: 2px 6px 2px 2px;
   margin: -2px -6px -2px -2px;
 }
@@ -230,6 +224,8 @@ html.no-js .cat-fgo { display: block; }
     inset: 0;
     z-index: var(--z-modal);
     max-height: none;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     margin: 0;
     padding: 16px var(--gut) 0;
     background: var(--p-0);

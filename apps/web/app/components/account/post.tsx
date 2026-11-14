@@ -95,19 +95,46 @@ export function vehiclesIn(text: string, vehicles: Vehicle[]): Vehicle[] {
 export const postText = (p: Post) => `${p.title} ${p.summary} ${p.benefit ?? ""} ${p.body ?? ""}`;
 
 const ART = {
-  news: ["/img/shop-welder.webp", "/img/install-rack.webp", "/img/shop-sparks.webp", "/img/shop-grinder.webp", "/img/install-hands.webp", "/img/steel-tubes.webp"],
-  offer: ["/img/truck.webp", "/img/road-mud.webp", "/img/install-hands.webp", "/img/road-taiga.webp", "/img/car-snow.webp", "/img/bullbar.webp"],
+  news: ["/img/shop-welder.webp", "/img/install-rack.webp", "/img/shop-sparks.webp", "/img/shop-grinder.webp", "/img/install-hands.webp", "/img/steel-tubes.webp", "/img/steel-plates.webp", "/img/bumper.webp", "/img/tex-brushed.webp"],
+  offer: ["/img/truck.webp", "/img/road-taiga.webp", "/img/bullbar.webp", "/img/road-fog.webp", "/img/truck-cut.webp", "/img/taiga-valley.webp", "/img/bumper.webp", "/img/install-hands.webp", "/img/taiga-peaks.webp"],
+};
+
+export type Art = Record<string, string>;
+
+const hashOf = (slug: string) => {
+  let h = 0;
+  for (const c of slug) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return h;
 };
 
 export function postArt(slug: string, type: "news" | "offer"): string {
-  let h = 0;
-  for (const c of slug) h = (h * 31 + c.charCodeAt(0)) >>> 0;
   const list = ART[type];
-  return list[h % list.length]!;
+  return list[hashOf(slug) % list.length]!;
 }
 
-export function coverOf(p: Post, type: "news" | "offer"): { src: string; own: boolean } {
-  return p.coverUrl && /^https?:\/\//i.test(p.coverUrl) ? { src: p.coverUrl, own: false } : { src: postArt(p.slug, type), own: true };
+export function assignArt(posts: { slug: string; coverUrl: string | null }[], type: "news" | "offer"): Art {
+  const list = ART[type];
+  const used = new Set<string>();
+  const out: Art = {};
+  for (const p of posts) {
+    if (p.coverUrl && /^https?:\/\//i.test(p.coverUrl)) continue;
+    const start = hashOf(p.slug) % list.length;
+    let pick = list[start]!;
+    for (let i = 0; i < list.length; i++) {
+      const c = list[(start + i) % list.length]!;
+      if (!used.has(c)) {
+        pick = c;
+        break;
+      }
+    }
+    used.add(pick);
+    out[p.slug] = pick;
+  }
+  return out;
+}
+
+export function coverOf(p: Post, type: "news" | "offer", art?: Art): { src: string; own: boolean } {
+  return p.coverUrl && /^https?:\/\//i.test(p.coverUrl) ? { src: p.coverUrl, own: false } : { src: art?.[p.slug] ?? postArt(p.slug, type), own: true };
 }
 
 export function until(p: Post): string {
