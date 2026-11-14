@@ -1,5 +1,3 @@
-/* Browser side of POST /api/v1/leads (same origin; on Vercel the rewrite or the
-   /api/v1/* route proxies it to the API, so cookies stay first-party). */
 import { API_PREFIX, type CatalogChange, type LeadCreatedResponse, type LeadRequest } from "@armorix/contracts";
 
 export type LeadResult =

@@ -22,6 +22,7 @@ const contactsBody = z.object({
   phone: z.preprocess(blankToUndefined, z.string().trim().max(40).optional()),
   email: z.preprocess(blankToUndefined, z.email().max(254).optional()),
   telegram: z.preprocess(blankToUndefined, z.url({ protocol: /^https$/ }).max(200).optional()),
+  vk: z.preprocess(blankToUndefined, z.url({ protocol: /^https$/, hostname: /^(m\.)?vk\.(com|ru)$/ }).max(200).optional()),
   address: z.preprocess(blankToUndefined, z.string().trim().max(300).optional()),
   hours: z.preprocess(blankToUndefined, z.string().trim().max(200).optional()),
 });

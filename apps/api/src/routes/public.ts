@@ -57,12 +57,20 @@ export function publicRoutes(deps: Deps) {
   r.get("/sitemap", async (_req, res) => {
     const products = await deps.sql<{ slug: string; updated_at: Date }[]>`
       select slug, updated_at from products where status = 'published' order by slug`;
-    const statics = ["/", "/catalog", "/about", "/contacts", "/privacy"];
+    const types = [deps.cfg.FEATURE_OFFERS && "offer", deps.cfg.FEATURE_NEWS && "news"].filter((t): t is string => !!t);
+    const posts = types.length
+      ? await deps.sql<{ type: string; slug: string; updated_at: Date }[]>`
+          select type, slug, updated_at from posts
+          where status = 'published' and type in ${deps.sql(types)} and (type <> 'offer' or coalesce(ends_at > now(), true))
+          order by type, slug`
+      : [];
+    const statics = ["/", "/catalog", "/about", "/contacts", "/faq", "/privacy", ...(deps.cfg.FEATURE_OFFERS ? ["/offers"] : []), ...(deps.cfg.FEATURE_NEWS ? ["/news"] : [])];
     const now = new Date().toISOString();
     res.set("Cache-Control", publicCache).json({
       urls: [
         ...statics.map((path) => ({ path, updatedAt: now })),
         ...products.map((p) => ({ path: `/catalog/${p.slug}`, updatedAt: p.updated_at.toISOString() })),
+        ...posts.map((p) => ({ path: `/${p.type === "offer" ? "offers" : "news"}/${p.slug}`, updatedAt: p.updated_at.toISOString() })),
       ],
     });
   });

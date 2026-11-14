@@ -1,6 +1,3 @@
-/* /api/v1/* on the site's own origin. API_MOCK=1: answered by the fixtures. Otherwise
-   proxied to API_ORIGIN with the client IP, cookies and the idempotency key forwarded.
-   On Vercel a rewrite in front of this route can take over; the shapes stay the same. */
 import type { Route } from "./+types/api";
 import { apiRaw, isMock } from "../lib/api.server";
 

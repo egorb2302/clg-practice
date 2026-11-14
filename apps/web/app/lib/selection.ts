@@ -1,5 +1,3 @@
-/* The selection («подборка»): localStorage key armorix.selection.v1. Snapshot is for
-   display only; the server re-validates on submit. Works without storage (memory). */
 import { useSyncExternalStore } from "react";
 
 export type SelectionItem = {
@@ -7,7 +5,15 @@ export type SelectionItem = {
   productSlug: string;
   vehicleSlug: string;
   quantity: number;
-  snapshot: { title: string; priceFrom: number | null; imageUrl: string | null; variantTitle?: string; vehicleLabel?: string };
+  snapshot: {
+    title: string;
+    priceFrom: number | null;
+    imageUrl: string | null;
+    variantTitle?: string;
+    vehicleLabel?: string;
+    options?: { id: string; title: string; priceFrom: number | null }[];
+    position?: "front" | "rear" | "kit";
+  };
 };
 
 const KEY = "armorix.selection.v1";
@@ -61,7 +67,6 @@ export const selection = {
   remove(variantId: string) {
     write(read().filter((i) => i.variantId !== variantId));
   },
-  /** after success: take away only the submitted quantities */
   removeSubmitted(sent: { variantId: string; quantity: number }[]) {
     const q = new Map(sent.map((s) => [s.variantId, s.quantity]));
     write(read().map((i) => ({ ...i, quantity: i.quantity - (q.get(i.variantId) ?? 0) })).filter((i) => i.quantity > 0));
@@ -69,4 +74,36 @@ export const selection = {
   has(variantId: string) {
     return read().some((i) => i.variantId === variantId);
   },
+  swap(variantId: string, to: { id: string; title: string; priceFrom: number | null }) {
+    const cur = read();
+    const item = cur.find((i) => i.variantId === variantId);
+    if (!item || variantId === to.id) return;
+    const moved: SelectionItem = { ...item, variantId: to.id, snapshot: { ...item.snapshot, priceFrom: to.priceFrom, variantTitle: to.title } };
+    const other = cur.find((i) => i.variantId === to.id);
+    write(other
+      ? cur.filter((i) => i.variantId !== variantId).map((i) => (i.variantId === to.id ? { ...i, quantity: Math.min(20, i.quantity + item.quantity) } : i))
+      : cur.map((i) => (i.variantId === variantId ? moved : i)));
+  },
+  restore(item: SelectionItem, index: number) {
+    const cur = read().filter((i) => i.variantId !== item.variantId);
+    cur.splice(Math.max(0, Math.min(index, cur.length)), 0, item);
+    write(cur);
+  },
 };
+
+const DKEY = "armorix.delivery.v1";
+let dcache: string | null | undefined;
+const dsubs = new Set<() => void>();
+function dread(): string | null {
+  if (dcache !== undefined) return dcache;
+  try { dcache = localStorage.getItem(DKEY); } catch { dcache = null; }
+  return dcache;
+}
+export function useDelivery(): string | null {
+  return useSyncExternalStore((f) => { dsubs.add(f); return () => { dsubs.delete(f); }; }, dread, () => null);
+}
+export function setDelivery(code: string) {
+  dcache = code;
+  try { localStorage.setItem(DKEY, code); } catch { /* memory only */ }
+  dsubs.forEach((f) => f());
+}

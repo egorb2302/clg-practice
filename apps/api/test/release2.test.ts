@@ -354,6 +354,15 @@ describe("offers and news", () => {
     return created.body.id as string;
   }
 
+  it("lists the offer and news pages and published posts in the sitemap", async () => {
+    await createOffer({ slug: "offer-live" });
+    const draft = await as(ctx, editor).post("/api/v1/admin/posts").send({ type: "news", slug: "news-draft", title: "Черновик", summary: "Еще не опубликовано" });
+    expect(draft.status).toBe(201);
+    const paths = (await ctx.http().get("/api/v1/sitemap")).body.urls.map((u: { path: string }) => u.path);
+    expect(paths).toEqual(expect.arrayContaining(["/faq", "/offers", "/news", "/offers/offer-live"]));
+    expect(paths).not.toContain("/news/news-draft");
+  });
+
   it("publishes an offer and applies it only after enough confirmed purchases", async () => {
     const offerId = await createOffer();
     expect((await ctx.http().get("/api/v1/offers")).body.items).toHaveLength(1);

@@ -1,181 +1,360 @@
-import { useEffect, useRef, useState } from "react";
-import { data, Link, redirect, useLocation, useRouteLoaderData } from "react-router";
+import type { ProductCard as Card } from "@armorix/contracts";
+import { useMemo, useRef, useState } from "react";
+import { data, Link, redirect, useLocation } from "react-router";
 import type { Route } from "./+types/product";
-import { LeadForm } from "../components/LeadForm";
-import { ProductCard } from "../components/ProductCard";
-import { Chip, Icon, Img, Sbtn } from "../components/ui";
-import { api, PUBLIC_CACHE } from "../lib/api.server";
-import { nb, POSITION_LABEL, PRICE_NOTE, priceFrom } from "../lib/format";
-import { selection, useSelection, type SelectionItem } from "../lib/selection";
+import { CatIcon } from "../components/catalog/CatIcon";
+import { fetchAllCards, popularCards } from "../components/catalog/catalog.server";
+import { Gallery, type Shot } from "../components/catalog/Gallery";
+import { LeadPanel } from "../components/catalog/LeadPanel";
+import { cardKey, kitDiscounts, parseQuery, swatchOf } from "../components/catalog/model";
+import { NotFound } from "../components/catalog/NotFound";
+import { ProductFaq } from "../components/catalog/ProductFaq";
+import { type SpecTab, SpecTabs } from "../components/catalog/SpecTabs";
+import { Collapse, Crumbs, Icon, ProductCard } from "../components/site";
+import { api } from "../lib/api.server";
+import { plural, POSITION_LABEL, PRICE_NOTE, priceFrom } from "../lib/format";
+import { selection, useSelection } from "../lib/selection";
 import { rootOrigin, seo } from "../lib/seo";
-import type { loader as rootLoader } from "../root";
+import { useSite } from "../lib/site";
+import { ui } from "../lib/ui";
+import { useVehicle } from "../lib/vehicle";
+import css from "../styles/pages/product.css?url";
+
+export const links: Route.LinksFunction = () => [{ rel: "stylesheet", href: css }];
 
 export async function loader({ params, request }: Route.LoaderArgs) {
-  const vehicle = new URL(request.url).searchParams.get("vehicle") ?? undefined;
+  const url = new URL(request.url);
+  const vehicle = url.searchParams.get("vehicle") ?? undefined;
   const res = await api.product(params.slug, vehicle);
-  if (!res) throw data(null, { status: 404 });
+  if (!res) {
+    const all = await fetchAllCards().catch((): Card[] => []);
+    return data({ kind: "404" as const, popular: popularCards(all), discounts: kitDiscounts(all) }, { status: 404, headers: { "Cache-Control": "no-store" } });
+  }
   if ("redirect" in res) {
     const to = res.redirect.startsWith("/") ? res.redirect : `/catalog/${encodeURIComponent(res.redirect)}`;
-    throw redirect(vehicle ? `${to}?vehicle=${encodeURIComponent(vehicle)}` : to, 301);
+    const keep = new URLSearchParams();
+    for (const k of ["vehicle", "back"]) { const v = url.searchParams.get(k); if (v) keep.set(k, v); }
+    throw redirect(keep.size ? `${to}?${keep}` : to, 301);
   }
   const p = res.product;
-  const related = (await api.catalog(new URLSearchParams({ vehicle: p.vehicle.slug }))).items.filter((x) => x.slug !== p.slug).slice(0, 3);
-  return data({ product: p, related }, { headers: { "Cache-Control": PUBLIC_CACHE } });
+  const all = await fetchAllCards().catch((): Card[] => []);
+  const own = all.filter((c) => c.vehicle.slug === p.vehicle.slug && c.slug !== p.slug);
+  const n = own.length >= 5 ? 5 : Math.min(own.length, 2);
+  const related = own.slice(0, n);
+  const alternatives: Record<string, { slug: string; title: string; label: string }> = {};
+  for (const c of all) {
+    if (c.slug === p.slug || alternatives[c.vehicle.slug] || p.compatibility.some((x) => x.vehicleSlug === c.vehicle.slug)) continue;
+    if (c.position === p.position) alternatives[c.vehicle.slug] = { slug: c.slug, title: c.title, label: c.vehicle.label };
+  }
+  const disc = kitDiscounts(all);
+  const discounts: Record<string, number> = {};
+  for (const c of related) if (disc[cardKey(c)]) discounts[cardKey(c)] = disc[cardKey(c)]!;
+  return data({ kind: "product" as const, product: p, related, alternatives, discounts, ownDiscount: disc[`${p.slug}|${p.vehicle.slug}`] ?? null }, { headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" } });
 }
 export { pageHeaders as headers } from "../lib/headers";
-export const meta: Route.MetaFunction = ({ data: d, matches }) =>
-  d ? seo({
-    title: `${d.product.title}, ${d.product.vehicle.label}`,
-    description: `${d.product.title} для ${d.product.vehicle.label}, ${priceFrom(d.product.priceFrom)}, ${d.product.code}`,
-    path: `/catalog/${d.product.slug}`,
-    origin: rootOrigin(matches),
-    image: "/og/armorix-product-v1.jpg",
-  }) : [{ title: "Товар не найден | ARMORIX" }];
 
-const sentences = (s: string | null) => (s ?? "").split(/(?<=[.!?])\s+/).map((x) => x.replace(/\.$/, "").trim()).filter(Boolean);
+export const meta: Route.MetaFunction = ({ data: d, matches }) => {
+  if (!d || d.kind === "404") {
+    return [
+      { title: "Товар не найден | ARMORIX" },
+      { name: "description", content: "Такой защиты нет в каталоге. Подберите по машине или позвоните, подскажем по телефону" },
+      { name: "robots", content: "noindex" },
+    ];
+  }
+  const p = d.product;
+  return seo({
+    title: `${p.title}, ${p.vehicle.label}`,
+    description: `${p.title} для ${p.vehicle.label}: ${p.coating?.label ?? "сталь"}, ${priceFrom(p.priceFrom).toLowerCase()}, код ${p.code}. На штатные точки, цену подтвердит менеджер`,
+    path: `/catalog/${p.slug}`,
+    origin: rootOrigin(matches),
+    image: p.image?.url ?? "/og/armorix-product-v1.jpg",
+  });
+};
+
+const clean = (s: string) => s.replace(/\s[—–]\s/g, ", ").replace(/\s*\.+\s*$/, "").trim();
+const sentences = (s: string | null | undefined) => (s ?? "").split(/(?<=[.!?])\s+/).map(clean).filter(Boolean);
+
+const ART: Record<Card["position"], [string, string][]> = {
+  front: [["/img/bullbar.webp", "передняя дуга"], ["/img/truck.webp", "на машине"], ["/img/install-hands.webp", "установка на штатные точки"], ["/img/steel-tubes.webp", "труба и сварной шов"]],
+  rear: [["/img/bumper.webp", "задняя дуга"], ["/img/truck-cut.webp", "на машине"], ["/img/install-rack.webp", "установка на штатные точки"], ["/img/shop-welder.webp", "сварка в мастерской"]],
+  kit: [["/img/truck-cut.webp", "комплект на машине"], ["/img/bullbar.webp", "передняя дуга"], ["/img/bumper.webp", "задняя дуга"], ["/img/install-hands.webp", "установка на штатные точки"]],
+};
 
 export default function Product({ loaderData }: Route.ComponentProps) {
-  const { product: p, related } = loaderData;
-  const root = useRouteLoaderData<typeof rootLoader>("root");
+  if (loaderData.kind === "404") return <NotFound kind="product" popular={loaderData.popular} discounts={loaderData.discounts} />;
+  return <ProductView key={`${loaderData.product.slug}|${loaderData.product.vehicle.slug}`} d={loaderData} />;
+}
+
+type ViewData = Extract<Route.ComponentProps["loaderData"], { kind: "product" }>;
+
+function ProductView({ d }: { d: ViewData }) {
+  const { product: p, related, alternatives, discounts } = d;
+  const { meta, vehicles } = useSite();
   const loc = useLocation();
-  const back = (loc.state as { back?: string } | null)?.back ?? `/catalog?vehicle=${p.vehicle.slug}`;
-  const gallery = p.gallery.length ? p.gallery : p.image ? [p.image] : [];
-  const [shot, setShot] = useState(0);
-  const own = p.variants.filter((v) => v.vehicleSlug === p.vehicle.slug);
-  const firstOk = own.find((v) => v.available) ?? own[0];
-  const [vid, setVid] = useState(firstOk?.id ?? "");
-  const variant = own.find((v) => v.id === vid) ?? firstOk;
-  const [askPrice, setAskPrice] = useState<{ id: string; priceFrom: number | null; available: boolean } | null>(null);
+  const car = useVehicle();
   const sel = useSelection();
-  const inSel = variant ? sel.some((i) => i.variantId === variant.id) : false;
-  const acts = useRef<HTMLDivElement>(null);
-  const refocus = useRef(false);
-  useEffect(() => {
-    if (inSel && refocus.current) { refocus.current = false; acts.current?.querySelector<HTMLElement>("a, button")?.focus(); }
-  }, [inSel]);
-  const dlg = useRef<HTMLDialogElement>(null);
+  const [tab, setTab] = useState("spec");
+  const [leadOpen, setLeadOpen] = useState(false);
+  const [breakOpen, setBreakOpen] = useState(false);
+  const tabsRef = useRef<HTMLElement>(null);
 
-  useEffect(() => { setShot(0); setVid(firstOk?.id ?? ""); }, [p.slug]); // eslint-disable-line react-hooks/exhaustive-deps
+  const cheapest = [...p.options].filter((o) => o.available).sort((a, b) => (a.priceFrom ?? Number.MAX_SAFE_INTEGER) - (b.priceFrom ?? Number.MAX_SAFE_INTEGER))[0] ?? p.options[0];
+  const [optId, setOptId] = useState(cheapest?.id ?? "");
+  const opt = p.options.find((o) => o.id === optId) ?? cheapest;
+  const price = opt ? opt.priceFrom : p.priceFrom;
+  const inSel = !!opt && sel.some((i) => i.variantId === opt.id);
+  const selQty = sel.reduce((t, i) => t + i.quantity, 0);
 
-  const item = (): Omit<SelectionItem, "quantity"> | null => variant ? {
-    variantId: variant.id, productSlug: p.slug, vehicleSlug: variant.vehicleSlug,
-    snapshot: { title: p.title, priceFrom: variant.priceFrom, imageUrl: p.image?.url ?? null, variantTitle: variant.title, vehicleLabel: p.vehicle.label },
-  } : null;
-  const ask = () => dlg.current?.showModal();
-  const askItem = item();
+  const sp = new URLSearchParams(loc.search);
+  const stateBack = (loc.state as { back?: string } | null)?.back;
+  const rawBack = stateBack ?? sp.get("back") ?? "";
+  const back = rawBack.startsWith("/catalog") && !rawBack.startsWith("//") ? rawBack : `/catalog?vehicle=${encodeURIComponent(p.vehicle.slug)}`;
+  const bq = parseQuery(new URLSearchParams(back.split("?")[1] ?? ""));
+  const backWhat = [
+    vehicles.find((v) => v.slug === bq.vehicle)?.label ?? (bq.vehicle ? p.vehicle.label : "все машины"),
+    ...bq.position.map((x) => ({ front: "передняя", rear: "задняя", kit: "комплекты" })[x as Card["position"]] ?? x),
+  ].join(", ");
+
+  const shots: Shot[] = useMemo(() => {
+    const own = p.gallery.length ? p.gallery : p.image ? [p.image] : [];
+    if (own.length) return own.map((g) => ({ src: g.url, alt: g.alt || `${p.title}, ${p.vehicle.label}` }));
+    return ART[p.position].map(([src, what]) => ({ src, alt: `${p.title}, ${p.vehicle.label}: ${what}` }));
+  }, [p]);
+
+  const compatLabels = p.compatibility.map((c) => c.label).join(", ") || p.vehicle.label;
+  const fits = car?.mode === "kit" ? p.compatibility.some((c) => c.vehicleSlug === car.slug) || car.slug === p.vehicle.slug : null;
+  const note = car?.mode === "kit" ? p.compatibility.find((c) => c.vehicleSlug === car.slug)?.note : undefined;
+  const alt = car?.mode === "kit" ? alternatives[car.slug] : undefined;
+
+  const openCompat = () => {
+    setTab("compat");
+    tabsRef.current?.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+  };
+
+  function add() {
+    if (!opt) return;
+    selection.add({
+      variantId: opt.id,
+      productSlug: p.slug,
+      vehicleSlug: p.vehicle.slug,
+      snapshot: {
+        title: p.title,
+        priceFrom: opt.priceFrom,
+        imageUrl: p.image?.url ?? null,
+        variantTitle: p.options.length > 1 ? opt.title : undefined,
+        vehicleLabel: p.vehicle.label,
+        options: p.options.filter((o) => o.available).map((o) => ({ id: o.id, title: o.title, priceFrom: o.priceFrom })),
+        position: p.position,
+      },
+    });
+    ui.toast(`${p.title}, ${p.vehicle.label}`);
+  }
+
+  const status = p.status === "available" ? "В наличии" : "Под заказ";
+  const install = sentences(p.installation);
+  const hasInstall = meta.deliveryMethods.some((m) => m.code === "install");
+  const hasShipping = meta.deliveryMethods.some((m) => m.code === "shipping");
+
+  const tabs: SpecTab[] = [
+    {
+      id: "spec", label: "Характеристики", sub: `Код ${p.code}`,
+      rows: [
+        ["Код", p.code],
+        ["Машина", compatLabels],
+        ["Что защищает", POSITION_LABEL[p.position]],
+        ["Покрытие", p.coating?.label ?? p.material ?? "Уточнит менеджер"],
+        ["Наличие", p.status === "available" ? "В наличии" : "Под заказ, срок назовет менеджер"],
+        ["Комплектация", p.options.map((o) => o.title).join(", ") || "Одна"],
+        ...(install[0] ? [["Крепление", install[0]] as [string, string]] : []),
+        ...(p.description ? [["Описание", sentences(p.description).join(". ")] as [string, string]] : []),
+      ],
+    },
+    {
+      id: "comp", label: "Комплектация", sub: "Что в коробке", numbered: true,
+      rows: (p.composition.length ? p.composition : ["Состав назовет менеджер"]).map((c, i) => [String(i + 1).padStart(2, "0"), clean(c)]),
+    },
+    {
+      id: "inst", label: "Установка", sub: hasInstall ? "Ставим у нас или сами по инструкции" : "Как ставится", numbered: true,
+      rows: [
+        ...(install.length ? install : ["Порядок установки расскажет менеджер"]).map((s, i) => [String(i + 1).padStart(2, "0"), s] as [string, string]),
+        ...(hasInstall ? [[String(install.length + 1).padStart(2, "0"), "Можно поставить у нас: срок и цену назовет менеджер"] as [string, string]] : []),
+      ],
+    },
+    {
+      id: "compat", label: "Совместимость", sub: "Сомневаетесь? Проверим по фото до заявки",
+      rows: [
+        ...p.compatibility.map((c) => [c.label, c.note ? clean(c.note) : "Подходит"] as [string, string]),
+        ["Год и комплектация", "Проверим по фото до заявки"],
+        ["Лебедка или силовой бампер", "Сделаем под заказ"],
+        ["Другая машина", "Сделаем под заказ"],
+      ],
+    },
+  ];
+
+  const faq = [
+    { q: "Встанет ли на мою комплектацию?", a: `Защита сделана под ${compatLabels}. Если стоит лебедка, фаркоп или другой бампер, пришлите фото, проверим бесплатно до заявки` },
+    { q: "Нужно ли сверлить бампер или раму?", a: install[0] ? `${install[0]}. Если сомневаетесь, менеджер покажет точки крепления на фото` : "Расскажем, как крепится, и покажем точки крепления на фото до заявки" },
+    { q: "Сколько занимает установка?", a: hasInstall ? "Ставим у нас по записи, срок назовет менеджер вместе с ценой. Можно поставить и самим" : "Срок установки назовет менеджер вместе с ценой" },
+    ...(hasShipping ? [{ q: "Доставите в другой город?", a: "Да, транспортной компанией по России. Срок и цену доставки назовет менеджер" }] : []),
+  ];
+
+  const breakRows: [string, string][] = [
+    ["Защита", price == null ? "назовем по телефону" : priceFrom(price)],
+    ...meta.deliveryMethods.map((m) => [m.label, m.code === "pickup" ? "бесплатно" : m.code === "shipping" ? "считаем по городу" : "назовем вместе с ценой защиты"] as [string, string]),
+    ["Итог", "подтвердит менеджер, на сайте ничего не оплачивается"],
+  ];
 
   return (
     <>
-      <section className="pd wrap">
-        <p className="crumbs pd__back">
-          <Link className="tlink" to={back}><Icon name="arrow" vb="0 0 20 20" className="ico ico--back" />Назад к каталогу</Link>
-        </p>
-        <div className="pd__grid">
-          <div className="pd__gal" data-in="">
-            <div className="pd__main">
-              {gallery.map((g, i) => (
-                <div key={g.url + i} className={`pd__shot${i === shot ? " is-on" : ""}`} aria-hidden={i !== shot}>
-                  <Img src={g.url} alt={g.alt} w={g.width} h={g.height} eager={i === 0} sizes="(max-width: 1023px) 100vw, 58vw" />
-                </div>
-              ))}
-              {!gallery.length ? <span className="pc__none">Фото комплекта готовится</span> : <span className="pc__tag">Иллюстрация</span>}
+      <section className="dark2 prd-head">
+        <div className="wrap prd-head__row">
+          <Link className="prd-back" to={back}>
+            <span className="ar ol" aria-hidden="true"><Icon name="back" className="ico--back" /></span>
+            <span className="prd-back__t">Назад в каталог</span>
+            <small>{backWhat}</small>
+          </Link>
+          <Crumbs items={[{ label: "Главная", to: "/" }, { label: "Каталог", to: "/catalog" }, { label: p.vehicle.label, to: `/catalog?vehicle=${encodeURIComponent(p.vehicle.slug)}` }, { label: p.title }]} />
+        </div>
+      </section>
+
+      <section className="light prd-main" aria-labelledby="prd-h1">
+        <div className="wrap prd-lay">
+          <Gallery
+            shots={shots}
+            title={p.title}
+            proofs={
+              <ul className="prd-proof" data-stagger="">
+                <li data-in=""><b>Без сверления</b><span>на штатные точки</span></li>
+                <li data-in=""><b>{hasInstall ? "Ставим у нас" : "Подскажем по установке"}</b><span>{meta.contacts.address ? meta.contacts.address : hasShipping ? "или отправим по России" : "по телефону"}</span></li>
+                <li data-in=""><b>Цену подтвердит менеджер</b><span>на сайте ничего не оплачивается</span></li>
+              </ul>
+            }
+          />
+
+          <div className="prd-buy">
+            <div className="prd-buy__meta">
+              <span className="prd-buy__code">{p.vehicle.label} · {p.code}</span>
+              <span className={`tag${p.status === "available" ? "" : " tag--line"}`}>{status}</span>
             </div>
-            {gallery.length > 1 ? (
-              <div className="pd__thumbs" role="group" aria-label="Фото">
-                {gallery.map((g, i) => (
-                  <button key={g.url + i} type="button" aria-pressed={i === shot} aria-label={`Фото ${i + 1}: ${g.alt}`} onClick={() => setShot(i)}>
-                    <img src={g.url.replace(/\.webp$/, "-s.webp")} alt="" loading="lazy" />
-                  </button>
-                ))}
+            <h1 id="prd-h1" className="prd-buy__t">{p.title}</h1>
+
+            {car?.mode === "kit" && fits ? (
+              <div className="prd-fit is-ok" role="status">
+                <Icon name="check" />
+                <div><b>Подходит для {car.label}</b>{note ? <span>{clean(note)}</span> : <span>Сомневаетесь в комплектации? Проверим по фото</span>}<button type="button" className="prd-fit__a" onClick={openCompat}>Вся совместимость</button></div>
+              </div>
+            ) : car && !fits ? (
+              <div className="prd-fit is-bad" role="status">
+                <CatIcon name="alert" />
+                <div>
+                  <b>{car.mode === "kit" && alt ? `На ваш ${car.label} встает другая` : `На ваш ${car.label} эта защита не встанет`}</b>
+                  <span>Эта защита для {compatLabels}</span>
+                  <span className="prd-fit__row">
+                    {car.mode === "kit" && alt ? (
+                      <Link className="prd-fit__a" to={`/catalog/${alt.slug}?vehicle=${encodeURIComponent(car.slug)}`}>{alt.title} для {alt.label}</Link>
+                    ) : (
+                      <Link className="prd-fit__a" to="/#quiz">Рассчитать под {car.label}</Link>
+                    )}
+                    <button type="button" className="prd-fit__a" onClick={openCompat}>Вся совместимость</button>
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <p className="prd-fit0"><CatIcon name="car" />Для {compatLabels}<button type="button" className="prd-fit__a" onClick={openCompat}>Вся совместимость</button></p>
+            )}
+
+            {p.options.length > 1 ? (
+              <div className="prd-row">
+                <span className="prd-lab" id="prd-opt-l">Комплектация</span>
+                <div className="prd-opts" role="radiogroup" aria-labelledby="prd-opt-l">
+                  {p.options.map((o) => (
+                    <button key={o.id} type="button" role="radio" aria-checked={o.id === opt?.id} disabled={!o.available} className="prd-opt ol" onClick={() => setOptId(o.id)}>
+                      <span>{o.title}</span>
+                      <small>{o.available ? priceFrom(o.priceFrom) : "Нет в наличии"}</small>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : opt ? (
+              <div className="prd-row"><span className="prd-lab">Комплектация</span><span className="prd-one">{opt.title}</span></div>
+            ) : null}
+
+            {p.coating ? (
+              <div className="prd-row">
+                <span className="prd-lab">Покрытие</span>
+                <span className="prd-coat"><i className={`prd-sw prd-sw--${swatchOf(p.coating.code)}`} aria-hidden="true" />{p.coating.label}</span>
               </div>
             ) : null}
-          </div>
 
-          <div className="pd__info" data-in="">
-            <p className="pd__meta"><Chip n={p.code}>{POSITION_LABEL[p.position]}</Chip><span className={`pd__st${p.status === "on_request" ? " is-r" : ""}`}>{p.status === "available" ? "В наличии" : "Под заказ"}</span></p>
-            <h1 className="pd__t">{p.title}</h1>
-            <p className="pd__car"><Icon name="truck" />Для {p.compatibility.map((c) => c.label).join(", ") || p.vehicle.label}</p>
-
-            {own.length > 1 ? (
-              <fieldset className="vars">
-                <legend>Вариант</legend>
-                {own.map((v) => (
-                  <label key={v.id} className={`var${v.available ? "" : " is-off"}`}>
-                    <input type="radio" name="variant" value={v.id} checked={v.id === variant?.id} disabled={!v.available} onChange={() => setVid(v.id)} />
-                    <span className="var__t">{v.title}</span>
-                    <span className="var__p num">{v.available ? priceFrom(v.priceFrom) : "Недоступен"}</span>
-                  </label>
-                ))}
-              </fieldset>
-            ) : null}
-
-            <div className="pd__price">
-              <b className={`num${variant?.priceFrom == null ? " is-ask" : ""}`}>{priceFrom(variant?.priceFrom ?? null)}</b>
-              <p>{PRICE_NOTE}</p>
+            <div className="prd-row prd-price">
+              <span className={`prd-price__v${price == null ? " is-ask" : ""}`} role="status" aria-live="polite" key={opt?.id}>{priceFrom(price)}</span>
+              <p className="prd-price__n">{price == null ? "Назовем по телефону, бесплатно. " : ""}{PRICE_NOTE}</p>
+              <div className="prd-acts">
+                <span className="lift lift--block lift--ink">
+                  {inSel ? (
+                    <button type="button" className="btn btn--dark btn--lg btn--block" onClick={() => ui.openDrawer()} aria-label={`В подборке: ${p.title}, открыть подборку`}>В подборке<Icon name="check" /></button>
+                  ) : (
+                    <button type="button" className="btn btn--dark btn--lg btn--block" onClick={add} disabled={!opt || !opt.available}>В подборку</button>
+                  )}
+                </span>
+                <span className="lift lift--block lift--ink">
+                  <button type="button" className="btn btn--line ol btn--block prd-ask" onClick={() => setLeadOpen(true)} aria-haspopup="dialog">Уточнить комплектацию</button>
+                </span>
+              </div>
+              <Collapse open={inSel}>
+                <div className="prd-next" role="status">
+                  <span>В подборке {selQty} {plural(selQty, ["позиция", "позиции", "позиций"])}</span>
+                  <Link className="lnk lnk--sm" to="/selection"><span className="lnk__t">Оформить подборку</span><span className="ar ol" aria-hidden="true"><Icon name="arrow" /></span></Link>
+                </div>
+              </Collapse>
+              <div className={`prd-break${breakOpen ? " is-open" : ""}`}>
+                <button type="button" className="prd-break__b" aria-expanded={breakOpen} aria-controls="prd-break" onClick={() => setBreakOpen((v) => !v)}>
+                  Из чего складывается цена<i className="prd-faq__pm" aria-hidden="true" />
+                </button>
+                <Collapse open={breakOpen} id="prd-break">
+                  <dl className="prd-break__dl">
+                    {breakRows.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}
+                  </dl>
+                </Collapse>
+              </div>
             </div>
-            <div className="pd__acts" ref={acts}>
-              {inSel ? (
-                <Sbtn to="/selection" className="sbtn--lg">В подборке, открыть</Sbtn>
-              ) : (
-                <Sbtn className="sbtn--lg" onClick={() => { const it = item(); if (it) { refocus.current = true; selection.add(it); } }} disabled={!variant?.available}>В подборку</Sbtn>
-              )}
-              <button className="btn-line" type="button" onClick={ask}>Уточнить комплектацию</button>
-            </div>
-            <ul className="pd__perks">
-              <li><Icon name="nodrill" />Без сверления кузова</li>
-              <li><Icon name="truck" />Доставка по России</li>
-              <li><Icon name="wrench" />Установка у нас</li>
-            </ul>
           </div>
         </div>
       </section>
 
-      <section className="wrap pd__more" aria-label="Описание">
-        <div className="pd__desc" data-in="">
-          <h2 className="pd__h">Описание</h2>
-          {sentences(p.description).map((s) => <p key={s}>{nb(s)}</p>)}
+      <section ref={tabsRef} className="light prd-sec prd-sec--tabs" aria-label="О товаре">
+        <div className="wrap" data-in="">
+          <SpecTabs tabs={tabs} value={tab} onChange={setTab} />
         </div>
-        <dl className="spec" data-stagger="">
-          {p.composition.length ? <div data-in=""><dt>Состав комплекта</dt><dd><ul>{p.composition.map((c) => <li key={c}>{nb(c)}</li>)}</ul></dd></div> : null}
-          {p.material ? <div data-in=""><dt>Материал</dt><dd>{p.material.split("; ").map((m) => <p key={m}>{m}</p>)}</dd></div> : null}
-          {p.installation ? <div data-in=""><dt>Установка</dt><dd>{sentences(p.installation).map((s) => <p key={s}>{nb(s)}</p>)}</dd></div> : null}
-          <div data-in=""><dt>Совместимость</dt><dd>{p.compatibility.map((c) => <p key={c.vehicleSlug}><b>{c.label}</b>{c.note ? `, ${c.note.charAt(0).toLowerCase()}${c.note.slice(1)}` : ""}</p>)}</dd></div>
-        </dl>
       </section>
 
-      {related.length ? (
-        <section className="sec wrap" aria-label="Другие комплекты">
-          <div className="head" data-in=""><h2 className="tt"><span>Еще для {p.vehicle.label}</span></h2><Link className="tlink" to={back}>Весь каталог</Link></div>
-          <div className="grid-cards" data-stagger="">{related.map((r) => <ProductCard key={r.slug} p={r} back={back} />)}</div>
-        </section>
+      <section className="light prd-sec" aria-labelledby="prd-rel-t">
+        <div className="wrap">
+          <h2 className="prd-h2" id="prd-rel-t" data-in="">Еще для {p.vehicle.label}</h2>
+          <div className="prd-grid" data-stagger="">
+            {related.map((r) => (
+              <ProductCard key={cardKey(r)} p={r} back={back} kitDiscountPct={discounts[cardKey(r)]} sizes="(max-width: 599px) 100vw, (max-width: 1023px) 50vw, 33vw" />
+            ))}
+            <div className="prd-tile ol" data-in="">
+              <b className="prd-tile__t">Нужна защита порогов или другая деталь на {p.vehicle.label}?</b>
+              <span className="prd-tile__p">Сделаем под заказ: снимем размеры по фото, покажем эскиз до изготовления</span>
+              <Link className="lnk" to="/#quiz"><span className="lnk__t">Рассчитать под заказ</span><span className="ar ol" aria-hidden="true"><Icon name="arrow" /></span></Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="light prd-sec" aria-label="Вопросы">
+        <div className="wrap"><ProductFaq items={faq} /></div>
+      </section>
+
+      {opt ? (
+        <LeadPanel
+          open={leadOpen}
+          onClose={() => setLeadOpen(false)}
+          item={{ variantId: opt.id, priceFrom: opt.priceFrom, title: `${p.title}, ${p.vehicle.label}`, sub: [p.code, p.options.length > 1 ? opt.title : "", p.coating?.label ?? ""].filter(Boolean).join(" · ") }}
+        />
       ) : null}
-
-      <dialog ref={dlg} className="dlg" aria-labelledby="ask-t">
-        <div className="dlg__in">
-          <button className="dlg__x" type="button" aria-label="Закрыть" onClick={() => dlg.current?.close()}><Icon name="close" /></button>
-          <h2 id="ask-t" className="dlg__t">Уточнить комплектацию</h2>
-          <p className="dlg__p">{p.title}, {p.vehicle.label}{variant ? `, ${variant.title}` : ""}</p>
-          {askPrice && askPrice.id === askItem?.variantId ? (
-            <p className="dlg__p" role="status">
-              {askPrice.available ? `Цена обновилась: ${priceFrom(askPrice.priceFrom)}. Отправьте вопрос ещё раз` : "Этот вариант сейчас недоступен, выберите другой"}
-            </p>
-          ) : null}
-          {askItem && !(askPrice && askPrice.id === askItem.variantId && !askPrice.available) ? (
-            <LeadForm
-              key={variant?.id}
-              type="catalog"
-              items={[{ ...askItem, quantity: 1, snapshot: { ...askItem.snapshot, priceFrom: askPrice && askPrice.id === askItem.variantId ? askPrice.priceFrom : askItem.snapshot.priceFrom } }]}
-              deliveryMethods={root?.meta.deliveryMethods ?? []}
-              submitLabel="Отправить вопрос"
-              changedMessage="Пока вы смотрели товар, цена изменилась"
-              onCatalogChanged={(changes) => {
-                const c = changes.find((x) => x.variantId === askItem.variantId);
-                if (c) setAskPrice({ id: c.variantId, priceFrom: c.priceFrom, available: c.available });
-              }}
-            />
-          ) : null}
-        </div>
-      </dialog>
     </>
   );
 }

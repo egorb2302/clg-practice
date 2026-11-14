@@ -349,12 +349,12 @@ export function Audit() {
   );
 }
 
-type Contacts = { phone?: string; email?: string; telegram?: string; address?: string; hours?: string };
+type Contacts = { phone?: string; email?: string; telegram?: string; vk?: string; address?: string; hours?: string };
 type SettingsData = { contacts: Contacts; deliveryMethods: { code: string; label: string; enabled: boolean; sort: number }[] };
 
 function ContactsForm({ initial, canEdit }: { initial: Contacts; canEdit: boolean }) {
   const act = useAction();
-  const [f, setF] = useState({ phone: initial.phone ?? "", email: initial.email ?? "", telegram: initial.telegram ?? "", address: initial.address ?? "", hours: initial.hours ?? "" });
+  const [f, setF] = useState({ phone: initial.phone ?? "", email: initial.email ?? "", telegram: initial.telegram ?? "", vk: initial.vk ?? "", address: initial.address ?? "", hours: initial.hours ?? "" });
   const fe = fieldsOf(act.error);
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF((s) => ({ ...s, [k]: e.target.value }));
   const submit = async (e: FormEvent) => {
@@ -369,6 +369,7 @@ function ContactsForm({ initial, canEdit }: { initial: Contacts; canEdit: boolea
             hours: f.hours.trim(),
             email: f.email.trim(),
             telegram: f.telegram.trim(),
+            vk: f.vk.trim(),
           },
         }),
       "Контакты сохранены",
@@ -386,6 +387,9 @@ function ContactsForm({ initial, canEdit }: { initial: Contacts; canEdit: boolea
         </Field>
         <Field label="Telegram" hint="Ссылка, начинается с https" error={fe.telegram}>
           {(p) => <input {...p} type="url" value={f.telegram} onChange={set("telegram")} readOnly={!canEdit} />}
+        </Field>
+        <Field label="ВКонтакте" hint="Ссылка на группу, https://vk.ru/…" error={fe.vk}>
+          {(p) => <input {...p} type="url" value={f.vk} onChange={set("vk")} readOnly={!canEdit} />}
         </Field>
         <Field label="Адрес" error={fe.address}>
           {(p) => <input {...p} value={f.address} onChange={set("address")} readOnly={!canEdit} maxLength={300} />}

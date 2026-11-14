@@ -1,121 +1,112 @@
-/* ARMORIX tokens: global → semantic → component (UX-4)
-   Matrix point: Modern, base grotesques, next to the horizontal axis (strict, technical)
-   One family: IBM Plex Sans 700 for headings, 400 for text and labels (Keelsy, 2026-11-10) */
 
 @font-face {
-  font-family: "IBM Plex Sans";
-  src: url("/fonts/ibm-plex-sans-700.woff") format("woff");
-  font-weight: 700;
+  font-family: "Tektur";
+  src: url("/fonts/tektur-cyrillic-500-normal.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
   font-display: swap;
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }
 @font-face {
-  font-family: "IBM Plex Sans";
-  src: url("/fonts/ibm-plex-sans-400.woff") format("woff");
-  font-weight: 400;
+  font-family: "Tektur";
+  src: url("/fonts/tektur-latin-500-normal.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
   font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Golos Text";
+  src: url("/fonts/golos-text-cyrillic-400-normal.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: "Golos Text";
+  src: url("/fonts/golos-text-latin-400-normal.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 :root {
-  /* ── Global: colour ramps (thought in OKLCH, hue ≈ 155 for pine, 250 for steel) ── */
-  --obsidian-950: #0b0d0c;  /* page ground, near-black tinted 2% to pine, never #000 */
-  --obsidian-900: #121514;  /* surface */
-  --obsidian-850: #171b19;  /* raised surface */
-  --obsidian-800: #1e2321;  /* plate */
+  --k-0: #0e0e0e;
+  --k-1: #121212;
+  --k-2: #141414;
+  --k-3: #161616;
+  --k-4: #1a1a1a;
+  --k-5: #1c1c1c;
+  --k-6: #262626;
+  --ln-0: #2a2a2a;
+  --ln-1: #2e2e2e;
+  --ln-2: #3a3a38;
+  --ln-3: #4a4a48;
+  --g-1: #6b6b68;
+  --g-2: #8e8e8a;
+  --g-3: #9a9a96;
+  --g-4: #afafab;
+  --t-2: #cfcfcb;
+  --t-1: #ededeb;
+  --t-0: #ffffff;
+  --p-0: #f2f2f0;
+  --p-1: #e4e4e1;
+  --p-2: #dcdcd8;
+  --p-3: #cfcfcb;
+  --p-4: #bdbdb9;
+  --ink: #1c1c1c;
+  --ink-2: #4a4a48;
+  --ink-3: #6b6b68;
 
-  --graphite-700: #2e3337;
-  --graphite-600: #3c4146;
-  --graphite-500: #4a4f56;  /* kit Graphite */
-  --graphite-400: #6b7178;
+  --f-d: "Tektur", "Golos Text", system-ui, sans-serif;
+  --f-t: "Golos Text", system-ui, sans-serif;
 
-  --steel-300: #8e949b;
-  --steel-200: #a9aeb4;     /* kit Steel */
-  --steel-100: #c9cdd1;
+  --fs-xs: 13px;
+  --fs-s: 14px;
+  --fs-b: clamp(15px, 14.2px + .2vw, 17px);
+  --fs-l: clamp(16px, 14.6px + .4vw, 20px);
+  --fs-h4: clamp(19px, 17px + .5vw, 24px);
+  --fs-h3: clamp(22px, 18.5px + .9vw, 32px);
+  --fs-h2: clamp(28px, 20px + 2.1vw, 56px);
+  --fs-h1: clamp(36px, 22px + 3.9vw, 96px);
+  --fs-btn: 16px;
 
-  --sand-200: #d6d2c8;      /* kit Sand: text on dark */
-  --sand-100: #e8e5de;
+  --gut: clamp(16px, 5vw, 96px);
+  --max: 1920px;
+  --gap: clamp(16px, 1.25vw, 32px);
+  --hd-h: 72px;
+  --bb-h: 0px;
 
-  --pine-50:  #eef3ef;
-  --pine-100: #d8e4db;
-  --pine-200: #b3c8b9;
-  --pine-300: #8aa995;
-  --pine-400: #648a71;
-  --pine-500: #4b6f57;
-  --pine-600: #3a5a45;      /* the accent: replaces Bronze #7A6A4A */
-  --pine-700: #2e4837;
-  --pine-800: #23382b;
-  --pine-900: #1a2a20;
-  --pine-950: #101a14;
+  --c-xs: 6px;
+  --c-s: 8px;
+  --c-m: 12px;
+  --c-l: 18px;
+  --c-xl: 24px;
 
-  --red-500: #c25a4a;       /* error only */
+  --e-out: cubic-bezier(.16, .84, .24, 1);
+  --e-io: cubic-bezier(.76, 0, .24, 1);
+  --e-press: cubic-bezier(.3, .7, .2, 1);
+  --d-1: 160ms;
+  --d-2: 240ms;
+  --d-3: 420ms;
+  --d-4: 700ms;
+  --d-glint: 900ms;
 
-  /* ── Semantic ── */
-  --bg: var(--obsidian-950);
-  --surface: var(--obsidian-900);
-  --raised: var(--obsidian-850);
-  --plate: var(--obsidian-800);
-  --line: rgb(169 174 180 / .16);     /* 1px hairline */
-  --line-strong: rgb(169 174 180 / .32);
-  --text: var(--sand-200);
-  --text-2: rgb(214 210 200 / .74);
-  --text-3: rgb(214 210 200 / .56);
-  --metal: var(--steel-200);
-  --action: var(--pine-600);
-  --action-hover: var(--pine-500);
-  --action-text: var(--sand-100);
-  --link: var(--pine-300);
-  --focus: var(--steel-100);
-  --success: var(--pine-400);
-  --error: var(--red-500);
-
-  /* polished steel: the one light comes from the top left (IMG-6) */
-  --mirror: linear-gradient(160deg, #eef0f2 0%, #a9aeb4 28%, #4a4f56 52%, #c9cdd1 70%, #6b7178 100%);
-  --powder: linear-gradient(160deg, #2e3337 0%, #1e2321 60%, #171b19 100%);
-
-  /* ── Type: one viewport base, everything in rem, ratio 1.25 (TYPE-5) ── */
-  --font-display: "IBM Plex Sans", system-ui, sans-serif;
-  --font-text: "IBM Plex Sans", system-ui, sans-serif;
-  --t-label: .8rem;     /* 12.8, caps labels only, tracked */
-  --t-small: .875rem;
-  --t-body: 1rem;
-  --t-lead: 1.25rem;
-  --t-h4: 1.563rem;
-  --t-h3: 1.953rem;
-  --t-h2: 3.052rem;
-  --t-h1: 4.768rem;
-  --t-mega: 7.451rem;
-
-  /* ── Spacing: 8pt, 4 only for micro gaps (GRID-2) ── */
-  --s-1: 4px;  --s-2: 8px;  --s-3: 16px; --s-4: 24px; --s-5: 32px;
-  --s-6: 48px; --s-7: 64px; --s-8: 96px; --s-9: 128px; --s-10: 192px;
-
-  /* ── Grid: 10 columns, plates span whole columns ── */
-  --cols: 10;
-  --gutter: 24px;
-  --edge: 48px;
-
-  /* ── Shape: chamfer, not radius (the shield's cut corner) ── */
-  --cut-s: 8px;
-  --cut-m: 16px;
-  --cut-l: 32px;
-
-  /* ── Motion: weight and inertia (MOT-1) ── */
-  --ease-forge: cubic-bezier(.76, 0, .24, 1);   /* heavy moves, 900 ms */
-  --ease-settle: cubic-bezier(.16, .84, .24, 1); /* entrances, 1100 ms, blur 14 → 0 */
-  --ease-press: cubic-bezier(.3, .7, .2, 1);    /* hover and press, 90–240 ms */
-  --d-press: 90ms;
-  --d-hover: 240ms;
-  --d-move: 900ms;
-  --d-enter: 1100ms;
-
-  --z-sticky: 5;
-  --z-drawer: 49;
-  --z-header: 50;
+  --z-hd: 50;
+  --z-bb: 52;
+  --z-fab: 54;
+  --z-toast: 56;
+  --z-scrim: 59;
+  --z-drawer: 60;
+  --z-menu: 61;
+  --z-modal: 63;
   --z-progress: 80;
   --z-intro: 90;
   --z-skip: 100;
 }
 
-html { font-size: clamp(16px, calc(10px + .42vw), 18px); }
-
-@media (max-width: 1023px) { :root { --cols: 8; --gutter: 16px; --edge: 32px; } }
-@media (max-width: 599px)  { :root { --cols: 4; --gutter: 16px; --edge: 16px; --t-h1: 3.052rem; --t-mega: 4.768rem; --t-h2: 2.441rem; } }
+@media (max-width: 767px) {
+  :root { --bb-h: 64px; }
+}

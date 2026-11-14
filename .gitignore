@@ -7,3 +7,4 @@ dist/
 coverage/
 apps/api/public/
 apps/admin/dist/
+.front-check/

@@ -1,4 +1,4 @@
-import type { CatalogQuery, CatalogResponse, Facet, Image, Position, ProductDetail } from "@armorix/contracts";
+import type { CatalogQuery, CatalogResponse, Facet, Image, Position, ProductDetail, ProductOption } from "@armorix/contracts";
 import type { Db } from "../db.js";
 
 export const PAGE_SIZE = 24;
@@ -16,6 +16,8 @@ type CardRow = {
   vehicle_model: string;
   price_from: number | null;
   image: Image | null;
+  material_label: string | null;
+  options: ProductOption[];
   total: number;
 };
 
@@ -37,6 +39,11 @@ export async function listCatalog(db: Db, q: CatalogQuery): Promise<CatalogRespo
           and x.available and x.price_kopecks is not null) as price_from,
       (select json_build_object('url', m.url, 'alt', m.alt, 'width', m.width, 'height', m.height)
         from media m where m.product_id = p.id and m.status = 'ready' order by m.sort, m.created_at limit 1) as image,
+      (select label from materials where code = p.material) as material_label,
+      (select coalesce(json_agg(json_build_object(
+          'id', x.id, 'title', x.title, 'available', x.available,
+          'priceFrom', case when x.available then x.price_kopecks end) order by x.sort, x.title), '[]'::json)
+        from variants x where x.product_id = p.id and x.vehicle_model_id = v.id and x.status = 'active') as options,
       count(*) over () as total
     ${base}
       ${q.position ? db`and p.position = ${q.position}` : db``}
@@ -68,6 +75,8 @@ export async function listCatalog(db: Db, q: CatalogQuery): Promise<CatalogRespo
       image: r.image,
       priceFrom: r.price_from,
       status: r.price_from === null ? "on_request" : "available",
+      coating: r.material && r.material_label ? { code: r.material, label: r.material_label } : null,
+      options: r.options.map((o) => ({ ...o, priceFrom: o.priceFrom === null ? null : Number(o.priceFrom) })),
     })),
     filters: {
       position: positionFacets.map((f) => ({ ...f, label: positionLabels[f.value as Position] ?? f.value })),
@@ -134,6 +143,10 @@ export async function getProduct(db: Db, slug: string, vehicleSlug?: string): Pr
     image: gallery[0] ?? null,
     priceFrom,
     status: priceFrom === null ? "on_request" : "available",
+    coating: p.material && p.material_label ? { code: p.material, label: p.material_label } : null,
+    options: variants
+      .filter((v) => v.vehicle_slug === selected.slug)
+      .map((v) => ({ id: v.id, title: v.title, priceFrom: v.available ? v.price : null, available: v.available })),
     gallery,
     description: p.description,
     composition: p.composition,

@@ -1,0 +1,23 @@
+.prv-h1 { margin-top: 28px; font-size: clamp(34px, 20px + 4.4vw, 88px); overflow-wrap: anywhere; }
+.prv-body { padding-top: clamp(40px, 5vw, 72px); }
+.prv-grid { display: grid; grid-template-columns: minmax(240px, 340px) minmax(0, 1fr); gap: clamp(32px, 6vw, 96px); align-items: start; }
+@media (max-width: 1023px) { .prv-grid { grid-template-columns: minmax(0, 1fr); } }
+
+.prv-toc { position: sticky; top: calc(var(--hd-h) + 24px); display: flex; flex-direction: column; gap: 14px; }
+@media (max-width: 1023px) { .prv-toc { position: static; } }
+.prv-toc ol { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+@media (max-width: 1023px) { .prv-toc ol { flex-direction: row; flex-wrap: wrap; } }
+.prv-toc__a { --c: var(--c-s); --lc: transparent; --fill: transparent; display: flex; align-items: center; min-height: 52px; padding: 10px 18px; color: var(--ink); font-size: 16px; line-height: 1.3; text-decoration: none; transition: transform var(--d-2) var(--e-press), --lc var(--d-2), --fill var(--d-2); }
+.prv-toc__a:hover { --lc: var(--g-3); transform: translateX(4px); }
+.prv-toc__a[aria-current="true"] { --lc: var(--ink); --fill: #fff; }
+@media (max-width: 1023px) { .prv-toc__a { min-height: 44px; padding: 8px 14px; --lc: var(--p-4); } }
+
+.prv-docs { display: flex; flex-direction: column; gap: clamp(40px, 5vw, 80px); max-width: 860px; min-width: 0; }
+.prv-doc { scroll-margin-top: calc(var(--hd-h) + 24px); }
+.prv-doc__t { padding-bottom: 20px; border-bottom: 1px solid var(--ink); text-wrap: balance; }
+.prv-lead { padding: 24px 0; font-size: var(--fs-l); line-height: 1.6; color: var(--ink); }
+.prv-sec { display: grid; grid-template-columns: minmax(130px, 240px) minmax(0, 1fr); gap: 8px clamp(16px, 3vw, 40px); padding: 22px 0; border-top: 1px solid var(--p-2); transition: background-color var(--d-2), padding var(--d-3) var(--e-out); }
+.prv-sec:hover { background: #fff; padding-inline: 14px; }
+.prv-sec__h { font: 500 clamp(16px, 15px + .3vw, 19px)/1.3 var(--f-d); text-transform: none; color: var(--ink); }
+.prv-sec p { font-size: var(--fs-b); line-height: 1.7; color: var(--ink-2); overflow-wrap: anywhere; }
+@media (max-width: 719px) { .prv-sec { grid-template-columns: minmax(0, 1fr); } }

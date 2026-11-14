@@ -1,7 +1,3 @@
-/* API_MOCK=1: local fixtures with the same shapes as apps/api (JAC T9 and Haval H3,
-   8 products, one without a price, one archived variant). Server-only: the browser reaches
-   it through the /api/v1/* proxy route, so idempotency and rate limits live in one place.
-   Test hooks for screenshots, mock only: a comment or message containing #429 or #500. */
 import {
   leadRequestSchema,
   type CatalogResponse,
@@ -16,7 +12,7 @@ import {
 } from "@armorix/contracts";
 
 type Variant = ProductDetail["variants"][number] & { material: "aisi304" | "powder" };
-type Product = Omit<ProductDetail, "variants" | "priceFrom" | "material"> & { variants: Variant[]; updatedAt: string };
+type Product = Omit<ProductDetail, "variants" | "priceFrom" | "material" | "coating" | "options"> & { variants: Variant[]; updatedAt: string };
 
 const img = (name: string, w: number, h: number, alt: string): Image => ({ url: `/img/${name}.webp`, alt, width: w, height: h });
 const rub = (n: number) => n * 100;
@@ -168,10 +164,16 @@ const minPrice = (vs: Variant[]) => {
   const p = vs.filter((v) => v.available && v.priceFrom != null).map((v) => v.priceFrom as number);
   return p.length ? Math.min(...p) : null;
 };
-const toCard = (p: Product, material?: string): ProductCard => ({
-  slug: p.slug, code: p.code, title: p.title, vehicle: p.vehicle, position: p.position, image: p.image, status: p.status,
-  priceFrom: minPrice(p.variants.filter((v) => !material || v.material === material)),
-});
+const toCard = (p: Product, material?: string): ProductCard => {
+  const own = p.variants.filter((v) => !material || v.material === material);
+  const code = own[0]?.material ?? p.variants[0]?.material ?? "aisi304";
+  return {
+    slug: p.slug, code: p.code, title: p.title, vehicle: p.vehicle, position: p.position, image: p.image, status: p.status,
+    priceFrom: minPrice(own),
+    coating: { code, label: MATERIAL[code] },
+    options: own.map((v) => ({ id: v.id, title: v.title, priceFrom: v.available ? v.priceFrom : null, available: v.available })),
+  };
+};
 const facet = (items: Product[], key: "position" | "material"): Facet[] => {
   const counts = new Map<string, number>();
   for (const p of items) {
@@ -210,7 +212,6 @@ function product(slug: string): { status: number; body: unknown } {
   return { status: 200, body: { product: detail } };
 }
 
-/* ── leads ── */
 const rid = () => Math.random().toString(36).slice(2, 10);
 const keys = new Map<string, { hash: string; reference: string }>();
 const hits = new Map<string, number[]>();
@@ -239,7 +240,6 @@ async function lead(raw: unknown, key: string | null): Promise<{ status: number;
   const now = Date.now(), list = (hits.get(who) ?? []).filter((t) => now - t < 10 * 60_000);
   if (text.includes("#429") || list.length >= 5) return { status: 429, body: { code: "RATE_LIMITED", message: "Слишком много попыток", retryAfterSec: 300, requestId: rid() } };
 
-  // honeypot or a form filled faster than a person can: answer as success, create nothing
   if (body.website || body.fillMs < 1500) return { status: 201, body: { reference: `AX-${String(++seq).padStart(6, "0")}`, status: "received" } };
 
   if (body.type === "catalog") {
@@ -258,7 +258,6 @@ async function lead(raw: unknown, key: string | null): Promise<{ status: number;
   return { status: 201, body: { reference, status: "received" } };
 }
 
-/** One entry point with the API's paths: method + path under /api/v1 + query + body. */
 export async function mockApi(method: string, path: string, query: URLSearchParams, body?: unknown, headers?: Headers): Promise<{ status: number; body: unknown }> {
   const parts = path.replace(/^\/+|\/+$/g, "").split("/");
   if (method === "GET") {

@@ -1,43 +1,37 @@
 import type { MetaResponse } from "@armorix/contracts";
 import { useEffect } from "react";
-import { data, isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration, useLocation, useNavigation, useRouteLoaderData } from "react-router";
+import { data, isRouteErrorResponse, Link, Links, Meta, Outlet, Scripts, ScrollRestoration, useLocation, useNavigation } from "react-router";
 import type { Route } from "./+types/root";
-import { Footer } from "./components/Footer";
-import { Header } from "./components/Header";
-import { NotFoundView } from "./components/NotFoundView";
+import { ContactFab, Footer, Header, Icon, LegalModal, MobileBar, SelectionDrawer, Toast } from "./components/site";
+import { MARK_IN, MARK_OUT } from "./components/site/Icon";
+import { NotFound } from "./components/catalog/NotFound";
 import { SPRITE } from "./components/sprite";
 import { api, PUBLIC_CACHE, siteOrigin } from "./lib/api.server";
 import { initMotion } from "./lib/motion";
+import { FALLBACK_META } from "./lib/site";
 import tokens from "./styles/tokens.css?url";
 import base from "./styles/base.css?url";
-import site from "./styles/site.css?url";
-import pages from "./styles/pages.css?url";
+import ui from "./styles/ui.css?url";
+import shell from "./styles/shell.css?url";
 
 export const links: Route.LinksFunction = () => [
-  { rel: "preload", href: "/fonts/ibm-plex-sans-700.woff", as: "font", type: "font/woff", crossOrigin: "anonymous" },
-  { rel: "preload", href: "/fonts/ibm-plex-sans-400.woff", as: "font", type: "font/woff", crossOrigin: "anonymous" },
+  { rel: "preload", href: "/fonts/tektur-cyrillic-500-normal.woff2", as: "font", type: "font/woff2", crossOrigin: "anonymous" },
+  { rel: "preload", href: "/fonts/golos-text-cyrillic-400-normal.woff2", as: "font", type: "font/woff2", crossOrigin: "anonymous" },
   { rel: "stylesheet", href: tokens },
   { rel: "stylesheet", href: base },
-  { rel: "stylesheet", href: site },
-  { rel: "stylesheet", href: pages },
+  { rel: "stylesheet", href: ui },
+  { rel: "stylesheet", href: shell },
   { rel: "icon", href: "/logo/favicon.svg", type: "image/svg+xml" },
   { rel: "apple-touch-icon", href: "/logo/apple-touch-icon.png", sizes: "180x180" },
 ];
 
-const FALLBACK_META: MetaResponse = {
-  features: { account: false, loyalty: false, offers: false, news: false, campaigns: false },
-  deliveryMethods: [],
-  contacts: {},
-};
-
 export async function loader({ request }: Route.LoaderArgs) {
   let fresh = true;
   const [meta, vehicles] = await Promise.all([
-    api.meta().catch(() => {
+    api.meta().catch((): MetaResponse => {
       fresh = false;
       return FALLBACK_META;
     }),
-    // the header's catalog menu lists the models; an empty list just hides the menu
     api.vehicles().then((r) => r.items).catch(() => []),
   ]);
   return data({ meta, vehicles, origin: siteOrigin(request) }, { headers: { "Cache-Control": fresh ? PUBLIC_CACHE : "no-store" } });
@@ -45,18 +39,15 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 export const headers: Route.HeadersFunction = ({ loaderHeaders }) => loaderHeaders;
 
-/* preloader once per session, skipped before first paint when already seen or motion is off */
 const INTRO_GATE = `try{if(sessionStorage.getItem('armorix-intro')||matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.classList.add('no-intro')}catch(e){document.documentElement.classList.add('no-intro')}document.documentElement.classList.remove('no-js');setTimeout(function(){var h=document.documentElement;if(!h.classList.contains('is-ready'))h.classList.add('no-js')},8000)`;
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const root = useRouteLoaderData<typeof loader>("root");
-  const meta = root?.meta ?? FALLBACK_META;
   return (
     <html lang="ru" className="no-js" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="theme-color" content="#0b0d0c" />
+        <meta name="theme-color" content="#0e0e0e" />
         <script dangerouslySetInnerHTML={{ __html: INTRO_GATE }} />
         <Meta />
         <Links />
@@ -66,9 +57,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <a className="skip" href="#main">К содержанию</a>
         <Intro />
         <NavProgress />
-        <Header features={meta.features} vehicles={root?.vehicles ?? []} />
-        <main id="main">{children}</main>
-        <Footer meta={meta} />
+        <Header />
+        <main id="main" tabIndex={-1}>{children}</main>
+        <Footer />
+        <SelectionDrawer />
+        <Toast />
+        <ContactFab />
+        <LegalModal />
+        <MobileBar />
         <ScrollRestoration />
         <Scripts />
       </body>
@@ -80,7 +76,6 @@ function Intro() {
   useEffect(() => {
     const h = document.documentElement;
     if (h.classList.contains("no-intro")) return;
-    // tied to real work: the fonts and the first screen's image
     const hero = document.querySelector<HTMLImageElement>("main img");
     const bar = document.querySelector<HTMLElement>(".intro__bar i");
     let done = 0;
@@ -98,8 +93,14 @@ function Intro() {
   }, []);
   return (
     <div className="intro" aria-hidden="true">
-      <svg viewBox="0 0 100 94.5"><use className="intro__line" href="#mono" /><use className="intro__fill" href="#mono" /></svg>
+      <div className="intro__mark">
+        <svg viewBox="0 0 100 94.5">
+          <path className="intro__line" d={MARK_OUT + MARK_IN} />
+          <path className="intro__fill" fillRule="evenodd" d={MARK_OUT + MARK_IN} />
+        </svg>
+      </div>
       <span className="intro__bar"><i /></span>
+      <span className="intro__name">Armorix</span>
     </div>
   );
 }
@@ -116,29 +117,35 @@ export default function App() {
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  if (isRouteErrorResponse(error) && error.status === 404) {
-    return (
-      <>
-        <title>Страница не найдена | ARMORIX</title>
-        <meta name="description" content="Такой страницы нет, перейдите в каталог защиты бамперов ARMORIX или на главную" />
-        <meta property="og:title" content="Страница не найдена | ARMORIX" />
-        <meta property="og:description" content="Такой страницы нет, перейдите в каталог защиты бамперов ARMORIX или на главную" />
-        <meta name="twitter:card" content="summary" />
-        <meta name="twitter:title" content="Страница не найдена | ARMORIX" />
-        <meta name="twitter:description" content="Такой страницы нет, перейдите в каталог защиты бамперов ARMORIX или на главную" />
-        <meta name="robots" content="noindex" />
-        <NotFoundView />
-      </>
-    );
-  }
-  const msg = isRouteErrorResponse(error) ? `${error.status}` : "Ошибка";
-  return (
-    <section className="sec wrap err">
-      <title>Ошибка | ARMORIX</title>
+  const notFound = isRouteErrorResponse(error) && error.status === 404;
+  const title = notFound ? "Страница не найдена" : "Что-то пошло не так";
+  const text = notFound
+    ? "Такой страницы нет. Посмотрите каталог защиты или вернитесь на главную"
+    : "Попробуйте обновить страницу. Если не помогло, вернитесь на главную или позвоните нам";
+  const head = (
+    <>
+      <title>{`${title} | ARMORIX`}</title>
+      <meta name="description" content={text} />
+      <meta property="og:title" content={`${title} | ARMORIX`} />
+      <meta property="og:description" content={text} />
+      <meta name="twitter:card" content="summary" />
+      <meta name="twitter:title" content={`${title} | ARMORIX`} />
+      <meta name="twitter:description" content={text} />
       <meta name="robots" content="noindex" />
-      <h1 className="tt"><span>Что-то пошло не так</span><span className="mute">{msg}</span></h1>
-      <p className="t-lead">Попробуйте еще раз или вернитесь на главную</p>
-      <p className="err__acts"><button className="btn-line" type="button" onClick={() => window.location.reload()}>Повторить</button><a className="tlink" href="/">На главную</a></p>
+    </>
+  );
+  if (notFound) return <>{head}<NotFound kind="page" /></>;
+  return (
+    <section className="ph dark2">
+      {head}
+      <div className="wrap">
+        <h1 className="ph__t">{title}</h1>
+        <p className="ph__sub">{text}</p>
+        <div className="err__acts">
+          <span className="lift"><button type="button" className="btn btn--light btn--lg" onClick={() => window.location.reload()}>Повторить</button></span>
+          <Link className="lnk" to="/"><span className="lnk__t">На главную</span><span className="ar ol" aria-hidden="true"><Icon name="arrow" /></span></Link>
+        </div>
+      </div>
     </section>
   );
 }

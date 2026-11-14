@@ -46,7 +46,7 @@ export type Features = {
 export type MetaResponse = {
   features: Features;
   deliveryMethods: { code: DeliveryMethodCode; label: string }[];
-  contacts: { phone?: string; email?: string; telegram?: string; address?: string; hours?: string };
+  contacts: { phone?: string; email?: string; telegram?: string; vk?: string; address?: string; hours?: string };
 };
 
 export type Vehicle = { slug: string; make: string; model: string; label: string };
@@ -54,6 +54,8 @@ export type VehiclesResponse = { items: Vehicle[] };
 
 export type Image = { url: string; alt: string; width: number; height: number };
 export type Facet = { value: string; label: string; count: number };
+
+export type ProductOption = { id: string; title: string; priceFrom: number | null; available: boolean };
 
 export type ProductCard = {
   slug: string;
@@ -64,6 +66,8 @@ export type ProductCard = {
   image: Image | null;
   priceFrom: number | null;
   status: "available" | "on_request";
+  coating: { code: string; label: string } | null;
+  options: ProductOption[];
 };
 
 export type CatalogResponse = {

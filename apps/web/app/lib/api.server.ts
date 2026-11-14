@@ -1,5 +1,3 @@
-/* All server-side data access. Loaders call ${API_ORIGIN}/api/v1/...; API_MOCK=1 swaps
-   in local fixtures with the same shapes. Swapping mock → real is one env change. */
 import {
   API_PREFIX,
   type CatalogResponse,
@@ -22,7 +20,6 @@ export class ApiFailure extends Error {
   }
 }
 
-/** Raw call: returns status and parsed body, never throws on HTTP errors. */
 export async function apiRaw(method: string, path: string, search = "", body?: unknown, headers?: Headers): Promise<{ status: number; body: unknown; headers?: Headers }> {
   if (isMock()) return mockApi(method, path, new URLSearchParams(search), body, headers);
   const res = await fetch(`${origin()}${API_PREFIX}${path}${search ? `?${search}` : ""}`, {
@@ -55,7 +52,6 @@ export const api = {
   sitemap: () => get<SitemapResponse>("/sitemap"),
 };
 
-/** Absolute site origin for canonical and OG tags. */
 export function siteOrigin(request: Request): string {
   return (process.env.SITE_ORIGIN ?? new URL(request.url).origin).replace(/\/+$/, "");
 }

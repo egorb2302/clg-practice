@@ -42,6 +42,19 @@ describe("public catalog", () => {
     expect(kit.status).toBe("on_request");
   });
 
+  it("lists each card's coating and its options in the vehicle context", async () => {
+    const haval = await ctx.http().get("/api/v1/catalog?vehicle=haval-h3");
+    const front = haval.body.items.find((i: { slug: string }) => i.slug === "haval-h3-front-double");
+    expect(front.coating).toEqual({ code: "aisi304", label: expect.any(String) });
+    expect(front.options).toEqual([
+      { id: expect.any(String), title: "Двойная труба 63/51 мм", priceFrom: 5_190_000, available: true },
+      { id: expect.any(String), title: "Двойная труба с декором", priceFrom: null, available: false },
+    ]);
+    const jac = await ctx.http().get("/api/v1/catalog?vehicle=jac-t9");
+    const steps = jac.body.items.find((i: { slug: string }) => i.slug === "universal-steps");
+    expect(steps.options.map((o: { title: string }) => o.title)).toEqual(["Пороги для JAC T9"]);
+  });
+
   it("returns facets and filters by position", async () => {
     const res = await ctx.http().get("/api/v1/catalog?vehicle=jac-t9&position=front");
     expect(res.body.items.map((i: { slug: string }) => i.slug)).toEqual(["jac-t9-front-tube"]);
@@ -65,6 +78,8 @@ describe("public catalog", () => {
     expect(res.body.product.vehicle.slug).toBe("haval-h3");
     expect(res.body.product.priceFrom).toBe(6_190_000);
     expect(res.body.product.variants).toHaveLength(2);
+    expect(res.body.product.options.map((o: { title: string }) => o.title)).toEqual(["Пороги для Haval H3"]);
+    expect(res.body.product.coating.code).toBe("aisi304");
   });
 
   it("returns 404 for unknown products and a redirect for old slugs", async () => {
@@ -81,7 +96,11 @@ describe("public catalog", () => {
     expect(res.body.items.map((i: { slug: string }) => i.slug)).not.toContain("haval-h3-rear-tube");
     expect((await ctx.http().get("/api/v1/catalog/haval-h3-rear-tube")).status).toBe(404);
     const sm = await ctx.http().get("/api/v1/sitemap");
-    expect(sm.body.urls.map((u: { path: string }) => u.path)).not.toContain("/catalog/haval-h3-rear-tube");
+    const paths = sm.body.urls.map((u: { path: string }) => u.path);
+    expect(paths).not.toContain("/catalog/haval-h3-rear-tube");
+    expect(paths).toContain("/faq");
+    expect(paths).not.toContain("/offers");
+    expect(paths).not.toContain("/news");
   });
 
   it("exposes meta with delivery methods and disabled release-2 flags", async () => {

@@ -1,110 +1,72 @@
-import { data, Link } from "react-router";
+import { useEffect, useState } from "react";
+import { data } from "react-router";
 import type { Route } from "./+types/privacy";
+import { Crumbs } from "../components/site";
 import { PUBLIC_CACHE } from "../lib/api.server";
+import { nb } from "../lib/format";
+import { LEGAL, LEGAL_VERSION } from "../lib/legal";
 import { rootOrigin, seo } from "../lib/seo";
+import css from "../styles/pages/privacy.css?url";
 
+export const links: Route.LinksFunction = () => [{ rel: "stylesheet", href: css }];
 export const loader = () => data({}, { headers: { "Cache-Control": PUBLIC_CACHE } });
 export { pageHeaders as headers } from "../lib/headers";
 export const meta: Route.MetaFunction = ({ matches }) =>
   seo({ title: "Обработка персональных данных", description: "Какие данные ARMORIX получает из заявок и рассылки, зачем, где хранит и как их удалить", path: "/privacy", origin: rootOrigin(matches) });
 
-const SECTIONS: { title: string; body: React.ReactNode }[] = [
-  {
-    title: "О сайте",
-    body: (
-      <>
-        <p>Сайт сделан командой участников хакатона по техническому и идейному заданию компании, которая производит защиту бамперов для китайских внедорожников и пикапов. ARMORIX пока рабочее название бренда, окончательное название утверждает компания</p>
-        <p>Это демонстрационная версия. Товары, цены и иллюстрации на сайте показаны для примера, оплаты на сайте нет, а отправленная заявка не является договором или резервом товара</p>
-      </>
-    ),
-  },
-  {
-    title: "Кто получает данные",
-    body: (
-      <>
-        <p>Заявки получает команда, которая разработала сайт и обслуживает его на время демонстрации. Команда передаёт компании-заказчику данные из заявки только для того, чтобы на неё ответить</p>
-        <p>Если компания запустит сайт как свой, она станет оператором персональных данных и опубликует новую редакцию этой страницы со своими реквизитами</p>
-      </>
-    ),
-  },
-  {
-    title: "Какие данные мы получаем",
-    body: (
-      <ul>
-        <li>Имя и контакт для ответа: телефон или email, удобный способ связи</li>
-        <li>Содержимое заявки: выбранные комплекты и количество, марка, модель и год автомобиля, способ получения, комментарий</li>
-        <li>Технические данные: IP-адрес и контакт из заявки в счётчиках защиты от спама, они удаляются через сутки</li>
-        <li>Подборка товаров хранится только в вашем браузере, без имени и контактов, пока вы не отправите заявку</li>
-      </ul>
-    ),
-  },
-  {
-    title: "Зачем",
-    body: (
-      <ul>
-        <li>Связаться с вами, уточнить совместимость, комплектацию, цену, доставку или установку</li>
-        <li>Защитить формы от автоматических заявок и спама</li>
-        <li>Отправлять письма о новых комплектах и акциях, если вы отдельно подписались на рассылку</li>
-      </ul>
-    ),
-  },
-  {
-    title: "Основание",
-    body: (
-      <p>Отправляя заявку, вы соглашаетесь на обработку указанных в ней данных для ответа на заявку. Согласие на рассылку даётся отдельно и не нужно для отправки заявки. Любое согласие можно отозвать</p>
-    ),
-  },
-  {
-    title: "Где хранятся данные",
-    body: (
-      <>
-        <p>Сайт работает на облачных сервисах, их серверы находятся за пределами России. Данные заявок и база сайта хранятся в Supabase на серверах в Европейском союзе, сайт размещён на платформе Vercel, письма отправляются через Google</p>
-        <p>Уведомления сотрудникам в Telegram и по почте содержат только номер и тип заявки, контакты в них не передаются. Мы не используем счётчики аналитики и рекламные метки</p>
-      </>
-    ),
-  },
-  {
-    title: "Сколько храним",
-    body: (
-      <p>Заявки хранятся, пока идёт демонстрация проекта, и не дольше 12 месяцев с даты отправки. После этого контакты, комментарии и заметки менеджера по заявке удаляются, а в истории остаются только обезличенные данные о заявке и покупке. Если вы попросите удалить данные раньше, мы сделаем это в течение 10 рабочих дней</p>
-    ),
-  },
-  {
-    title: "Ваши права",
-    body: (
-      <p>
-        Вы можете узнать, какие ваши данные у нас есть, попросить исправить или удалить их и отозвать согласие. Напишите через форму на странице <Link to="/contacts">«Контакты»</Link> и укажите в тексте номер заявки, если он есть. Мы ответим на тот контакт, который вы оставите в форме
-      </p>
-    ),
-  },
-  {
-    title: "Согласие на рассылку",
-    body: (
-      <>
-        <p className="doc__quote">Я соглашаюсь получать от ARMORIX письма о новых комплектах защиты, акциях и новостях производства на указанный email. Я понимаю, что могу отказаться от писем в любой момент по ссылке в каждом письме</p>
-        <p>Подписка начинает действовать после того, как вы подтвердите адрес по ссылке из первого письма. Мы храним дату согласия, версию этого текста и то, откуда вы подписались. Версия текста согласия от 12 ноября 2026 года</p>
-      </>
-    ),
-  },
-  {
-    title: "Изменения",
-    body: <p>Если порядок обработки данных изменится, мы обновим эту страницу и дату редакции. Новые условия рассылки применяются только после нового согласия</p>,
-  },
-];
-
 export default function Privacy() {
+  const [active, setActive] = useState(LEGAL[0]!.id as string);
+
+  useEffect(() => {
+    const els = LEGAL.map((d) => document.getElementById(d.id)).filter((e): e is HTMLElement => !!e);
+    const fromHash = location.hash.slice(1);
+    if (LEGAL.some((d) => d.id === fromHash)) setActive(fromHash);
+    const io = new IntersectionObserver((es) => {
+      const hit = es.filter((e) => e.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+      if (hit) setActive(hit.target.id);
+    }, { rootMargin: "-20% 0px -60% 0px", threshold: [0, .25, .5, 1] });
+    els.forEach((e) => io.observe(e));
+    return () => io.disconnect();
+  }, []);
+
   return (
-    <section className="sec wrap doc">
-      <p className="crumbs"><span className="chip"><span>Документ</span></span></p>
-      <h1 className="tt"><span>Обработка персональных данных</span><span className="mute">Редакция от 12 ноября 2026</span></h1>
-      <div className="doc__body">
-        {SECTIONS.map((s) => (
-          <section key={s.title} className="doc__sec">
-            <h2 className="t-h4">{s.title}</h2>
-            {s.body}
-          </section>
-        ))}
-      </div>
-    </section>
+    <>
+      <section className="ph dark2">
+        <div className="wrap">
+          <Crumbs items={[{ label: "Главная", to: "/" }, { label: "Документы" }]} />
+          <h1 className="ph__t prv-h1" data-in="">Обработка<br />персональных данных</h1>
+          <p className="ph__sub" data-in="">{LEGAL_VERSION}</p>
+        </div>
+      </section>
+
+      <section className="light sec prv-body">
+        <div className="wrap prv-grid">
+          <nav className="prv-toc" aria-label="Документы">
+            <p className="cap">Документы</p>
+            <ol>
+              {LEGAL.map((d) => (
+                <li key={d.id}>
+                  <a className="prv-toc__a ol" href={`#${d.id}`} aria-current={active === d.id ? "true" : undefined}>{d.title}</a>
+                </li>
+              ))}
+            </ol>
+          </nav>
+
+          <div className="prv-docs">
+            {LEGAL.map((d) => (
+              <article key={d.id} id={d.id} className="prv-doc" data-in="">
+                <h2 className="h3 prv-doc__t">{d.title}</h2>
+                {d.sections.map(([h, t], i) => (
+                  <section key={i} className={h ? "prv-sec" : "prv-lead"}>
+                    {h ? <h3 className="prv-sec__h">{h}</h3> : null}
+                    <p>{nb(t)}</p>
+                  </section>
+                ))}
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+    </>
   );
 }

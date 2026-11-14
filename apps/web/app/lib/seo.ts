@@ -2,7 +2,6 @@ import type { MetaDescriptor } from "react-router";
 
 type Opts = { title: string; description: string; path: string; origin?: string; image?: string; noindex?: boolean };
 
-/** title, description, canonical, Open Graph and Twitter Card for every public page */
 export function seo({ title, description, path, origin = "", image = "/og/armorix-default-v1.jpg", noindex }: Opts): MetaDescriptor[] {
   const url = `${origin}${path}`;
   const img = image.startsWith("http") ? image : `${origin}${image}`;
@@ -28,7 +27,6 @@ export function seo({ title, description, path, origin = "", image = "/og/armori
   ];
 }
 
-/** origin from the root loader, available to every route's meta */
 export function rootOrigin(matches: readonly unknown[]): string {
   const root = matches.find((m) => (m as { id?: string })?.id === "root") as { loaderData?: { origin?: string }; data?: { origin?: string } } | undefined;
   return root?.loaderData?.origin ?? root?.data?.origin ?? "";
