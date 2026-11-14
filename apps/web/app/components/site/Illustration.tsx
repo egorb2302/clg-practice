@@ -51,14 +51,14 @@ type Props = {
 export const isRealPhoto = (src: string | null | undefined, alt = "") =>
   !!src && !src.startsWith("/img/") && !/^иллюстрация/i.test(alt.trim());
 
-export function Illustration({ src, alt, ratio, sizes = "100vw", eager, label = true, crop, dark, thumb, className = "", caption }: Props) {
+export function Illustration({ src, alt, ratio, sizes = "100vw", eager, crop, dark, thumb, className = "", caption }: Props) {
   const style = ratio ? ({ "--r": ratio } as React.CSSProperties) : undefined;
   if (!isRealPhoto(src, alt)) {
     const text = (caption ?? alt.replace(/^иллюстрация:\s*/i, "")).trim();
     return (
-      <div className={`ill ill--ph${dark ? " ill--dark" : ""}${thumb ? " ill--thumb" : ""} ${className}`} style={style} role={text ? "img" : undefined} aria-label={text || undefined} aria-hidden={text ? undefined : true}>
+      <div className={`ill ill--ph${dark ? " ill--dark" : ""}${thumb ? " ill--thumb" : ""} ${className}`} style={style} aria-hidden="true">
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1"><rect x="3" y="5" width="18" height="14" /><path d="M3 16l5-5 4 4 3-3 6 6" /><circle cx="16" cy="9" r="1.5" /></svg>
-        {text && !thumb ? <span className="ill__cap" aria-hidden="true">[ФОТО: {text}]</span> : null}
+        {text && !thumb ? <span className="ill__cap">[ФОТО: {text}]</span> : null}
       </div>
     );
   }
@@ -74,8 +74,6 @@ export function Illustration({ src, alt, ratio, sizes = "100vw", eager, label = 
         loading={eager ? "eager" : "lazy"}
         decoding="async"
         fetchPriority={eager ? "high" : undefined}
-      />
-      {label && !isRealPhoto(src, alt) ? <span className="ill__lbl">Иллюстрация</span> : null}
-    </div>
+      />    </div>
   );
 }

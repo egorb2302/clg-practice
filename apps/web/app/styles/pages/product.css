@@ -175,6 +175,7 @@
 .prd-zoom__img .prd-zoom__ill { width: 100%; height: 100%; aspect-ratio: auto; transition: transform .3s ease; transform-origin: var(--o, 50% 50%); }
 .prd-zoom__img.is-zoom { cursor: zoom-out; }
 .prd-zoom__img.is-zoom .prd-zoom__ill { transform: scale(2); }
+.prd-zoom__ill img { object-fit: contain; }
 .prd-zoom__thumbs { display: flex; justify-content: center; gap: 10px; }
 .prd-zoom__thumbs .prd-thumb { width: 96px; --lc: var(--ln-2); }
 .prd-zoom__thumbs .prd-thumb.is-on { --lc: var(--t-1); }

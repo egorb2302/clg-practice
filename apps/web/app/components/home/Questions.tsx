@@ -45,7 +45,7 @@ export function Questions({ car }: { car: Vehicle }) {
                   <span className="home-faq__pm cut" aria-hidden="true"><i /><i /></span>
                 </button>
               </h3>
-              {on ? <p className="home-faq__a" id={`${id}-${i}`}>{a}</p> : null}
+              <p className="home-faq__a" id={`${id}-${i}`} hidden={!on}>{a}</p>
             </article>
           );
         })}
