@@ -103,6 +103,7 @@ export default function Account({ loaderData }: Route.ComponentProps) {
   async function logout() {
     await send("POST", "/auth/logout");
     setCsrf(null);
+    contact.clear();
     navigate("/", { replace: true });
   }
 

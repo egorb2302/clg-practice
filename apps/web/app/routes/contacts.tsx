@@ -123,7 +123,7 @@ export default function Contacts() {
           <ul className="cnt-revs">
             {REVIEWS.map(([t, who]) => (
               <li key={who} className="cnt-rev ol">
-                <span className="cnt-rev__stars" aria-label="Оценка 5 из 5">★★★★★</span>
+                <span className="cnt-rev__stars" aria-hidden="true">★★★★★</span>
                 <p>{t}</p>
                 <span className="cnt-rev__who">{who}</span>
               </li>

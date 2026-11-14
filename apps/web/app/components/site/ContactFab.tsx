@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { contact as saved, useContact } from "../../lib/contact";
 import { maskPhone, phoneE164, telegramLink } from "../../lib/format";
-import { postLead, uuid } from "../../lib/leads";
+import { postLead, uuid, waitFill } from "../../lib/leads";
 import { useModal } from "../../lib/modal";
 import { useSelection } from "../../lib/selection";
 import { telHref, useSite, vkLink } from "../../lib/site";
@@ -26,7 +26,8 @@ export function ContactFab() {
   const key = useRef<string | null>(null);
   const started = useRef<number | null>(null);
   const known = useContact();
-  useEffect(() => { setPhone((p) => p || known.phone); }, [known.phone]);
+  useEffect(() => { setPhone(known.phone); }, [known.phone]);
+  useEffect(() => { if (open) started.current ??= Date.now(); }, [open]);
   const close = () => ui.setContact(false);
   useModal(ref, open, close, { fallback: ".fab__btn, .bb [aria-controls='contact-p']" });
 
@@ -61,6 +62,8 @@ export function ContactFab() {
     key.current ??= uuid();
     setState("sending");
     setErr("");
+    const k = key.current;
+    await waitFill(started.current ?? Date.now());
     const r = await postLead({
       type: "general",
       name: "Обратный звонок",
@@ -68,7 +71,7 @@ export function ContactFab() {
       message: lines.join("\n").slice(0, 2000),
       website: hp,
       fillMs: Date.now() - (started.current ?? Date.now()),
-    }, key.current);
+    }, k);
     if (r.kind === "ok") { setRef(r.data.reference); setState("done"); key.current = null; return; }
     if (r.kind === "limited") { setState("limited"); setErr(`Слишком много попыток. Подождите минуту${callAlt}`); return; }
     setState("idle");
@@ -124,7 +127,7 @@ export function ContactFab() {
                   started.current ??= Date.now();
                   const v = e.target.value.replace(/\D/g, "") ? maskPhone(e.target.value) : "";
                   setPhone(v);
-                  saved.set({ phone: v, ...(v ? { pref: "phone" as const } : {}) });
+                  saved.set({ phone: v });
                   key.current = null;
                   if (state !== "limited") setErr("");
                 }}

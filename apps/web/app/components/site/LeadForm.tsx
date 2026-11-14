@@ -1,9 +1,9 @@
 import { API_PREFIX, type CatalogChange, type DeliveryMethodCode, type LeadCreatedResponse, type LeadRequest } from "@armorix/contracts";
 import { type FormEvent, type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router";
-import { contact as saved, useContact } from "../../lib/contact";
+import { CONTACT_FIELDS, contact as saved, useContact } from "../../lib/contact";
 import { maskPhone, phoneE164, plural } from "../../lib/format";
-import { postLead, uuid } from "../../lib/leads";
+import { postLead, uuid, waitFill } from "../../lib/leads";
 import { setDelivery, useDelivery } from "../../lib/selection";
 import { useSite } from "../../lib/site";
 import { ui } from "../../lib/ui";
@@ -69,17 +69,7 @@ export function LeadForm(props: Props) {
 
   const known = useContact();
   useEffect(() => {
-    setF((o) => {
-      const fresh = started.current == null;
-      const n = {
-        ...o,
-        name: o.name || known.name,
-        phone: o.phone || known.phone,
-        email: o.email || known.email,
-        pref: fresh && !o.phone && !o.email ? known.pref : o.pref,
-      };
-      return n.name === o.name && n.phone === o.phone && n.email === o.email && n.pref === o.pref ? o : n;
-    });
+    setF((o) => (CONTACT_FIELDS.every((k) => o[k] === known[k]) ? o : { ...o, name: known.name, pref: known.pref, phone: known.phone, email: known.email }));
   }, [known]);
 
   useEffect(() => {
@@ -163,7 +153,9 @@ export function LeadForm(props: Props) {
     setMsg("");
     setChanged(false);
     const sent = items;
-    const r = await postLead(body(), key.current);
+    const k = key.current;
+    await waitFill(started.current ?? mounted.current);
+    const r = await postLead(body(), k);
     if (r.kind === "ok") {
       const mail = f.pref === "email" && f.mail && meta.features.campaigns ? await subscribe(f.email.trim()) : null;
       setResult({ ref: r.data.reference, mail, pending: meta.features.loyalty && r.data.loyaltyStatus === "pending", authed: r.authed });

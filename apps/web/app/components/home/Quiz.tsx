@@ -66,8 +66,15 @@ export function Quiz({ kits, car, req }: { kits: Kit[]; car: Vehicle; req: numbe
   const followKey = carKey(carOfVehicle(car));
   const doneNow = useRef(done);
   doneNow.current = done;
+  const ansNow = useRef(ans);
+  ansNow.current = ans;
+  const followed = useRef("");
   useEffect(() => {
+    const prev = followed.current;
+    followed.current = followKey;
     if (doneNow.current) return;
+    const own = ansNow.current.car;
+    if (!followKey && own && carKey(own) !== prev) return;
     const c = carOfVehicle(car);
     setOther("");
     setAns(c ? { car: c } : {});
@@ -151,7 +158,15 @@ export function Quiz({ kits, car, req }: { kits: Kit[]; car: Vehicle; req: numbe
     moved.current = true;
     setDone({ ref: r.reference, count: selMode ? items.length : 0 });
   };
-  const restart = () => { setDone(null); setFree(false); setAns({}); setOther(""); moved.current = true; setStep(0); };
+  const restart = () => {
+    const c = carOfVehicle(car);
+    setDone(null);
+    setFree(false);
+    setAns(c ? { car: c } : {});
+    setOther("");
+    moved.current = true;
+    setStep(c ? 1 : 0);
+  };
 
   const head = selMode ? ["Почти готово,", "контакты и проверка"] : ["Подберем защиту", "за 4 вопроса"];
   const lead = selMode

@@ -39,6 +39,13 @@ export async function postLead(body: LeadRequest, key: string): Promise<LeadResu
   return { kind: "failed" };
 }
 
+export const MIN_FILL_MS = 3200;
+
+export async function waitFill(since: number) {
+  const left = MIN_FILL_MS - (Date.now() - since);
+  if (left > 0) await new Promise((r) => setTimeout(r, left));
+}
+
 export const uuid = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto
     ? crypto.randomUUID()
