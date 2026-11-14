@@ -69,7 +69,11 @@ export function LeadForm(props: Props) {
 
   const known = useContact();
   useEffect(() => {
-    setF((o) => (CONTACT_FIELDS.every((k) => o[k] === known[k]) ? o : { ...o, name: known.name, pref: known.pref, phone: known.phone, email: known.email }));
+    setF((o) => {
+      if (CONTACT_FIELDS.every((k) => o[k] === known[k])) return o;
+      key.current = null;
+      return { ...o, name: known.name, pref: known.pref, phone: known.phone, email: known.email };
+    });
   }, [known]);
 
   useEffect(() => {
@@ -95,6 +99,7 @@ export function LeadForm(props: Props) {
 
   const touch = () => { if (started.current == null) started.current = Date.now(); };
   const set = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => {
+    if (state === "sending") return;
     touch();
     setF((o) => ({ ...o, [k]: v }));
     if (k === "name" || k === "phone" || k === "email" || k === "pref") saved.set({ [k]: v });
@@ -231,6 +236,7 @@ export function LeadForm(props: Props) {
   );
   const inProps = (k: Field) => ({
     id: fid(k),
+    readOnly: state === "sending" || undefined,
     "aria-invalid": err[k] ? (true as const) : undefined,
     "aria-describedby": err[k] ? fid(`${k}-e`) : undefined,
   });
@@ -279,6 +285,7 @@ export function LeadForm(props: Props) {
                   checked={dm === m.code}
                   aria-invalid={err.delivery && i === 0 ? true : undefined}
                   onChange={() => {
+                    if (busy) return;
                     touch();
                     setDelivery(m.code);
                     key.current = null;

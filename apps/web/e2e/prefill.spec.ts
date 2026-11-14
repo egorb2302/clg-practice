@@ -79,7 +79,7 @@ const seed = (page: Page, v: Record<string, unknown>) =>
 test("a saved contact fills the form after hydration without errors", async ({ page }) => {
   const errors: string[] = [];
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
-  await seed(page, { name: "Тест Тестов", pref: "phone", phone: "+7 (900) 123-45-67", email: "", owner: null, epoch: 0 });
+  await seed(page, { name: "Тест Тестов", pref: "phone", phone: "+7 (900) 123-45-67", email: "", owner: null });
   await open(page, "/contacts");
   const form = page.locator("#contact-form form.lf");
   await expect(form.getByLabel("Имя")).toHaveValue("Тест Тестов");
@@ -88,7 +88,7 @@ test("a saved contact fills the form after hydration without errors", async ({ p
 });
 
 test("without a saved contact the forms start empty", async ({ page }) => {
-  await seed(page, { name: "", pref: "phone", phone: "", email: "", owner: null, epoch: 1 });
+  await seed(page, { name: "", pref: "phone", phone: "", email: "", owner: null });
   await open(page, "/contacts");
   const form = page.locator("#contact-form form.lf");
   await expect(form.getByLabel("Имя")).toHaveValue("");
@@ -112,7 +112,7 @@ test("a form already on the page follows the phone typed in the callback field",
 
 test("a prefilled form sent at once still reports a human fill time", async ({ page }) => {
   const sent = await mockLeads(page);
-  await seed(page, { name: "Тест Тестов", pref: "phone", phone: "+7 (900) 123-45-67", email: "", owner: null, epoch: 0 });
+  await seed(page, { name: "Тест Тестов", pref: "phone", phone: "+7 (900) 123-45-67", email: "", owner: null });
   await open(page, "/catalog");
   await page.getByRole("button", { name: /^В подборку: / }).first().click();
   await page.locator(".hd__sel").click();
@@ -126,7 +126,7 @@ test("a prefilled form sent at once still reports a human fill time", async ({ p
 
 test("the callback sent at once with a saved phone still reports a human fill time", async ({ page }) => {
   const sent = await mockLeads(page);
-  await seed(page, { name: "", pref: "phone", phone: "+7 (900) 123-45-67", email: "", owner: null, epoch: 0 });
+  await seed(page, { name: "", pref: "phone", phone: "+7 (900) 123-45-67", email: "", owner: null });
   await open(page, "/");
   await page.getByRole("button", { name: "Связаться с нами" }).click();
   const panel = page.getByRole("dialog", { name: "Связаться" });

@@ -2,11 +2,11 @@ import { useSyncExternalStore } from "react";
 import { maskPhone } from "./format";
 
 export type ContactFields = { name: string; pref: "phone" | "email"; phone: string; email: string };
-export type Contact = ContactFields & { owner: string | null; epoch: number };
+export type Contact = ContactFields & { owner: string | null };
 export const CONTACT_FIELDS = ["name", "pref", "phone", "email"] as const;
 
 const KEY = "armorix.contact.v1";
-const EMPTY: Contact = { name: "", pref: "phone", phone: "", email: "", owner: null, epoch: 0 };
+const EMPTY: Contact = { name: "", pref: "phone", phone: "", email: "", owner: null };
 let cache: Contact | null = null;
 const subs = new Set<() => void>();
 
@@ -21,7 +21,6 @@ function read(): Contact {
           phone: String(v.phone ?? ""),
           email: String(v.email ?? ""),
           owner: typeof v.owner === "string" ? v.owner : null,
-          epoch: Number(v.epoch) || 0,
         }
       : EMPTY;
   } catch {
@@ -50,21 +49,29 @@ export const contact = {
   },
   fromProfile(p: { id: string; name: string | null; phone: string | null; email: string | null }) {
     const cur = read();
-    if (cur.owner === p.id) return;
-    const base = cur.owner ? { ...EMPTY, epoch: cur.epoch + 1 } : cur;
-    const phone = p.phone ? maskPhone(p.phone) : base.phone;
-    const email = p.email || base.email;
+    if (cur.owner === p.id) {
+      contact.set({
+        name: cur.name || p.name?.trim() || "",
+        phone: cur.phone || (p.phone ? maskPhone(p.phone) : ""),
+        email: cur.email || p.email || "",
+      });
+      return;
+    }
+    const base = cur.owner ? EMPTY : cur;
     write({
       name: p.name?.trim() || base.name,
-      phone,
-      email,
+      phone: p.phone ? maskPhone(p.phone) : base.phone,
+      email: p.email || base.email,
       pref: p.phone ? "phone" : p.email && !base.phone ? "email" : base.pref,
       owner: p.id,
-      epoch: base.epoch,
     });
   },
+  signedIn(id: string) {
+    const cur = read();
+    if (cur.owner && cur.owner !== id) write(EMPTY);
+  },
   clear() {
-    write({ ...EMPTY, epoch: read().epoch + 1 });
+    write(EMPTY);
   },
 };
 

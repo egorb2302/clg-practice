@@ -6,6 +6,7 @@ import { CodeInput } from "../components/account/CodeInput";
 import { useTelegram } from "../components/account/useTelegram";
 import { Crumbs, Icon } from "../components/site";
 import { emailOk, safeNext, send, setCsrf } from "../lib/account";
+import { contact } from "../lib/contact";
 import { PRIVATE_CACHE, privateHeaders, sessionOf } from "../lib/account.server";
 import { rootOrigin, seo } from "../lib/seo";
 import { useSite } from "../lib/site";
@@ -70,6 +71,7 @@ export default function Login({ loaderData }: Route.ComponentProps) {
 
   async function done(s: SessionResponse, viaEmail: string | null) {
     setCsrf(s.csrfToken);
+    contact.signedIn(s.user.id);
     if (viaEmail && mail && meta.features.campaigns) {
       await send("POST", "/subscriptions", { email: viaEmail, consent: true, source: "login" }).catch(() => null);
     }
@@ -158,6 +160,7 @@ export default function Login({ loaderData }: Route.ComponentProps) {
     if (reauth) {
       await send("POST", "/auth/logout");
       setCsrf(null);
+      contact.clear();
     }
     setStep("tg");
     await tg.prepare();

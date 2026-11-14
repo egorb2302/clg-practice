@@ -120,10 +120,12 @@ export function ContactFab() {
                 autoComplete="tel"
                 placeholder="+7 (___) ___-__-__"
                 value={phone}
+                readOnly={state === "sending"}
                 aria-invalid={err && state !== "limited" ? true : undefined}
                 aria-describedby={err ? `${id}-e` : undefined}
                 onFocus={() => { started.current ??= Date.now(); }}
                 onChange={(e) => {
+                  if (state === "sending") return;
                   started.current ??= Date.now();
                   const v = e.target.value.replace(/\D/g, "") ? maskPhone(e.target.value) : "";
                   setPhone(v);
