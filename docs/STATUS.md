@@ -1,6 +1,6 @@
 # ARMORIX — release status
 
-Updated 2026-11-12.
+Updated 2026-11-14.
 
 ## What `main` contains
 
@@ -8,10 +8,10 @@ Updated 2026-11-12.
 | --- | --- | --- |
 | Backend release 1 (API, schema, outbox, bot webhook, admin API) | built, tested locally | `apps/api` |
 | API contracts | built | `packages/contracts` |
-| Public site (`apps/web`) | release 1 by the frontend teammate (PR #1, merged 2026-11-10); proxies `/api/v1/*` and `/admin/*` to the API project; checked locally against the real API (catalog, selection, lead AX-000002, admin on the site origin) | `apps/web` |
+| Public site (`apps/web`) | rebuilt 2026-11-14 to the completed design canvas (home, catalog with URL filters, product, selection, FAQ, about, contacts, privacy, 404); proxies `/api/v1/*` and `/admin/*` to the API project | `apps/web` |
 | Admin UI (`/admin/*` pages) | built as a Vite SPA, served by the API project at `/admin` (`pnpm --filter @armorix/admin build:api` copies it to `apps/api/public/admin`); the site project must rewrite `/admin/*` to the API project, like `/api/*` | `apps/admin` |
-| Release 2 backend (cabinet, Telegram Login with phone, guest lead claim, welcome bonus ledger, offers, news, subscriptions, campaigns) | built and tested locally; every route returns 404 while its `FEATURE_*` flag is `false` (the default) | `apps/api` |
-| Release 2 pages on the site | frontend teammate, after release 1 | — |
+| Release 2 backend (cabinet, Telegram Login with phone, guest lead claim, welcome bonus ledger, offers, news, subscriptions, campaigns) | on in production since 2026-11-14: all `FEATURE_*` flags `true` in `armorix-api` production env, `TELEGRAM_LOGIN_CLIENT_ID` set | `apps/api` |
+| Release 2 pages on the site | live 2026-11-14: `/login` (email code, Telegram), `/account` (leads, purchases, bonus, offers, profile), `/offers`, `/news`, `/subscribe/confirm`, `/unsubscribe` | `apps/web` |
 
 ## Deployment
 
@@ -27,7 +27,7 @@ Deployed 2026-11-10. A push to `main` deploys both Vercel projects (Git integrat
 
 Opened on production 2026-11-12 (Egor: «открываем»). This is a hackathon build for the company that wrote the brief, so production carries the demo catalog: products, "from" prices and site illustrations labeled «Иллюстрация», because the company has no product photos or confirmed data yet. Public contacts are the Telegram bot and working hours. Preview deployments of `armorix-api` use the staging database; preview deployments of `armorix-web` run on local mock data (`API_MOCK=1`), so no preview touches production data.
 
-Welcome bonus values (Egor delegated the choice, 2026-11-12): 1000 points, 1 point = 1 ₽, points valid 180 days, at most 20 % of a sale paid with points, guest contact confirmation within 30 days. Stored as `loyalty_rules` version 1 in both databases; inactive in practice while `FEATURE_LOYALTY=false`.
+Welcome bonus values (Egor delegated the choice, 2026-11-12): 1000 points, 1 point = 1 ₽, points valid 180 days, at most 20 % of a sale paid with points, guest contact confirmation within 30 days. Stored as `loyalty_rules` version 1 in both databases; active since `FEATURE_LOYALTY` went on 2026-11-14.
 
 Lead retention: contacts and free text of leads older than `LEAD_RETENTION_DAYS` (365) are cleared by the job runner, with their notification jobs; `/privacy` promises this.
 
@@ -50,6 +50,13 @@ In production the API refuses to start with log/local adapters (`NODE_ENV=produc
 - Daily monitor runs every day (`monitor_runs` rows for 10, 11 and 12 November); it sends a Telegram message only when it finds a problem, and found none.
 - Site at 320, 390, 768, 1024 and 1440 px: no horizontal scroll on home, catalog, product, selection, about, contacts, privacy, 404 and admin login; public pages carry title, description, canonical and Open Graph.
 - CI runs ESLint (`pnpm lint`) before typecheck and tests.
+
+## Verified 2026-11-14
+
+- Front rebuild: 15 routes at 1440, 820, 390 and 320 px with no horizontal scroll; typecheck, lint and production build clean; API tests 104/104.
+- Locally against the real API with release-2 flags on: email code login to the cabinet; a signed-in client's lead appears in the cabinet; a catalog lead asks how to receive the order when several delivery methods are enabled.
+- Production after the deploy: `/api/v1/meta` shows all release-2 features on and the VK contact; site pages 200, unknown pages 404; `/auth/telegram/nonce` 200 and the Telegram button shown on `/login`; footer shows VK and Telegram links.
+- Not verified on production: a real Telegram login (needs a Telegram account in the popup; BotFather must allow both `/login` and `/account` as redirect URIs) and an email-code login with a real mailbox.
 
 ## Deliberate deferrals
 
