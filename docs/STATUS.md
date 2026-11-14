@@ -58,6 +58,13 @@ In production the API refuses to start with log/local adapters (`NODE_ENV=produc
 - Production after the deploy: `/api/v1/meta` shows all release-2 features on and the VK contact; site pages 200, unknown pages 404; `/auth/telegram/nonce` 200 and the Telegram button shown on `/login`; footer shows VK and Telegram links.
 - Not verified on production: a real Telegram login (needs a Telegram account in the popup; BotFather must allow both `/login` and `/account` as redirect URIs) and an email-code login with a real mailbox.
 
+## Verified 2026-11-15
+
+- Front back to the frontender's template: grey photo placeholders, his simple motion, preloader kept.
+- Frontender's mandatory list (`devfix`, 19 items) checked against the code. Fonts fixed: only Tektur 500 and Golos Text 400, nothing under 13 px.
+- Browser tests: `pnpm --filter @armorix/web e2e` (Playwright, Edge) with the local `api-r2` and `web` dev servers running; 28/28 pass. They mock only `POST /api/v1/leads`. Covered: add to selection, open it and submit from home, catalog and product; the hero button and the quiz take the selection; the car is chosen only in the picker and stays between pages; «Перезвоните мне» sends the car and the selection; the selection survives a reload, removal can be undone; dialog focus, Esc and scroll lock; lead answers 422, 429, a network retry with the same key, 409 catalog changed; type rules on 11 routes; the phone bottom bar; header links by flags; price format.
+- Waiting on the client: a phone, email and address in the production contacts (call buttons stay hidden without a phone), real reviews for `/contacts`, and confirmation of the numbers and promises on the site.
+
 ## Deliberate deferrals
 
 - Confirming a sale queues no customer notification: release 2 shows purchases in the cabinet; no recipient for a release-1 sale notice is defined in the spec.

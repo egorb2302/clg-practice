@@ -38,7 +38,25 @@ test("429: «too many attempts», the button waits", async ({ page }) => {
   await expect(form.locator(".lf__msg")).toContainText(/попыт/i);
 });
 
-test("network error: retry reuses the same Idempotency-Key", async ({ page }) => {
+test("network failure: «Повторить», the retry reuses the same Idempotency-Key", async ({ page }) => {
+  const keys: string[] = [];
+  await page.route(/\/api\/v1\/leads$/, async (route) => {
+    if (route.request().method() !== "POST") return route.fallback();
+    keys.push(route.request().headers()["idempotency-key"] ?? "");
+    if (keys.length === 1) return route.abort("failed");
+    await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ reference: "AX-E2E002", status: "received" }) });
+  });
+  const form = await toSelectionPage(page);
+  await fillContact(page, form);
+  await form.locator("button[type=submit]").click();
+  await expect(form.locator("button[type=submit]")).toHaveText(/Повторить/);
+  await form.locator("button[type=submit]").click();
+  await expect(page.getByRole("heading", { name: "Заявка AX-E2E002 принята" }).first()).toBeVisible();
+  expect(keys).toHaveLength(2);
+  expect(keys[1]).toBe(keys[0]);
+});
+
+test("503: «Повторить», the retry reuses the same Idempotency-Key", async ({ page }) => {
   const sent = await mockLeads(page, (n) => (n === 1 ? { status: 503, json: {} } : undefined));
   const form = await toSelectionPage(page);
   await fillContact(page, form);

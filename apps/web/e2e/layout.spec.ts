@@ -6,27 +6,43 @@ const ROUTES = ["/", "/catalog", "/catalog/jac-t9-front-tube?vehicle=jac-t9", "/
 for (const path of ROUTES) {
   test(`type rules on ${path}: Tektur 500 or Golos 400, no text under 13 px`, async ({ page }) => {
     await open(page, path);
-    const bad = await page.evaluate(() => {
+    const bad = await page.evaluate(async () => {
+      await document.fonts.ready;
       const out: string[] = [];
-      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-      const seen = new Set<Element>();
-      for (let n = walker.nextNode(); n; n = walker.nextNode()) {
-        const el = n.parentElement;
-        if (!el || seen.has(el) || !n.textContent?.trim()) continue;
-        seen.add(el);
-        if (el.closest("[aria-hidden='true'], .hp, .vh, script, style, noscript, svg")) continue;
-        const r = el.getBoundingClientRect();
-        if (!r.width || !r.height) continue;
-        const cs = getComputedStyle(el);
-        if (cs.visibility === "hidden" || cs.display === "none") continue;
+      if (!document.fonts.check('500 16px "Tektur"')) out.push("Tektur 500 is not loaded");
+      if (!document.fonts.check('400 16px "Golos Text"')) out.push("Golos Text 400 is not loaded");
+      const rule = (what: string, cs: CSSStyleDeclaration) => {
         const size = parseFloat(cs.fontSize);
         const family = cs.fontFamily.split(",")[0]!.replace(/["']/g, "").trim();
-        const weight = cs.fontWeight;
-        const what = `${el.tagName.toLowerCase()}.${[...el.classList].join(".")} «${n.textContent.trim().slice(0, 30)}»`;
         if (size < 13) out.push(`${what}: ${size}px`);
         if (!["Tektur", "Golos Text"].includes(family)) out.push(`${what}: font ${cs.fontFamily}`);
-        else if (family === "Tektur" && weight !== "500") out.push(`${what}: Tektur ${weight}`);
-        else if (family === "Golos Text" && weight !== "400") out.push(`${what}: Golos ${weight}`);
+        else if (family === "Tektur" && cs.fontWeight !== "500") out.push(`${what}: Tektur ${cs.fontWeight}`);
+        else if (family === "Golos Text" && cs.fontWeight !== "400") out.push(`${what}: Golos ${cs.fontWeight}`);
+      };
+      const shown = (el: Element) => {
+        if (el.closest(".hp, .vh, script, style, noscript")) return false;
+        const r = el.getBoundingClientRect();
+        const cs = getComputedStyle(el);
+        return !!r.width && !!r.height && cs.visibility !== "hidden" && cs.display !== "none";
+      };
+      const name = (el: Element, text: string) => `${el.tagName.toLowerCase()}.${[...el.classList].join(".")} «${text.trim().slice(0, 30)}»`;
+      const seen = new Set<Element>();
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+        const el = n.parentElement;
+        if (!el || seen.has(el) || !n.textContent?.trim() || el.closest("svg")) continue;
+        seen.add(el);
+        if (shown(el)) rule(name(el, n.textContent), getComputedStyle(el));
+      }
+      for (const el of document.body.querySelectorAll("*")) {
+        if (!shown(el)) continue;
+        for (const pseudo of ["::before", "::after"] as const) {
+          const cs = getComputedStyle(el, pseudo);
+          const c = cs.content;
+          if (c && c !== "none" && c !== "normal" && /^["'].*\S.*["']$/.test(c)) rule(name(el, `${pseudo} ${c}`), cs);
+        }
+        if ((el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) && el.placeholder) rule(name(el, `placeholder ${el.placeholder}`), getComputedStyle(el, "::placeholder"));
+        if ((el instanceof HTMLInputElement && el.value && el.type !== "hidden") || el instanceof HTMLSelectElement) rule(name(el, "value"), getComputedStyle(el));
       }
       return out;
     });

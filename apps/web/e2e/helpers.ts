@@ -5,7 +5,7 @@ export const CAR_KEY = "armorix.vehicle.v1";
 
 export async function open(page: Page, path: string) {
   await page.addInitScript(() => {
-    try { sessionStorage.setItem("armorix-intro", "1"); } catch { /* storage blocked */ }
+    try { sessionStorage.setItem("armorix-intro", "1"); } catch { return; }
   });
   await page.goto(path);
   await expect(page.locator("html")).toHaveClass(/is-ready/);
