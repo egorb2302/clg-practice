@@ -87,33 +87,6 @@ b, strong { font-weight: 400; }
 }
 .skip:focus, .skip:focus-visible { transform: none; outline-offset: 2px; }
 
-html:not(.no-js) [data-in]:not(.is-in) {
-  opacity: 0;
-  transform: translate3d(0, 28px, 0);
-}
-[data-in] {
-  transition:
-    opacity var(--d-4) var(--e-out) calc(var(--i, 0) * 70ms),
-    transform var(--d-4) var(--e-out) calc(var(--i, 0) * 70ms);
-}
-html:not(.no-js) [data-in="fade"]:not(.is-in) { transform: none; }
-html:not(.no-js) [data-in="left"]:not(.is-in) { transform: translate3d(-32px, 0, 0); }
-
-.navp {
-  position: fixed;
-  left: 0; top: 0;
-  z-index: var(--z-progress);
-  width: 100%; height: 2px;
-  background: var(--t-1);
-  transform: scaleX(0);
-  transform-origin: 0 0;
-  opacity: 0;
-  transition: opacity 300ms;
-  pointer-events: none;
-}
-.navp.is-on { opacity: 1; animation: navp 2.4s var(--e-out) forwards; }
-@keyframes navp { from { transform: scaleX(0); } to { transform: scaleX(.85); } }
-
 .intro {
   position: fixed;
   inset: 0;
@@ -175,5 +148,4 @@ html:not(.no-js) [data-in="left"]:not(.is-in) { transform: translate3d(-32px, 0,
     transition-duration: 1ms !important;
     transition-delay: 0ms !important;
   }
-  html:not(.no-js) [data-in]:not(.is-in) { opacity: 1; transform: none; }
 }

@@ -28,12 +28,12 @@ const RULES = [
 ];
 
 const STEPS = [
-  ["Замер", "По машине в мастерской или по фото и размерам, которые вы пришлете", "/img/install-hands.webp"],
-  ["Чертеж", "Показываем чертеж и примерный вид до оплаты, правим по вашим пожеланиям", "/img/tex-brushed.webp"],
-  ["Резка и гибка", "Труба 63 или 76 мм, гнем по линии штатного бампера", "/img/shop-grinder.webp"],
-  ["Сварка", "Каждый шов проверяет мастер, геометрию сверяем по шаблону", "/img/shop-sparks.webp"],
-  ["Покрытие", "Зеркальная полировка нержавейки или порошковая окраска", "/img/steel-plates.webp"],
-  ["Примерка", "Ставим на машину до выдачи, если не встает, исправляем", "/img/bumper.webp"],
+  ["Замер", "По машине в мастерской или по фото и размерам, которые вы пришлете", "замер штатных точек крепления"],
+  ["Чертеж", "Показываем чертеж и примерный вид до оплаты, правим по вашим пожеланиям", "чертеж на экране"],
+  ["Резка и гибка", "Труба 63 или 76 мм, гнем по линии штатного бампера", "гибка трубы"],
+  ["Сварка", "Каждый шов проверяет мастер, геометрию сверяем по шаблону", "сварной шов крупно"],
+  ["Покрытие", "Зеркальная полировка нержавейки или порошковая окраска", "полировка или камера окраски"],
+  ["Примерка", "Ставим на машину до выдачи, если не встает, исправляем", "защита на машине клиента"],
 ];
 
 const MATS = [
@@ -77,9 +77,9 @@ export default function About() {
       <section className="light sec abt-story">
         <div className="wrap abt-story__grid">
           <div className="abt-mosaic" data-stagger="">
-            <div className="abt-mosaic__a" data-in=""><Illustration src="/img/shop-welder.webp" alt="Мастер варит стальную трубу" sizes="(max-width: 1023px) 100vw, 40vw" className="abt-fill" /></div>
-            <div data-in=""><Illustration src="/img/steel-tubes.webp" alt="Стальные трубы на стеллаже" sizes="(max-width: 1023px) 50vw, 25vw" className="abt-fill" /></div>
-            <div data-in=""><Illustration src="/img/install-rack.webp" alt="Защита на подъемнике" sizes="(max-width: 1023px) 50vw, 25vw" className="abt-fill" /></div>
+            <div className="abt-mosaic__a" data-in=""><Illustration src="" alt="" caption="мастерская снаружи, вывеска, вертикальный кадр" className="abt-fill" /></div>
+            <div data-in=""><Illustration src="" alt="" caption="готовые дуги на стеллаже" className="abt-fill" /></div>
+            <div data-in=""><Illustration src="" alt="" caption="мастер за сваркой" className="abt-fill" /></div>
           </div>
           <div className="abt-story__t" data-in="">
             <h2 className="h2">Как мы<br />работаем</h2>
@@ -104,7 +104,7 @@ export default function About() {
             {STEPS.map(([t, d, img], i) => (
               <li key={t} data-in="">
                 <article className="abt-step ol">
-                  <Illustration src={img!} alt="" dark ratio="16 / 10" sizes="(max-width: 767px) 100vw, (max-width: 1279px) 50vw, 33vw" />
+                  <Illustration src="" alt="" caption={img!} dark ratio="16 / 10" />
                   <div className="abt-step__b">
                     <small className="D num">0{i + 1}</small>
                     <h3>{t}</h3>

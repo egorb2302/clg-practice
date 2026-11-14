@@ -19,21 +19,8 @@ type Props = {
 
 type ChipT = { key: string; label: string; aria: string; href?: string; onClick?: () => void };
 
-function useLeaving(items: ChipT[], ms = 220) {
-  const [shown, setShown] = useState(items.map((c) => ({ ...c, out: false })));
-  const sig = items.map((c) => c.key).join("¦");
-  const last = useRef(items);
-  last.current = items;
-  useEffect(() => {
-    const keys = new Set(last.current.map((c) => c.key));
-    setShown((prev) => {
-      const out = prev.filter((p) => !keys.has(p.key)).map((p) => ({ ...p, out: true }));
-      return [...last.current.map((c) => ({ ...c, out: false })), ...out];
-    });
-    const t = window.setTimeout(() => setShown(last.current.map((c) => ({ ...c, out: false }))), ms);
-    return () => window.clearTimeout(t);
-  }, [sig, ms]);
-  return shown;
+function useLeaving(items: ChipT[]) {
+  return items.map((c) => ({ ...c, out: false }));
 }
 
 const OTHER = "__other";

@@ -1,6 +1,6 @@
 import type { MetaResponse } from "@armorix/contracts";
 import { useEffect } from "react";
-import { data, isRouteErrorResponse, Link, Links, Meta, Outlet, Scripts, ScrollRestoration, useLocation, useNavigation } from "react-router";
+import { data, isRouteErrorResponse, Link, Links, Meta, Outlet, Scripts, ScrollRestoration, useLocation } from "react-router";
 import type { Route } from "./+types/root";
 import { ContactFab, Footer, Header, Icon, LegalModal, MobileBar, SelectionDrawer, Toast } from "./components/site";
 import { MARK_IN, MARK_OUT } from "./components/site/Icon";
@@ -57,7 +57,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div className="sprite" aria-hidden="true" dangerouslySetInnerHTML={{ __html: `<svg>${SPRITE}</svg>` }} />
         <a className="skip" href="#main">К содержанию</a>
         <Intro />
-        <NavProgress />
         <Header />
         <main id="main" tabIndex={-1}>{children}</main>
         <Footer />
@@ -104,11 +103,6 @@ function Intro() {
       <span className="intro__name">Armorix</span>
     </div>
   );
-}
-
-function NavProgress() {
-  const nav = useNavigation();
-  return <div className={`navp${nav.state !== "idle" ? " is-on" : ""}`} aria-hidden="true" />;
 }
 
 export default function App() {

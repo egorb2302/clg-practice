@@ -27,7 +27,7 @@ export function Gallery({ shots, title, proofs }: { shots: Shot[]; title: string
         <div className="prd-gal__track" style={{ transform: `translate3d(${-i * 100}%, 0, 0)` }}>
           {shots.map((s, k) => (
             <div className="prd-gal__slide" key={s.src + k} aria-hidden={k !== i} role="group" aria-roledescription="кадр" aria-label={`${k + 1} из ${n}`}>
-              <Illustration src={s.src} alt={s.alt} sizes="(max-width: 1023px) 100vw, 58vw" eager={k === 0} crop />
+              <Illustration src={s.src} alt={s.alt} caption={s.alt} sizes="(max-width: 1023px) 100vw, 58vw" eager={k === 0} label={false} />
             </div>
           ))}
         </div>
@@ -46,7 +46,7 @@ export function Gallery({ shots, title, proofs }: { shots: Shot[]; title: string
         <div className="prd-gal__thumbs" role="group" aria-label="Кадры" style={{ "--n": Math.max(4, Math.min(n, 6)) } as React.CSSProperties}>
           {shots.map((s, k) => (
             <button key={s.src + k} type="button" className={`prd-thumb ol${k === i ? " is-on" : ""}`} aria-label={`Фото ${k + 1}: ${s.alt}`} aria-current={k === i || undefined} onClick={() => go(k)}>
-              <Illustration src={s.src} alt="" thumb label={false} />
+              <Illustration src={s.src} alt={s.alt} thumb label={false} />
             </button>
           ))}
         </div>
@@ -93,11 +93,11 @@ function Zoom({ shots, i, go, title, open, onClose }: { shots: Shot[]; i: number
         {n > 1 ? <button type="button" className="prd-zoom__nav cut" onClick={() => go(i - 1)} aria-label="Предыдущее фото"><CatIcon name="left" /></button> : <span />}
         <div
           className={`prd-zoom__img${zoom ? " is-zoom" : ""}`}
+          style={{ "--o": origin } as React.CSSProperties}
           onClick={(e) => { at(e); setZoom((z) => !z); }}
           onPointerMove={(e) => { if (zoom && e.pointerType === "mouse") at(e); }}
         >
-          <img key={s.src} src={s.src} alt={s.alt} style={{ transformOrigin: origin }} decoding="async" />
-          <span className="ill__lbl">Иллюстрация</span>
+          <Illustration key={s.src + i} src={s.src} alt={s.alt} caption={s.alt} dark label={false} className="prd-zoom__ill" />
         </div>
         {n > 1 ? <button type="button" className="prd-zoom__nav cut" onClick={() => go(i + 1)} aria-label="Следующее фото"><CatIcon name="right" /></button> : <span />}
       </div>
@@ -105,7 +105,7 @@ function Zoom({ shots, i, go, title, open, onClose }: { shots: Shot[]; i: number
         <div className="prd-zoom__thumbs">
           {shots.map((x, k) => (
             <button key={x.src + k} type="button" className={`prd-thumb ol${k === i ? " is-on" : ""}`} aria-label={`Фото ${k + 1}`} aria-current={k === i || undefined} onClick={() => go(k)}>
-              <Illustration src={x.src} alt="" thumb label={false} dark />
+              <Illustration src={x.src} alt={x.alt} thumb label={false} dark />
             </button>
           ))}
         </div>

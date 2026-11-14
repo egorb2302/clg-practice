@@ -74,10 +74,10 @@ export const meta: Route.MetaFunction = ({ data: d, matches }) => {
 const clean = (s: string) => s.replace(/\s[—–]\s/g, ", ").replace(/\s*\.+\s*$/, "").trim();
 const sentences = (s: string | null | undefined) => (s ?? "").split(/(?<=[.!?])\s+/).map(clean).filter(Boolean);
 
-const ART: Record<Card["position"], [string, string][]> = {
-  front: [["/img/bullbar.webp", "передняя дуга"], ["/img/truck.webp", "на машине"], ["/img/install-hands.webp", "установка на штатные точки"], ["/img/steel-tubes.webp", "труба и сварной шов"]],
-  rear: [["/img/bumper.webp", "задняя дуга"], ["/img/truck-cut.webp", "на машине"], ["/img/install-rack.webp", "установка на штатные точки"], ["/img/shop-welder.webp", "сварка в мастерской"]],
-  kit: [["/img/truck-cut.webp", "комплект на машине"], ["/img/bullbar.webp", "передняя дуга"], ["/img/bumper.webp", "задняя дуга"], ["/img/install-hands.webp", "установка на штатные точки"]],
+const ART: Record<Card["position"], string[]> = {
+  front: ["на машине, три четверти спереди", "крупно: покрытие и сварной шов", "крепление на штатные точки, без сверления", "вид сбоку: клиренс и угол въезда", "комплект перед установкой: дуга, кронштейны, крепеж", "на машине после бездорожья"],
+  rear: ["на машине, три четверти сзади", "крупно: покрытие и сварной шов", "крепление на штатные точки, без сверления", "вид сбоку: клиренс и угол съезда", "комплект перед установкой: дуга, кронштейны, крепеж", "на машине после бездорожья"],
+  kit: ["на машине, перед и зад, два ракурса", "передняя дуга крупно", "задняя дуга крупно", "крепление на штатные точки", "комплект перед установкой: две дуги, кронштейны, крепеж", "на машине после бездорожья"],
 };
 
 export default function Product({ loaderData }: Route.ComponentProps) {
@@ -118,7 +118,7 @@ function ProductView({ d }: { d: ViewData }) {
   const shots: Shot[] = useMemo(() => {
     const own = p.gallery.length ? p.gallery : p.image ? [p.image] : [];
     if (own.length) return own.map((g) => ({ src: g.url, alt: g.alt || `${p.title}, ${p.vehicle.label}` }));
-    return ART[p.position].map(([src, what]) => ({ src, alt: `${p.title}, ${p.vehicle.label}: ${what}` }));
+    return ART[p.position].map((what) => ({ src: "", alt: `${p.title.toLowerCase()} ${p.vehicle.label}${p.coating ? `, ${p.coating.label.toLowerCase()}` : ""}, ${what}` }));
   }, [p]);
 
   const compatLabels = p.compatibility.map((c) => c.label).join(", ") || p.vehicle.label;
@@ -128,7 +128,7 @@ function ProductView({ d }: { d: ViewData }) {
 
   const openCompat = () => {
     setTab("compat");
-    tabsRef.current?.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+    tabsRef.current?.scrollIntoView({ block: "start" });
   };
 
   function add() {

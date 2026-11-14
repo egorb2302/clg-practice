@@ -5,7 +5,7 @@ import { priceFrom } from "../../lib/format";
 import { selection, useSelection } from "../../lib/selection";
 import { ui } from "../../lib/ui";
 import { Icon } from "./Icon";
-import { Illustration, productArt } from "./Illustration";
+import { Illustration } from "./Illustration";
 
 function cheapest(p: Card) {
   const live = p.options.filter((o) => o.available);
@@ -50,7 +50,7 @@ export function ProductCard({ p, back, kitDiscountPct, sizes = "(max-width: 767p
       <article className="pc ol" aria-labelledby={titleId}>
         <Link className="pc-cover" to={to} state={state} prefetch="intent" tabIndex={-1} aria-hidden="true" />
         <div className="pc__img" style={{ position: "relative" }}>
-          <Illustration src={p.image?.url ?? productArt(p.position)} alt={p.image?.alt ?? ""} sizes={sizes} eager={eager} />
+          <Illustration src={p.image?.url ?? ""} alt={p.image?.alt ?? ""} caption={`${p.title.toLowerCase()} ${p.vehicle.label}${p.coating ? `, ${p.coating.label.toLowerCase()}` : ""}, вырезанная, на сером фоне`} sizes={sizes} eager={eager} />
           <span className={`pc__st tag${p.status === "available" ? "" : " tag--line"}`}>{p.status === "available" ? "В наличии" : "Под заказ"}</span>
           {kitDiscountPct ? <span className="pc-deal">Комплектом дешевле на {kitDiscountPct}%</span> : null}
         </div>

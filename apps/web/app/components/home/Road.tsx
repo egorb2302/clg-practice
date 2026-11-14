@@ -5,8 +5,7 @@ import { Glyph, PATH } from "./data";
 export function Road({ car }: { car: Vehicle }) {
   return (
     <section className="home-road dark" aria-labelledby="home-road-t">
-      <Illustration src="/img/road-taiga.webp" alt="Внедорожник на лесной грунтовой дороге в тумане" className="home-road__img" sizes="100vw" dark />
-      <div className="home-road__shade" aria-hidden="true" />
+      <Illustration src="/img/x.webp" alt="" caption={`на всю ширину: ${car ? `${car.label} на тяжелой дороге` : "машина на тяжелой дороге"}, лес и колея, слева`} className="home-road__img" dark />
       <div className="home-road__copy" data-stagger="">
         <h2 id="home-road-t" data-in="">Пластик для города,<br />сталь для вашей дороги</h2>
         <p data-in="">Лес, съезд к воде и колея после дождя<br />{car ? `бампер вашего ${car.label} встречает первым` : "бампер встречает первым"}</p>
@@ -36,7 +35,7 @@ export function Sketch({ label, small = false }: { label?: string; small?: boole
         <rect x="110" y="420" width="96" height="74" /><rect x="594" y="420" width="96" height="74" />
       </g>
       <g className="home-sketch__bar" fill="none">
-        <path pathLength={1} d="M150 342 L650 342 M180 392 L620 392 M318 214 L318 392 M482 214 L482 392 M150 342 L180 392 M650 342 L620 392" />
+        <path d="M150 342 L650 342 M180 392 L620 392 M318 214 L318 392 M482 214 L482 392 M150 342 L180 392 M650 342 L620 392" />
       </g>
       {small ? null : (
         <>

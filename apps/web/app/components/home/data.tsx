@@ -29,11 +29,11 @@ export const BODY: Record<string, string> = {
 export const bodyOf = (label: string) => BODY[label] ?? "кроссовер";
 
 export const WORKS = [
-  { car: "Tank 300", body: "рамный внедорожник", what: "Передняя защита, черная порошковая", img: "/img/hero-forest.webp" },
-  { car: "Chery Tiggo 8 Pro", body: "кроссовер", what: "Передняя и задняя, нержавейка", img: "/img/hero-wet.webp" },
-  { car: "Geely Monjaro", body: "кроссовер", what: "Задняя защита, нержавейка", img: "/img/bumper.webp" },
-  { car: "Great Wall Poer", body: "пикап", what: "Передняя защита, черная порошковая", img: "/img/car-dust.webp" },
-  { car: "Haval H5", body: "рамный внедорожник", what: "Передняя защита, нержавейка", img: "/img/truck-l.webp" },
+  { car: "Tank 300", body: "рамный внедорожник", what: "Передняя защита, черная порошковая" },
+  { car: "Chery Tiggo 8 Pro", body: "кроссовер", what: "Передняя и задняя, нержавейка" },
+  { car: "Geely Monjaro", body: "кроссовер", what: "Задняя защита, нержавейка" },
+  { car: "Great Wall Poer", body: "пикап", what: "Передняя защита, черная порошковая" },
+  { car: "Haval H5", body: "рамный внедорожник", what: "Передняя защита, нержавейка" },
 ];
 
 export function coatShort(code: string | undefined): string {

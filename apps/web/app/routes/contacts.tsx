@@ -94,7 +94,7 @@ export default function Contacts() {
               </div>
             </div>
           ) : (
-            <div className="cnt-art" data-in=""><Illustration src="/img/taiga-valley.webp" alt="" sizes="(max-width: 1023px) 100vw, 50vw" className="cnt-fill" /></div>
+            <div className="cnt-art" data-in=""><Illustration src="" alt="" caption="въезд и вывеска" className="cnt-fill" /></div>
           )}
         </div>
       </section>
@@ -106,9 +106,9 @@ export default function Contacts() {
             <p className="txt">Можно приехать посмотреть готовые комплекты и образцы покрытия до заказа, установка по записи</p>
           </div>
           <div className="cnt-photos" data-stagger="">
-            <div data-in=""><Illustration src="/img/shop-welder.webp" alt="Мастер варит стальную трубу" sizes="(max-width: 767px) 100vw, 45vw" className="cnt-fill" /></div>
-            <div data-in=""><Illustration src="/img/install-rack.webp" alt="Защита на подъемнике" sizes="(max-width: 767px) 100vw, 28vw" className="cnt-fill" /></div>
-            <div data-in=""><Illustration src="/img/steel-chrome.webp" alt="Образец полированной стали" sizes="(max-width: 767px) 100vw, 28vw" className="cnt-fill" /></div>
+            <div data-in=""><Illustration src="" alt="" caption="мастерская изнутри, подъемник с машиной" className="cnt-fill" /></div>
+            <div data-in=""><Illustration src="" alt="" caption="образцы покрытия" className="cnt-fill" /></div>
+            <div data-in=""><Illustration src="" alt="" caption="мастер за сваркой" className="cnt-fill" /></div>
           </div>
         </div>
       </section>

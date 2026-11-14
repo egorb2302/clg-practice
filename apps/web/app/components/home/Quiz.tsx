@@ -274,7 +274,7 @@ export function Quiz({ kits, car, req }: { kits: Kit[]; car: Vehicle; req: numbe
       </div>
 
       <div className="home-quiz__r">
-        <Illustration src="/img/install-hands.webp" alt="Мастер ставит защиту на машину клиента" ratio="auto" sizes="(max-width: 1023px) 100vw, 520px" dark className="home-quiz__img" />
+        <Illustration src="/img/x.webp" alt="" caption="мастер у машины клиента" ratio="auto" dark className="home-quiz__img" />
         <div className="home-quiz__plates">
           <div className="home-quiz__sum">
             <p className="home-quiz__sumt D">Ваша заявка{selMode ? <span> · {sel.length} {plural(sel.length, ["позиция", "позиции", "позиций"])}</span> : null}</p>

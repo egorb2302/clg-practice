@@ -23,10 +23,9 @@ export function Process({ car, onQuiz }: { car: Vehicle; onQuiz: () => void }) {
 
   return (
     <section className="home-proc" aria-labelledby="home-proc-t">
-      <div className="home-proc__tex" aria-hidden="true" />
       <h2 id="home-proc-t" className="home-proc__t" data-in="">{custom ? "Как сделаем под вашу машину" : "Как все проходит"}</h2>
       <div className="home-proc__box">
-      <span className="home-proc__link" aria-hidden="true" data-in="fade" />
+      <span className="home-proc__link" aria-hidden="true" />
       <ol className="home-proc__row" data-stagger="">
         {steps.map((s, i) => (
           <li key={s.t} className="home-proc__w" data-in="">

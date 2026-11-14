@@ -1,7 +1,7 @@
 import type { ProductCard as Card } from "@armorix/contracts";
 import { useEffect, useState, type KeyboardEvent } from "react";
 import { Link } from "react-router";
-import { addCard, Icon, Illustration, productArt } from "../site";
+import { addCard, Icon, Illustration } from "../site";
 import { POSITION_LABEL, priceFrom } from "../../lib/format";
 import { useSelection } from "../../lib/selection";
 import { ui } from "../../lib/ui";
@@ -14,13 +14,11 @@ type Slide = {
   car: string;
   title: string;
   text: string;
-  bg: string;
-  pic: string;
+  photo: string;
   stats: [string, string, string][];
   product?: Card;
 };
 
-const BG: Record<string, string> = { "jac-t9": "/img/truck.webp", "haval-h3": "/img/road-mud.webp" };
 const KIT_TEXT = "Ставится на штатные точки без сверления, нержавейка AISI 304 или черная сталь с порошковой краской";
 
 function kitSlide(p: Card, tab: string): Slide {
@@ -30,8 +28,7 @@ function kitSlide(p: Card, tab: string): Slide {
     car: p.vehicle.label,
     title: POSITION_LABEL[p.position],
     text: p.title,
-    bg: BG[p.vehicle.slug] ?? "/img/truck.webp",
-    pic: p.image?.url ?? productArt(p.position),
+    photo: `на весь экран: ${p.vehicle.label} с защитой едет по камням, машина слева`,
     stats: [["2,5", " ч", "установка"], ["0", "", "отверстий в кузове"], p.coating?.code === "aisi304" ? ["304", "", "марка стали AISI"] : ["РФ", "", "доставка по России"]],
     product: p,
   };
@@ -46,8 +43,7 @@ function customSlide(label: string | null, tab: string): Slide {
     text: label
       ? "Готового комплекта еще нет: снимем размеры, покажем эскиз на согласование, сварим и поставим"
       : "Снимем размеры по фото, покажем эскиз до изготовления, сделаем по месту и поставим",
-    bg: "/img/car-dust.webp",
-    pic: "/img/shop-grinder.webp",
+    photo: label ? "на весь экран: работа под похожую модель на камнях, подпись «так мы сделали под похожую машину»" : "на весь экран: реальная работа под другую модель на камнях",
     stats: [["0", " ₽", "до согласования"], ["2", " материала", "на выбор"], ["от 4", " нед", "изготовление"]],
   };
 }
@@ -92,27 +88,20 @@ export function Showcase({ kits, car, onQuiz }: { kits: Kit[]; car: Vehicle; onQ
     e.currentTarget.querySelectorAll<HTMLElement>("[role=tab]")[next]?.focus();
   };
 
-  const bgs = [...new Set(slides.map((x) => x.bg))];
-
   return (
     <section id="kits" className="home-show dark" aria-label="Готовые комплекты">
-      <div className="home-show__bgs" aria-hidden="true">
-        {bgs.map((b) => (
-          <div key={b} className={`home-show__bg${b === s.bg ? " is-on" : ""}`}>
-            <Illustration src={b} alt="" sizes="100vw" dark label={b === s.bg} />
-          </div>
-        ))}
+      <div className="home-show__bgs">
+        <Illustration src="/img/x.webp" alt="" caption={s.photo} dark />
       </div>
-      <div className="home-show__shade" aria-hidden="true" />
 
-      <ul className="home-show__stats" key={`st-${s.key}`}>
+      <ul className="home-show__stats">
         {s.stats.map(([v, u, k]) => (
           <li key={k}><b className="D">{v}<small>{u}</small></b><span>{k}</span></li>
         ))}
       </ul>
 
       <div className="home-show__col">
-        <div className="home-show__card" id="home-show-panel" role="tabpanel" aria-labelledby={`home-show-tab-${at}`} key={`c-${s.key}`}>
+        <div className="home-show__card" id="home-show-panel" role="tabpanel" aria-labelledby={`home-show-tab-${at}`}>
           <span className="home-show__car">{s.car}</span>
           <h3 className="home-show__t">{s.title}</h3>
           <span className="home-show__dash" aria-hidden="true" />
@@ -132,8 +121,8 @@ export function Showcase({ kits, car, onQuiz }: { kits: Kit[]; car: Vehicle; onQ
             )}
           </div>
         </div>
-        <div className="home-show__pic" key={`p-${s.key}`}>
-          <Illustration src={s.pic} alt="" ratio="auto" sizes="410px" dark />
+        <div className="home-show__pic">
+          <Illustration src="/img/x.webp" alt="" caption="защита крупно на машине" ratio="auto" className="home-show__thumb" />
         </div>
         <div className="home-show__tabs" role="tablist" aria-label="Комплекты" onKeyDown={onKey}>
           {slides.map((x, i) => (

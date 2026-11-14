@@ -13,8 +13,7 @@
 .lg-why { list-style: none; margin-top: clamp(32px, 4vw, 56px); max-width: 640px; }
 .lg-why li { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 16px; align-items: start; padding: 18px 0; border-top: 1px solid var(--ln-1); }
 .lg-why li:last-child { border-bottom: 1px solid var(--ln-1); }
-.lg-why__i { --c: var(--c-s); width: 44px; height: 44px; display: grid; place-items: center; background: var(--t-1); color: #111; transition: transform var(--d-3) var(--e-out); }
-.lg-why li:hover .lg-why__i { transform: translateX(4px) rotate(-4deg); }
+.lg-why__i { --c: var(--c-s); width: 44px; height: 44px; display: grid; place-items: center; background: var(--t-1); color: #111; }
 .lg-why strong { display: block; font-size: 18px; line-height: 1.3; color: var(--t-0); }
 .lg-why small { display: block; margin-top: 4px; font-size: 15px; line-height: 1.5; color: var(--g-3); }
 
@@ -23,9 +22,7 @@
 .lg-bonus span { font-size: 15px; line-height: 1.5; color: var(--t-2); }
 
 .lg-card { --c: var(--c-l); --lc: var(--ln-2); --fill: var(--k-1); min-width: 0; padding: clamp(28px, 3.4vw, 48px); color: var(--t-1); }
-.lg-sec [data-in].ol { transition: opacity var(--d-4) var(--e-out) calc(var(--i, 0) * 70ms), transform var(--d-4) var(--e-out) calc(var(--i, 0) * 70ms), --lc var(--d-2) var(--e-press), --fill var(--d-2) var(--e-press); }
-.lg-step { display: flex; flex-direction: column; gap: 20px; animation: lg-in var(--d-3) var(--e-out); }
-@keyframes lg-in { from { opacity: 0; transform: translate3d(14px, 0, 0); } to { opacity: 1; transform: none; } }
+.lg-step { display: flex; flex-direction: column; gap: 20px; }
 .lg-h { font-size: var(--fs-h3); line-height: 1.1; color: var(--t-0); }
 .lg-h:focus-visible { outline-offset: 6px; }
 .lg-sub { margin-top: -8px; font-size: 16px; line-height: 1.6; color: var(--g-3); }
@@ -72,14 +69,9 @@
   color: var(--t-0);
   font: 500 clamp(24px, 20px + 1vw, 32px)/1 var(--f-d);
   font-variant-numeric: tabular-nums;
-  transition: border-color var(--d-2) var(--e-press), box-shadow var(--d-2) var(--e-press), transform var(--d-2) var(--e-press);
 }
-.lg-code__c.is-on { animation: lg-digit var(--d-2) var(--e-press); }
-@keyframes lg-digit { from { transform: translateY(-5px); opacity: .3; } to { transform: none; opacity: 1; } }
 .lg-code__c.is-cur { border-color: var(--t-1); box-shadow: inset 0 -3px 0 var(--t-1); }
 .lg-code.is-bad .lg-code__c { border: 2px solid var(--t-0); }
-.lg-code.is-bad .lg-code__cells { animation: lg-shake 320ms var(--e-press); }
-@keyframes lg-shake { 20% { transform: translateX(-6px); } 45% { transform: translateX(5px); } 70% { transform: translateX(-3px); } 100% { transform: none; } }
 .lg-code:has(.lg-code__in:focus-visible) .lg-code__cells { outline: 2px dashed var(--t-1); outline-offset: 5px; }
 .lg-code:has(.lg-code__in:disabled) .lg-code__c { opacity: .55; }
 .lg-code--light .lg-code__c { border-color: var(--p-4); background: #fff; color: var(--ink); }
@@ -97,7 +89,4 @@
   .lg-bonus { flex-direction: column; align-items: flex-start; gap: 10px; }
   .lg-card { padding: 24px 18px; --c: var(--c-m); }
   .lg-code__c { height: 52px; font-size: 22px; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .lg-step, .lg-code__c.is-on, .lg-code.is-bad .lg-code__cells { animation: none; }
 }

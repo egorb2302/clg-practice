@@ -1,12 +1,10 @@
 import type { ProductCard as Card } from "@armorix/contracts";
-import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
-import { addCard, Icon, Illustration, Logo, productArt } from "../site";
+import { addCard, Icon, Illustration, Logo } from "../site";
 import { priceFrom } from "../../lib/format";
 import { useSelection } from "../../lib/selection";
 import { ui } from "../../lib/ui";
 import type { Vehicle } from "../../lib/vehicle";
-import { isCalm } from "./data";
 import { Sketch } from "./Road";
 
 const PAIRS = [
@@ -19,20 +17,6 @@ export function Steel({ car, product, onQuiz }: { car: Vehicle; product: Card | 
   const sel = useSelection();
   const custom = car?.mode === "custom";
   const added = product ? sel.some((i) => i.productSlug === product.slug) : false;
-  const [on, setOn] = useState(0);
-  const list = useRef<HTMLUListElement>(null);
-  const hover = useRef(false);
-
-  useEffect(() => {
-    const el = list.current;
-    if (!el || isCalm()) return;
-    let seen = false;
-    const io = new IntersectionObserver(([e]) => { seen = !!e?.isIntersecting; }, { threshold: 0.4 });
-    io.observe(el);
-    const t = window.setInterval(() => { if (seen && !hover.current && !document.hidden) setOn((i) => (i + 1) % PAIRS.length); }, 2600);
-    return () => { window.clearInterval(t); io.disconnect(); };
-  }, []);
-
   const add = () => {
     if (!product) return;
     if (added) { ui.openDrawer(); return; }
@@ -59,7 +43,7 @@ export function Steel({ car, product, onQuiz }: { car: Vehicle; product: Card | 
             {custom ? (
               <div className="home-plate__draw"><Sketch small /></div>
             ) : (
-              <Illustration src={product?.image?.url ?? productArt("front")} alt={product ? `${product.title}, ${product.vehicle.label}` : "Передняя стальная защита бампера"} ratio="380 / 520" sizes="(max-width: 767px) 80vw, 380px" dark crop />
+              <Illustration src="/img/x.webp" alt="" caption={`передняя защита ${product ? product.vehicle.label : "на машину"}, вырезанная, стоит вертикально и выходит за пластину сверху`} ratio="380 / 520" dark />
             )}
           </div>
           <div className="home-plate__buy">
@@ -75,14 +59,9 @@ export function Steel({ car, product, onQuiz }: { car: Vehicle; product: Card | 
           </div>
         </div>
 
-        <ul
-          ref={list}
-          className="home-pairs"
-          onPointerEnter={() => { hover.current = true; }}
-          onPointerLeave={() => { hover.current = false; }}
-        >
-          {PAIRS.map((x, i) => (
-            <li key={x.k} className={`home-pair${i === on ? " is-on" : ""}`} onPointerEnter={() => setOn(i)} onFocus={() => setOn(i)} tabIndex={0}>
+        <ul className="home-pairs">
+          {PAIRS.map((x) => (
+            <li key={x.k} className="home-pair" tabIndex={0}>
               <span className="home-pair__b ol"><span>{x.k}</span></span>
               <span className="home-pair__f ol"><b className="D">{x.t}</b><span>{x.p}</span></span>
             </li>

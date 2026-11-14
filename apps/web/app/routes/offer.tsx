@@ -60,7 +60,7 @@ export default function Offer({ loaderData }: Route.ComponentProps) {
   const closed = !!p.minPurchases;
   const el = useEligibility(meta.features.account && closed && st === "live");
   const eligible = el.of(p.slug);
-  const cv = coverOf(p, "offer");
+  const cv = coverOf(p);
   const carText = cars.length ? cars.map((c) => c.label).join(", ") : "все модели";
   const n = p.minPurchases ?? 0;
   const nLabel = `${n} ${plural(n, ["подтвержденная покупка", "подтвержденные покупки", "подтвержденных покупок"])}`;
@@ -97,7 +97,7 @@ export default function Offer({ loaderData }: Route.ComponentProps) {
       <section className="of-dsec light">
         <div className="wrap of-dgrid">
           <div className="of-dmain">
-            <div data-in=""><Illustration src={cv.src} alt="" label={cv.own} ratio="16 / 9" eager crop={cv.own} className="cut of-dimg" sizes="(max-width: 1023px) 100vw, 60vw" /></div>
+            <div data-in=""><Illustration src={cv.src} alt="" caption={cv.caption} ratio="16 / 9" eager className="cut of-dimg" sizes="(max-width: 1023px) 100vw, 60vw" /></div>
             <h2 className="of-h2" data-in="">Условия</h2>
             {p.body ? <PostBody text={p.body} className="of-terms" /> : <p className="of-terms__p">{p.summary || "Подробные условия уточнит менеджер"}</p>}
             <h2 className="of-h2" data-in="">Как получить</h2>

@@ -8,10 +8,8 @@
   background: linear-gradient(115deg, transparent 40%, rgb(28 28 28 / .9) 50%, transparent 60%) 100% 0 / 250% 100% no-repeat;
   -webkit-background-clip: text;
   background-clip: text;
-  animation: nf-glint 2.4s var(--e-out) .3s both;
   user-select: none;
 }
-@keyframes nf-glint { from { background-position: 100% 0; } to { background-position: -50% 0; } }
 .nf-t { max-width: 20ch; font-size: clamp(30px, 20px + 1.8vw, 56px); line-height: 1.02; }
 .nf-p { max-width: 56ch; font-size: var(--fs-l); line-height: 1.55; color: var(--ink-2); }
 .nf-acts { display: flex; flex-direction: column; align-items: center; gap: 20px; margin-top: 14px; }
@@ -27,4 +25,3 @@
 .nf-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 44px var(--gap); padding-top: 18px; }
 @media (max-width: 1023px) { .nf-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 599px) { .nf-grid { grid-template-columns: minmax(0, 1fr); } }
-@media (prefers-reduced-motion: reduce) { .nf-code { animation: none; } }

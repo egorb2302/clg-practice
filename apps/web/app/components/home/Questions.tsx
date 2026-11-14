@@ -1,6 +1,6 @@
 import { useId, useState } from "react";
 import { Link } from "react-router";
-import { Collapse, Icon } from "../site";
+import { Icon } from "../site";
 import { telHref, useSite } from "../../lib/site";
 import type { Vehicle } from "../../lib/vehicle";
 
@@ -26,9 +26,6 @@ export function Questions({ car }: { car: Vehicle }) {
 
   return (
     <section className="home-faq dark2" aria-labelledby="home-faq-t">
-      <svg className="home-faq__line" viewBox="0 0 1920 600" preserveAspectRatio="none" aria-hidden="true">
-        <path pathLength={1} d="M0 520 L620 520 L980 300 L1920 300" />
-      </svg>
       <div className="home-faq__l" data-stagger="">
         <h2 id="home-faq-t" data-in="">Вопросы перед<br />покупкой</h2>
         <span className="home-faq__rule" data-in="" aria-hidden="true" />
@@ -48,7 +45,7 @@ export function Questions({ car }: { car: Vehicle }) {
                   <span className="home-faq__pm cut" aria-hidden="true"><i /><i /></span>
                 </button>
               </h3>
-              <Collapse open={on} id={`${id}-${i}`}><p className="home-faq__a">{a}</p></Collapse>
+              {on ? <p className="home-faq__a" id={`${id}-${i}`}>{a}</p> : null}
             </article>
           );
         })}

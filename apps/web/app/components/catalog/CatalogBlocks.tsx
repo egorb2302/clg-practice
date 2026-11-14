@@ -30,11 +30,11 @@ export function StateBox({ kind, title, text, children }: { kind: "error" | "emp
 }
 
 const WORKS = [
-  { car: "Tank 300", body: "рамный внедорожник", what: "передняя защита, черная порошковая", img: "/img/car-dust.webp" },
-  { car: "Haval H5", body: "рамный внедорожник", what: "передняя защита, нержавейка", img: "/img/road-taiga.webp" },
-  { car: "Great Wall Poer", body: "пикап", what: "передняя защита, черная порошковая", img: "/img/road-mud.webp" },
-  { car: "Chery Tiggo 8 Pro", body: "кроссовер", what: "передняя и задняя, нержавейка", img: "/img/car-snow.webp" },
-  { car: "Geely Monjaro", body: "кроссовер", what: "задняя защита, нержавейка", img: "/img/install-rack.webp" },
+  { car: "Tank 300", body: "рамный внедорожник", what: "передняя защита, черная порошковая" },
+  { car: "Haval H5", body: "рамный внедорожник", what: "передняя защита, нержавейка" },
+  { car: "Great Wall Poer", body: "пикап", what: "передняя защита, черная порошковая" },
+  { car: "Chery Tiggo 8 Pro", body: "кроссовер", what: "передняя и задняя, нержавейка" },
+  { car: "Geely Monjaro", body: "кроссовер", what: "задняя защита, нержавейка" },
 ];
 const BODY: Record<string, string> = {
   "JAC T8": "пикап", "Great Wall Poer": "пикап", "Great Wall Wingle 7": "пикап", "Tank 300": "рамный внедорожник",
@@ -53,7 +53,7 @@ export function SimilarWorks({ car }: { car: string }) {
       <ul className="cat-works__g" data-stagger="">
         {list.map((w) => (
           <li key={w.car} data-in="">
-            <Illustration className="cat-works__img" src={w.img} alt={`Работа на ${w.car}`} sizes="(max-width: 767px) 100vw, 30vw" crop />
+            <Illustration className="cat-works__img" src="" alt="" caption={`работа на ${w.car}`} />
             <b>{w.car}</b>
             <span>{w.what}{w.body === body ? ", похожий кузов" : ""}</span>
           </li>

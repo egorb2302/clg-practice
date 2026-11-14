@@ -13,8 +13,8 @@ export function Workshop({ models, items }: { models: number; items: number }) {
             <li data-in=""><b className="D"><span data-count="2.5">2,5</span><small> ч</small></b>установка у нас</li>
           </ul>
           <div className="home-shop__pics" data-in="">
-            <Illustration src="/img/shop-welder.webp" alt="Мастер варит стальную деталь" ratio="auto" sizes="(max-width: 767px) 100vw, 30vw" dark crop className="home-shop__wide" />
-            <Illustration src="/img/shop-sparks.webp" alt="Искры от болгарки над сварным швом" ratio="1 / 1" sizes="(max-width: 767px) 40vw, 170px" dark crop className="home-shop__sq" />
+            <Illustration src="/img/x.webp" alt="" caption="мастер за сваркой, узкий кадр" ratio="auto" dark className="home-shop__wide" />
+            <Illustration src="/img/x.webp" alt="" caption="шов крупно" ratio="1 / 1" dark className="home-shop__sq" />
           </div>
         </div>
       </div>

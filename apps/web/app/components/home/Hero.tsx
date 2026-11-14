@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Link } from "react-router";
-import { Icon, Illustration, Logo } from "../site";
+import { Icon, Logo } from "../site";
 import { plural, priceFrom } from "../../lib/format";
 import { useUi } from "../../lib/ui";
 import { useVehicle, vehicle, type Vehicle } from "../../lib/vehicle";
 import { BRANDS, MODELS } from "../../lib/vehicles-catalog";
 import { bodyOf, isCalm, type Kit, minPrice, splitCar } from "./data";
+import { Outline, Truck } from "./Truck";
 
 type Slide = { key: string; name: string; sub: string; kit?: Kit };
 
@@ -46,23 +47,6 @@ export function Hero({ kits, onQuiz }: { kits: Kit[]; onQuiz: () => void }) {
     return () => { window.clearInterval(t); io?.disconnect(); };
   }, []);
 
-  useEffect(() => {
-    const el = root.current;
-    if (!el || isCalm() || !matchMedia("(pointer: fine)").matches) return;
-    let raf = 0, x = 0, y = 0;
-    const paint = () => { raf = 0; el.style.setProperty("--mx", x.toFixed(3)); el.style.setProperty("--my", y.toFixed(3)); };
-    const move = (e: PointerEvent) => {
-      const r = el.getBoundingClientRect();
-      x = ((e.clientX - r.left) / r.width - 0.5) * 2;
-      y = ((e.clientY - r.top) / r.height - 0.5) * 2;
-      if (!raf) raf = requestAnimationFrame(paint);
-    };
-    const leave = () => { x = 0; y = 0; if (!raf) raf = requestAnimationFrame(paint); };
-    el.addEventListener("pointermove", move, { passive: true });
-    el.addEventListener("pointerleave", leave);
-    return () => { el.removeEventListener("pointermove", move); el.removeEventListener("pointerleave", leave); cancelAnimationFrame(raf); };
-  }, []);
-
   const go = (to: number) => {
     if (!car) { setAuto(to); hold.current.until = Date.now() + 12000; } else setBrowse(to);
   };
@@ -87,11 +71,17 @@ export function Hero({ kits, onQuiz }: { kits: Kit[]; onQuiz: () => void }) {
           <span className="home-hero__sub">{slide.sub}</span>
         </div>
         <div className="home-hero__floor" aria-hidden="true" />
-        <div className={`home-hero__car${slide.kit ? "" : " is-sil"}${idx === 0 ? " is-flip" : ""}`} key={`c-${slide.key}-${idx}`}>
+        <div className="home-hero__car" key={`c-${slide.key}-${idx}`}>
           {slide.kit ? (
-            <Illustration src="/img/truck-cut.webp" alt={`${slide.name} со стальной защитой бампера`} ratio="2 / 1" sizes="(max-width: 1023px) 100vw, 64vw" eager className="home-hero__img" />
+            <figure className="home-sil">
+              <Truck label={`${slide.name} со стальной защитой бампера`} />
+              <figcaption>[ФОТО: {slide.name} с защитой, студия, белый фон, три четверти спереди]</figcaption>
+            </figure>
           ) : (
-            <Silhouette caption={car?.mode === "custom" ? `${bodyOf(car.label)}, защиту сделаем по месту` : "Выберите марку и модель"} />
+            <figure className="home-sil">
+              <Outline />
+              <figcaption>{car?.mode === "custom" ? `${bodyOf(car.label)}, защиту сделаем по месту` : "Выберите марку и модель"}</figcaption>
+            </figure>
           )}
         </div>
 
@@ -107,7 +97,7 @@ export function Hero({ kits, onQuiz }: { kits: Kit[]; onQuiz: () => void }) {
           <li><b className="D"><span data-count="2.5">2,5</span> ч</b>установка у нас</li>
         </ul>
         <span className="lift lift--ink home-hero__cta">
-          <a href="#quiz" className="btn btn--dark home-cta" data-magnet="" onClick={(e) => { e.preventDefault(); onQuiz(); }}>
+          <a href="#quiz" className="btn btn--dark home-cta" onClick={(e) => { e.preventDefault(); onQuiz(); }}>
             <span className="home-cta__t">{ctaLabel}</span>
             <span className="home-cta__a" aria-hidden="true"><Icon name="arrow" /></span>
           </a>
@@ -139,7 +129,8 @@ export function Hero({ kits, onQuiz }: { kits: Kit[]; onQuiz: () => void }) {
         <div className="home-hero__nav">
           <span className="D num">{pad(idx + 1)} / {pad(n)}</span>
           <button type="button" className="ar ol home-sq" onClick={() => go(idx - 1)} aria-label="Предыдущая модель"><Icon name="back" /></button>
-          <button type="button" className="ar ol home-sq" onClick={() => go(idx + 1)} aria-label="Следующая модель"><Icon name="arrow" /></button>        </div>
+          <button type="button" className="ar ol home-sq" onClick={() => go(idx + 1)} aria-label="Следующая модель"><Icon name="arrow" /></button>
+        </div>
       </aside>
     </section>
   );
@@ -284,36 +275,5 @@ function AllModels({ open, kits, onClose }: { open: boolean; kits: Kit[]; onClos
         Другая марка или модель
       </button>
     </div>
-  );
-}
-
-function Silhouette({ caption }: { caption: string }) {
-  return (
-    <figure className="home-sil">
-      <svg viewBox="0 0 1000 440" role="img" aria-label="Силуэт машины с защитой бампера">
-        <g className="home-sil__body" fill="#fff" stroke="#1c1c1c" strokeWidth="1.4" strokeDasharray="6 5">
-          <path d="M70 196 L305 196 L590 186 L690 188 L695 355 L72 330 Z" />
-          <path d="M305 196 L312 100 L500 94 L590 186 Z" />
-          <path d="M500 94 L640 104 L735 192 L590 186 Z" />
-          <path d="M590 186 L735 192 L850 196 L690 188 Z" />
-          <path d="M690 188 L850 196 L852 338 L695 355 Z" />
-        </g>
-        <g fill="none" stroke="#1c1c1c" strokeWidth="1" strokeDasharray="4 4">
-          <path d="M322 112 L398 108 L398 182 L322 186 Z" />
-          <path d="M410 108 L490 104 L560 180 L410 182 Z" />
-          <path d="M712 222 L830 226 L831 284 L713 292 Z" />
-        </g>
-        <g fill="#fff" stroke="#1c1c1c" strokeWidth="1.4">
-          <ellipse cx="205" cy="338" rx="52" ry="58" /><ellipse cx="205" cy="338" rx="22" ry="25" fill="none" />
-          <ellipse cx="575" cy="346" rx="58" ry="64" /><ellipse cx="575" cy="346" rx="25" ry="28" fill="none" />
-        </g>
-        <g className="home-sil__guard" fill="#1c1c1c">
-          <path d="M680 292 L870 284 L871 297 L681 306 Z" />
-          <path d="M704 340 L862 328 L864 341 L706 354 Z" />
-          <path d="M737 222 h6 v78 h-6z M803 224 h6 v72 h-6z" />
-        </g>
-      </svg>
-      <figcaption>{caption}</figcaption>
-    </figure>
   );
 }

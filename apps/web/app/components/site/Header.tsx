@@ -23,17 +23,7 @@ export function useNavLinks() {
 export function SelCount({ className = "" }: { className?: string }) {
   const items = useSelection();
   const n = items.length;
-  const ref = useRef<HTMLElement>(null);
-  const prev = useRef(n);
-  useEffect(() => {
-    if (n > prev.current && ref.current) {
-      ref.current.classList.remove("is-bump");
-      void ref.current.offsetWidth;
-      ref.current.classList.add("is-bump");
-    }
-    prev.current = n;
-  }, [n]);
-  return n ? <b ref={ref} className={className}>{n}</b> : null;
+  return n ? <b className={className}>{n}</b> : null;
 }
 
 export function Header() {

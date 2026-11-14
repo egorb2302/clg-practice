@@ -1,6 +1,6 @@
 import { data, Link } from "react-router";
 import type { Route } from "./+types/news-post";
-import { assignArt, coverOf, type Post, PostBody, readMinutes } from "../components/account/post";
+import { coverOf, type Post, PostBody, readMinutes } from "../components/account/post";
 import { Crumbs, Icon, Illustration } from "../components/site";
 import { fmtDate, fmtLong } from "../lib/account";
 import { apiRaw, PUBLIC_CACHE } from "../lib/api.server";
@@ -35,8 +35,7 @@ export const meta: Route.MetaFunction = ({ data: d, matches, params }) => {
 
 export default function NewsPost({ loaderData }: Route.ComponentProps) {
   const { post: p, more } = loaderData;
-  const art = assignArt([p, ...more], "news");
-  const cv = coverOf(p, "news", art);
+  const cv = coverOf(p);
   const min = readMinutes(`${p.summary} ${p.body ?? ""}`);
   const date = p.publishedAt ?? p.startsAt;
 
@@ -54,7 +53,7 @@ export default function NewsPost({ loaderData }: Route.ComponentProps) {
       <section className="nw-psec light">
         <div className="wrap nw-pgrid">
           <article className="nw-art">
-            <div data-in=""><Illustration src={cv.src} alt="" label={cv.own} ratio="16 / 9" eager crop={cv.own} className="cut nw-art__img" sizes="(max-width: 1023px) 100vw, 60vw" /></div>
+            <div data-in=""><Illustration src={cv.src} alt="" caption={cv.caption} ratio="16 / 9" eager className="cut nw-art__img" sizes="(max-width: 1023px) 100vw, 60vw" /></div>
             {p.body ? <PostBody text={p.body} className="nw-body" /> : null}
           </article>
           <aside className="nw-aside" aria-label="Еще по теме">
@@ -83,11 +82,11 @@ export default function NewsPost({ loaderData }: Route.ComponentProps) {
             <h2 className="nw-next__t" data-in="">Читать еще</h2>
             <ul className="nw-grid nw-grid--next" data-stagger="">
               {more.map((m) => {
-                const c = coverOf(m, "news", art);
+                const c = coverOf(m);
                 return (
                   <li key={m.slug} data-in="">
                     <Link className="nw-card ol" to={`/news/${m.slug}`} prefetch="intent">
-                      <Illustration src={c.src} alt="" label={c.own} ratio="16 / 9" sizes="(max-width: 767px) 100vw, 33vw" />
+                      <Illustration src={c.src} alt="" caption={c.caption} ratio="16 / 9" sizes="(max-width: 767px) 100vw, 33vw" />
                       <span className="nw-card__b">
                         <time className="nw-meta">{fmtDate(m.publishedAt ?? m.startsAt)}</time>
                         <span className="nw-card__t D">{m.title}</span>

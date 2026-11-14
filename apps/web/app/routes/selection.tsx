@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { data, Link } from "react-router";
 import type { Route } from "./+types/selection";
 import { Glyph } from "../components/pages/glyphs";
-import { Crumbs, Icon, Illustration, LeadForm, ProductCard, productArt, SectionHead, type LeadItem } from "../components/site";
+import { Crumbs, Icon, Illustration, LeadForm, ProductCard, SectionHead, type LeadItem } from "../components/site";
 import { api, PUBLIC_CACHE } from "../lib/api.server";
 import { PRICE_NOTE, plural, priceFrom, rubles } from "../lib/format";
 import { selection, setDelivery, useDelivery, useSelection, type SelectionItem } from "../lib/selection";
@@ -168,7 +168,7 @@ export default function Selection({ loaderData }: Route.ComponentProps) {
                         <li key={i.variantId} className="sel-li" data-in="">
                         <div className={`sel-it${ch ? " is-changed" : ""}`}>
                           <Link className="sel-it__img" to={href} tabIndex={-1} aria-hidden="true">
-                            <Illustration src={i.snapshot.imageUrl ?? productArt(i.snapshot.position)} alt="" thumb sizes="160px" />
+                            <Illustration src={i.snapshot.imageUrl ?? ""} alt="" thumb sizes="160px" />
                           </Link>
                           <div className="sel-it__b">
                             <p className="sel-it__meta">{i.snapshot.vehicleLabel ?? i.vehicleSlug}{i.snapshot.position === "kit" ? " · комплект" : ""}</p>

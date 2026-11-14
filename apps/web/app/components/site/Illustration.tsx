@@ -45,13 +45,27 @@ type Props = {
   dark?: boolean;
   thumb?: boolean;
   className?: string;
+  caption?: string;
 };
 
-export function Illustration({ src, alt, ratio, sizes = "100vw", eager, label = true, crop, dark, thumb, className = "" }: Props) {
+export const isRealPhoto = (src: string | null | undefined, alt = "") =>
+  !!src && !src.startsWith("/img/") && !/^иллюстрация/i.test(alt.trim());
+
+export function Illustration({ src, alt, ratio, sizes = "100vw", eager, label = true, crop, dark, thumb, className = "", caption }: Props) {
+  const style = ratio ? ({ "--r": ratio } as React.CSSProperties) : undefined;
+  if (!isRealPhoto(src, alt)) {
+    const text = (caption ?? alt.replace(/^иллюстрация:\s*/i, "")).trim();
+    return (
+      <div className={`ill ill--ph${dark ? " ill--dark" : ""}${thumb ? " ill--thumb" : ""} ${className}`} style={style} role={text ? "img" : undefined} aria-label={text || undefined} aria-hidden={text ? undefined : true}>
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1"><rect x="3" y="5" width="18" height="14" /><path d="M3 16l5-5 4 4 3-3 6 6" /><circle cx="16" cy="9" r="1.5" /></svg>
+        {text && !thumb ? <span className="ill__cap" aria-hidden="true">[ФОТО: {text}]</span> : null}
+      </div>
+    );
+  }
   const file = thumb ? thumbOf(src) : src;
   const set = thumb ? undefined : srcSet(src);
   return (
-    <div className={`ill${crop ? " ill--crop" : ""}${dark ? " ill--dark" : ""} ${className}`} style={ratio ? ({ "--r": ratio } as React.CSSProperties) : undefined}>
+    <div className={`ill${crop ? " ill--crop" : ""}${dark ? " ill--dark" : ""} ${className}`} style={style}>
       <img
         src={file}
         srcSet={set}
@@ -61,7 +75,7 @@ export function Illustration({ src, alt, ratio, sizes = "100vw", eager, label = 
         decoding="async"
         fetchPriority={eager ? "high" : undefined}
       />
-      {label ? <span className="ill__lbl">Иллюстрация</span> : null}
+      {label && !isRealPhoto(src, alt) ? <span className="ill__lbl">Иллюстрация</span> : null}
     </div>
   );
 }

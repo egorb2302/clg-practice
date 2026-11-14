@@ -1,7 +1,7 @@
 import type { Vehicle } from "@armorix/contracts";
 import { data, Link, type ShouldRevalidateFunction, useSearchParams } from "react-router";
 import type { Route } from "./+types/offers";
-import { type Art, assignArt, coverOf, offerState,type Post, postText, until, vehiclesIn } from "../components/account/post";
+import { coverOf, offerState, type Post, postText, until, vehiclesIn } from "../components/account/post";
 import { SubscribeForm } from "../components/account/SubscribeForm";
 import { useEligibility } from "../components/account/useEligibility";
 import { Crumbs, Icon, Illustration } from "../components/site";
@@ -57,7 +57,6 @@ export default function Offers({ loaderData }: Route.ComponentProps) {
   const list = car ? items.filter((p) => carsOf(p).some((c) => c.slug === car.slug)) : items;
   const featured = list.find((p) => offerState(p) === "live" && !p.minPurchases) ?? list[0];
   const rest = list.filter((p) => p !== featured);
-  const art = assignArt(items, "offer");
 
   return (
     <>
@@ -82,17 +81,17 @@ export default function Offers({ loaderData }: Route.ComponentProps) {
           {failed ? <p className="ferr" role="alert">Не удалось загрузить акции, обновите страницу через минуту</p> : null}
           {featured ? (
             <>
-              <FeaturedOffer art={art} p={featured}cars={carsOf(featured)} eligible={el.of(featured.slug)} state={el.state} purchases={el.purchases} />
+              <FeaturedOffer p={featured} cars={carsOf(featured)} eligible={el.of(featured.slug)} state={el.state} purchases={el.purchases} />
               {rest.length ? (
                 <ul className="of-grid" data-stagger="">
                   {rest.map((p) => {
-                    const cv = coverOf(p, "offer", art);
+                    const cv = coverOf(p);
                     const cars = carsOf(p);
                     const eligible = el.of(p.slug);
                     return (
                       <li key={p.slug} data-in="">
                         <Link className="of-card ol" to={`/offers/${p.slug}`} prefetch="intent">
-                          <Illustration src={cv.src} alt="" label={cv.own} sizes="(max-width: 767px) 100vw, (max-width: 1279px) 50vw, 33vw" />
+                          <Illustration src={cv.src} alt="" caption={cv.caption} sizes="(max-width: 767px) 100vw, (max-width: 1279px) 50vw, 33vw" />
                           <span className="of-card__b">
                             <Tag p={p} eligible={eligible} />
                             <span className="of-card__t D">{p.title}</span>
@@ -130,11 +129,11 @@ export default function Offers({ loaderData }: Route.ComponentProps) {
   );
 }
 
-function FeaturedOffer({ p, art, cars, eligible, state, purchases }: { p: Post; art: Art; cars: Vehicle[]; eligible: boolean | null; state: string; purchases: number }) {
-  const cv = coverOf(p, "offer", art);
+function FeaturedOffer({ p, cars, eligible, state, purchases }: { p: Post; cars: Vehicle[]; eligible: boolean | null; state: string; purchases: number }) {
+  const cv = coverOf(p);
   return (
     <Link className="of-feat ol" to={`/offers/${p.slug}`} prefetch="intent" data-in="">
-      <Illustration src={cv.src} alt="" label={cv.own} dark eager ratio="16 / 10" className="of-feat__img" sizes="(max-width: 1023px) 100vw, 55vw" />
+      <Illustration src={cv.src} alt="" caption={cv.caption} dark eager ratio="16 / 10" className="of-feat__img" sizes="(max-width: 1023px) 100vw, 55vw" />
       <span className="of-feat__b">
         <span className="of-tag cut is-light">{offerState(p) === "soon" && p.startsAt ? `С ${fmtDate(p.startsAt)}` : p.endsAt ? `До ${fmtDate(p.endsAt)}` : "Без срока"}</span>
         <span className="of-feat__t D">{p.title}</span>

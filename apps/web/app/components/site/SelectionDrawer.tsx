@@ -8,7 +8,7 @@ import { useSite } from "../../lib/site";
 import { ui, useUi } from "../../lib/ui";
 import { useVehicle } from "../../lib/vehicle";
 import { Icon } from "./Icon";
-import { Illustration, productArt } from "./Illustration";
+import { Illustration } from "./Illustration";
 
 const sugCache = new Map<string, Card[]>();
 
@@ -117,7 +117,7 @@ export function SelectionDrawer() {
             const p = it.snapshot.priceFrom;
             return (
               <div className="dr-it" key={it.variantId}>
-                <Illustration className="dr-it__img" src={it.snapshot.imageUrl ?? productArt(it.snapshot.position)} alt="" thumb dark />
+                <Illustration className="dr-it__img" src={it.snapshot.imageUrl ?? ""} alt="" thumb dark />
                 <div className="dr-it__i">
                   <Link className="dr-it__t" to={to} onClick={close}>{it.snapshot.title}</Link>
                   {it.snapshot.vehicleLabel ? <span className="dr-it__car">{it.snapshot.vehicleLabel}</span> : null}
@@ -158,7 +158,7 @@ export function SelectionDrawer() {
                 const o = cheapest(p)!;
                 return (
                   <div className="dr-sg ol" key={`${p.slug}|${p.vehicle.slug}`}>
-                    <Illustration src={p.image?.url ?? productArt(p.position)} alt="" thumb dark />
+                    <Illustration src={p.image?.url ?? ""} alt="" thumb dark />
                     <div>
                       <span className="dr-sg__t">{p.title}</span>
                       <span className="dr-sg__s">{p.vehicle.label}, {priceFrom(o.priceFrom)}</span>

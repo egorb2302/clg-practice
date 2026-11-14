@@ -74,25 +74,6 @@ const PILL: Record<string, string> = { "Принята": "is-new", "В рабо�
 const BUY: Record<Purchase["status"], string> = { confirmed: "Подтверждена", partially_refunded: "Частичный возврат", refunded: "Возврат" };
 const OP: Record<string, string> = { earn: "Начисление", redeem: "Списание", reverse: "Отмена", expire: "Сгорание", adjust: "Корректировка" };
 
-function useCalm() {
-  const [calm, setCalm] = useState(false);
-  useEffect(() => { setCalm(matchMedia("(prefers-reduced-motion: reduce)").matches); }, []);
-  return calm;
-}
-
-function usePanel(tab: Tab) {
-  const calm = useCalm();
-  const [shown, setShown] = useState(tab);
-  const [out, setOut] = useState(false);
-  useEffect(() => {
-    if (tab === shown) return;
-    if (calm) { setShown(tab); return; }
-    setOut(true);
-    const t = window.setTimeout(() => { setShown(tab); setOut(false); }, 170);
-    return () => window.clearTimeout(t);
-  }, [tab, shown, calm]);
-  return { shown, out };
-}
 
 function Empty({ title, text, children }: { title: string; text: string; children?: React.ReactNode }) {
   return (
@@ -150,7 +131,7 @@ function Cabinet({ d, onLogout }: { d: D; onLogout: () => void }) {
   const raw = params.get("tab");
   const enabled = TABS.filter((t) => (t === "bonus" ? !!d.loyalty : t === "offers" ? !!d.offers : true));
   const tab: Tab = enabled.includes(raw as Tab) ? (raw as Tab) : "leads";
-  const { shown, out } = usePanel(tab);
+  const shown = tab;
   const rv = useRevalidator();
   const refresh = () => void rv.revalidate();
   const p = d.profile;
@@ -209,7 +190,7 @@ function Cabinet({ d, onLogout }: { d: D; onLogout: () => void }) {
             </div>
           </nav>
 
-          <div className={`ac-panel${out ? " is-out" : ""}`} key={shown}>
+          <div className="ac-panel" key={shown}>
             {shown === "leads" ? <LeadsPanel d={d} loyaltyOn={!!d.loyalty} onChanged={refresh} /> : null}
             {shown === "purchases" ? <PurchasesPanel d={d} /> : null}
             {shown === "bonus" && d.loyalty ? <BonusPanel l={d.loyalty} onChanged={refresh} /> : null}
@@ -423,12 +404,12 @@ function OffersPanel({ o }: { o: MyOffers }) {
       {o.items.length ? (
         <ul className="ac-offs" data-stagger="">
           {o.items.map((x) => {
-            const cv = coverOf(x, "offer");
+            const cv = coverOf(x);
             const st = offerState(x);
             return (
               <li key={x.slug} data-in="">
                 <Link className="ac-off ol" to={`/offers/${x.slug}`} prefetch="intent">
-                  <Illustration src={cv.src} alt="" label={cv.own} ratio="4 / 3" sizes="(max-width: 767px) 100vw, 220px" />
+                  <Illustration src={cv.src} alt="" caption={cv.caption} ratio="4 / 3" sizes="(max-width: 767px) 100vw, 220px" />
                   <span className="ac-off__b">
                     <span className="ac-cap">{x.minPurchases ? (x.eligible ? "Вам подходит" : `После ${x.minPurchases} ${plural(x.minPurchases, ["покупки", "покупок", "покупок"])}`) : "Для всех"}</span>
                     <span className="ac-off__t D">{x.title}</span>
