@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { contact as saved, useContact } from "../../lib/contact";
 import { maskPhone, phoneE164, telegramLink } from "../../lib/format";
 import { postLead, uuid } from "../../lib/leads";
 import { useModal } from "../../lib/modal";
@@ -24,6 +25,8 @@ export function ContactFab() {
   const [ref_, setRef] = useState("");
   const key = useRef<string | null>(null);
   const started = useRef<number | null>(null);
+  const known = useContact();
+  useEffect(() => { setPhone((p) => p || known.phone); }, [known.phone]);
   const close = () => ui.setContact(false);
   useModal(ref, open, close, { fallback: ".fab__btn, .bb [aria-controls='contact-p']" });
 
@@ -119,7 +122,9 @@ export function ContactFab() {
                 onFocus={() => { started.current ??= Date.now(); }}
                 onChange={(e) => {
                   started.current ??= Date.now();
-                  setPhone(e.target.value.replace(/\D/g, "") ? maskPhone(e.target.value) : "");
+                  const v = e.target.value.replace(/\D/g, "") ? maskPhone(e.target.value) : "";
+                  setPhone(v);
+                  saved.set({ phone: v, ...(v ? { pref: "phone" as const } : {}) });
                   key.current = null;
                   if (state !== "limited") setErr("");
                 }}

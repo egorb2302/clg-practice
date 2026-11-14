@@ -7,6 +7,7 @@ import type { Claimable, Lead, Loyalty, MyOffers, Profile, Purchase, Subscriptio
 import { Collapse, Crumbs, Icon, Illustration } from "../components/site";
 import { fmtDate, fmtTime, loginHref, maskedPhone, num, pointsLabel, send, setCsrf } from "../lib/account";
 import { meGet, PRIVATE_CACHE, privateHeaders, sessionOf } from "../lib/account.server";
+import { contact } from "../lib/contact";
 import { plural, rubles } from "../lib/format";
 import { rootOrigin, seo } from "../lib/seo";
 import { useSite } from "../lib/site";
@@ -135,6 +136,7 @@ function Cabinet({ d, onLogout }: { d: D; onLogout: () => void }) {
   const rv = useRevalidator();
   const refresh = () => void rv.revalidate();
   const p = d.profile;
+  useEffect(() => { contact.fromProfile(p); }, [p]);
   const bal = d.loyalty?.balance ?? 0;
   const pending = d.loyalty?.pending ?? [];
   const pendingPts = pending.reduce((s, x) => s + x.points, 0);

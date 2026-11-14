@@ -1,6 +1,7 @@
 import { API_PREFIX, type CatalogChange, type DeliveryMethodCode, type LeadCreatedResponse, type LeadRequest } from "@armorix/contracts";
 import { type FormEvent, type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router";
+import { contact as saved, useContact } from "../../lib/contact";
 import { maskPhone, phoneE164, plural } from "../../lib/format";
 import { postLead, uuid } from "../../lib/leads";
 import { setDelivery, useDelivery } from "../../lib/selection";
@@ -66,6 +67,21 @@ export function LeadForm(props: Props) {
   const mounted = useRef(Date.now());
   const focusBad = useRef(false);
 
+  const known = useContact();
+  useEffect(() => {
+    setF((o) => {
+      const fresh = started.current == null;
+      const n = {
+        ...o,
+        name: o.name || known.name,
+        phone: o.phone || known.phone,
+        email: o.email || known.email,
+        pref: fresh && !o.phone && !o.email ? known.pref : o.pref,
+      };
+      return n.name === o.name && n.phone === o.phone && n.email === o.email && n.pref === o.pref ? o : n;
+    });
+  }, [known]);
+
   useEffect(() => {
     if (type !== "custom" || props.vehicle || chosen?.mode !== "custom") return;
     setF((o) => (o.make || o.model ? o : { ...o, make: chosen.brand, model: chosen.model }));
@@ -91,6 +107,7 @@ export function LeadForm(props: Props) {
   const set = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => {
     touch();
     setF((o) => ({ ...o, [k]: v }));
+    if (k === "name" || k === "phone" || k === "email" || k === "pref") saved.set({ [k]: v });
     key.current = null;
     setFailed(false);
     if (k in err) setErr((e) => { const n = { ...e }; delete n[k as Field]; return n; });

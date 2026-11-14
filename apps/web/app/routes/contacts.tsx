@@ -16,6 +16,12 @@ export const meta: Route.MetaFunction = ({ matches }) =>
 
 type Row = { id: string; icon: ReactNode; k: string; v: string; n: string; href?: string; ext?: boolean };
 
+const REVIEWS: [string, string][] = [
+  ["[ОТЗЫВ КЛИЕНТА: реальный текст с Яндекс Карт или Авито, два или три предложения про установку и качество]", "[ИМЯ], JAC T9 · [ИСТОЧНИК, ДАТА]"],
+  ["[ОТЗЫВ КЛИЕНТА]", "[ИМЯ], Haval H3 · [ИСТОЧНИК, ДАТА]"],
+  ["[ОТЗЫВ КЛИЕНТА: заказ под машину вне каталога]", "[ИМЯ], Tank 300 · [ИСТОЧНИК, ДАТА]"],
+];
+
 const NEXT = [
   "Менеджер ответит в рабочее время тем способом, который вы выбрали",
   "Для заказа под машину попросим фото бампера и точек крепления",
@@ -110,6 +116,19 @@ export default function Contacts() {
             <div data-in=""><Illustration src="" alt="" caption="образцы покрытия" className="cnt-fill" /></div>
             <div data-in=""><Illustration src="" alt="" caption="мастер за сваркой" className="cnt-fill" /></div>
           </div>
+          <div className="cnt-sh cnt-sh--rev">
+            <h2 className="h2">Отзывы</h2>
+            <span className="txt">Все отзывы на [ИСТОЧНИК]</span>
+          </div>
+          <ul className="cnt-revs">
+            {REVIEWS.map(([t, who]) => (
+              <li key={who} className="cnt-rev ol">
+                <span className="cnt-rev__stars" aria-label="Оценка 5 из 5">★★★★★</span>
+                <p>{t}</p>
+                <span className="cnt-rev__who">{who}</span>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
