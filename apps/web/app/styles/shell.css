@@ -60,7 +60,7 @@
 .hd__sel.is-empty { --lc: var(--ln-3); color: var(--g-3); }
 .hd__sel.is-empty:hover, .hd__sel.is-empty:focus-visible { --lc: var(--t-1); color: #111; }
 .hd__sel .ico { width: 18px; height: 18px; }
-.hd__sel b { min-width: 20px; height: 20px; padding: 0 5px; display: inline-grid; place-items: center; background: var(--t-1); color: #111; font: 500 12px/1 var(--f-d); }
+.hd__sel b { min-width: 20px; height: 20px; padding: 0 5px; display: inline-grid; place-items: center; background: var(--t-1); color: #111; font: 500 13px/1 var(--f-d); }
 .hd__acc { display: inline-flex; align-items: center; gap: 10px; color: var(--t-1); font-size: var(--fs-s); text-decoration: none; }
 .hd__acc:hover { color: #fff; }
 .hd__burger { --c: var(--c-s); --lc: var(--g-2); display: none; width: 44px; height: 44px; border: 0; place-items: center; color: var(--t-1); }
@@ -374,7 +374,7 @@
   .bb > a:active, .bb > button:active { background: rgb(255 255 255 / .06); }
   .bb .ico { width: 18px; height: 18px; }
   .bb__l { display: inline-flex; align-items: center; gap: 6px; }
-  .bb b { min-width: 20px; height: 20px; padding: 0 5px; display: inline-grid; place-items: center; background: var(--t-1); color: #111; font: 500 12px/1 var(--f-d); }
+  .bb b { min-width: 20px; height: 20px; padding: 0 5px; display: inline-grid; place-items: center; background: var(--t-1); color: #111; font: 500 13px/1 var(--f-d); }
 }
 
 .err__acts { display: flex; flex-wrap: wrap; align-items: center; gap: 20px 32px; margin-top: 32px; }

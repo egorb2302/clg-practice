@@ -78,7 +78,7 @@
 }
 
 .ico { width: 20px; height: 20px; flex-shrink: 0; }
-.ico--vk { display: inline-grid; place-items: center; width: auto; height: auto; font: 500 12px/1 var(--f-d); letter-spacing: .04em; }
+.ico--vk { display: inline-grid; place-items: center; width: auto; height: auto; font: 500 13px/1 var(--f-d); letter-spacing: .04em; }
 
 .btn {
   --c: var(--c-m);
@@ -271,7 +271,7 @@ select.in {
 .in--light[aria-invalid="true"] { border-color: var(--ink); }
 .fld__hint { font-size: var(--fs-xs); line-height: 1.4; color: var(--g-2); }
 .ferr { display: flex; align-items: flex-start; gap: 8px; font-size: var(--fs-xs); line-height: 1.4; color: var(--t-0); }
-.ferr::before { content: "!"; flex-shrink: 0; width: 16px; height: 16px; background: var(--t-0); color: #111; font: 500 11px/16px var(--f-d); text-align: center; }
+.ferr::before { content: "!"; flex-shrink: 0; width: 16px; height: 16px; background: var(--t-0); color: #111; font: 500 13px/16px var(--f-d); text-align: center; }
 .light .ferr, .white .ferr, .on-light .ferr { color: var(--ink); }
 .light .ferr::before, .white .ferr::before, .on-light .ferr::before { background: var(--ink); color: #fff; }
 .hp { position: absolute !important; left: -9999px !important; width: 1px; height: 1px; opacity: 0; }
@@ -347,7 +347,7 @@ select.in {
     linear-gradient(currentColor, currentColor) right bottom / 16px 1px no-repeat, linear-gradient(currentColor, currentColor) right bottom / 1px 16px no-repeat;
 }
 .ill--ph svg { width: 56px; height: 56px; flex: none; }
-.ill--ph .ill__cap { max-width: 80%; padding: 0 12px; font: 400 12px/1.4 ui-monospace, "SFMono-Regular", Consolas, monospace; text-align: center; }
+.ill--ph .ill__cap { max-width: 80%; padding: 0 12px; font: 400 var(--fs-xs)/1.4 var(--f-t); text-align: center; }
 .ill--thumb::before { inset: 6px; background-size: 8px 1px, 1px 8px, 8px 1px, 1px 8px, 8px 1px, 1px 8px, 8px 1px, 1px 8px; }
 .ill--thumb svg { width: 24px; height: 24px; }
 .ill__lbl {

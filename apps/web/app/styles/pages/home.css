@@ -68,7 +68,7 @@
 
 .home-sil { margin: 0; position: relative; }
 .home-sil svg { display: block; width: 100%; height: auto; }
-.home-sil figcaption { position: absolute; left: 0; right: 0; top: 4%; padding: 0 8%; text-align: center; font: 400 12px/1.4 ui-monospace, "SFMono-Regular", Consolas, monospace; color: #5e5e5b; }
+.home-sil figcaption { position: absolute; left: 0; right: 0; top: 4%; padding: 0 8%; text-align: center; font: 400 var(--fs-xs)/1.4 var(--f-t); color: #5e5e5b; }
 
 .home-hero__tab {
   position: absolute;
@@ -218,7 +218,7 @@
 
 .home-pairs { list-style: none; display: flex; flex-direction: column; gap: 30px; width: 100%; max-width: 500px; justify-self: end; }
 .home-pair { position: relative; height: 150px; outline: none; cursor: default; }
-.home-pair__b { --c: 14px; --lc: #2e2e2c; --fill: #131313; position: absolute; left: 44px; right: 0; top: 0; height: 104px; padding: 12px 20px; font-size: 12px; letter-spacing: .2em; text-transform: uppercase; color: var(--g-2); }
+.home-pair__b { --c: 14px; --lc: #2e2e2c; --fill: #131313; position: absolute; left: 44px; right: 0; top: 0; height: 104px; padding: 12px 20px; font-size: var(--fs-xs); letter-spacing: .2em; text-transform: uppercase; color: var(--g-2); }
 .home-pair__f { --c: 16px; --lc: var(--ln-2); --fill: #0f0f0f; position: absolute; left: 0; top: 40px; width: calc(100% - 60px); height: 110px; padding: 20px 24px; display: flex; flex-direction: column; gap: 6px; transition: transform .35s ease; }
 .home-pair__f b { font-size: 20px; text-transform: uppercase; }
 .home-pair__f > span { font-size: 15px; color: var(--g-3); }
@@ -338,7 +338,7 @@
 .home-works__stage:focus-visible { outline: 2px dashed var(--t-1); outline-offset: -8px; }
 .home-works__slide { margin: 0; width: var(--sw); display: flex; flex-direction: column; justify-content: flex-end; gap: 14px; padding: 0 1.5%; }
 .home-works__slide svg { display: block; width: 100%; height: auto; }
-.home-works__cap { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; font: 400 12px/1.4 ui-monospace, "SFMono-Regular", Consolas, monospace; color: var(--g-3); }
+.home-works__cap { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; font: 400 var(--fs-xs)/1.4 var(--f-t); color: var(--g-3); }
 .home-works__cap em { font-style: normal; color: var(--t-1); }
 .home-works__plate { position: absolute; top: calc(7% + 80px + var(--sw) / 4 - clamp(90px, 7.8vw, 150px)); z-index: 2; width: clamp(240px, 24.5vw, 470px); height: clamp(180px, 15.6vw, 300px); display: flex; align-items: center; gap: 24px; background: #262626; }
 .home-works__plate--l { left: 0; justify-content: flex-end; padding-right: clamp(32px, 3.6vw, 70px); clip-path: polygon(0 0, calc(100% - 64px) 0, 100% 64px, 100% calc(100% - 64px), calc(100% - 64px) 100%, 0 100%); }

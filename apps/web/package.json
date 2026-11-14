@@ -7,7 +7,8 @@
     "dev": "react-router dev",
     "build": "pnpm --filter @armorix/contracts build && react-router build",
     "start": "react-router-serve ./build/server/index.js",
-    "typecheck": "react-router typegen && tsc -p tsconfig.json"
+    "typecheck": "react-router typegen && tsc -p tsconfig.json",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@armorix/contracts": "workspace:*",
@@ -21,6 +22,7 @@
     "zod": "4.6.7"
   },
   "devDependencies": {
+    "@playwright/test": "1.64.1",
     "@react-router/dev": "7.18.5",
     "@types/node": "24.19.2",
     "@types/react": "19.3.0",
