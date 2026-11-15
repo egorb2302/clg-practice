@@ -250,3 +250,4 @@ html.no-js .cat-fgo { display: block; }
 @media (prefers-reduced-motion: reduce) {
   .cat-sk__b i, .cat-sk__img { animation: none; }
 }
+.cat-works__img img { object-fit: contain; padding: 6%; }
