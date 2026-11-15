@@ -68,7 +68,7 @@ export function Hero({ kits, onQuiz }: { kits: Kit[]; onQuiz: () => void }) {
     >
       <div className="home-hero__stage white">
         <Logo mark className="home-hero__mark" />
-        <div className="home-hero__name" key={`n-${slide.key}-${idx}`} data-size={size}>
+        <div className="home-hero__name" key={`n-${slide.key}-${idx}`} data-size={size} style={{ "--nl": Math.max(nameLen, 6) } as React.CSSProperties}>
           <span className="home-hero__model D">{slide.name}</span>
           <span className="home-hero__sub">{slide.sub}</span>
         </div>
@@ -76,7 +76,7 @@ export function Hero({ kits, onQuiz }: { kits: Kit[]; onQuiz: () => void }) {
         <div className="home-hero__car" key={`c-${slide.key}-${idx}`}>
           {slide.kit && studio ? (
             <figure className="home-sil home-sil--photo">
-              <img src={studio} srcSet={`${studio.replace(/\.webp$/, "-800.webp")} 800w, ${studio} 1600w`} sizes="(max-width: 767px) 100vw, 76vw" alt={`${slide.name} со стальной защитой бампера`} fetchPriority={idx === 0 ? "high" : undefined} decoding="async" />
+              <img src={studio} srcSet={`${studio.replace(/\.webp$/, "-800.webp")} 800w, ${studio} 1600w`} sizes="(max-width: 1099px) 90vw, 50vw" alt={`${slide.name} со стальной защитой бампера`} fetchPriority={idx === 0 ? "high" : undefined} decoding="async" />
             </figure>
           ) : slide.kit ? (
             <figure className="home-sil">
@@ -96,17 +96,19 @@ export function Hero({ kits, onQuiz }: { kits: Kit[]; onQuiz: () => void }) {
         </button>
         <AllModels open={all} kits={kits} onClose={() => setAll(false)} />
 
-        <ul className="home-hero__facts" aria-label="ARMORIX в цифрах">
-          <li><b className="D">AISI 304</b>нержавеющая сталь</li>
-          <li><b className="D">0</b>отверстий в кузове</li>
-          <li><b className="D"><span data-count="2.5">2,5</span> ч</b>установка у нас</li>
-        </ul>
-        <span className="lift lift--ink home-hero__cta">
-          <a href="#quiz" className="btn btn--dark home-cta" onClick={(e) => { e.preventDefault(); onQuiz(); }}>
-            <span className="home-cta__t">{ctaLabel}</span>
-            <span className="home-cta__a" aria-hidden="true"><Icon name="arrow" /></span>
-          </a>
-        </span>
+        <div className="home-hero__bot">
+          <ul className="home-hero__facts" aria-label="ARMORIX в цифрах">
+            <li><b className="D">AISI 304</b>нержавеющая сталь</li>
+            <li><b className="D">0</b>отверстий в кузове</li>
+            <li><b className="D"><span data-count="2.5">2,5</span> ч</b>установка у нас</li>
+          </ul>
+          <span className="lift lift--ink home-hero__cta">
+            <a href="#quiz" className="btn btn--dark home-cta" onClick={(e) => { e.preventDefault(); onQuiz(); }}>
+              <span className="home-cta__t">{ctaLabel}</span>
+              <span className="home-cta__a" aria-hidden="true"><Icon name="arrow" /></span>
+            </a>
+          </span>
+        </div>
       </div>
 
       <aside className="home-hero__side dark">

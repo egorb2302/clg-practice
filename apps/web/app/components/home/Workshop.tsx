@@ -9,9 +9,9 @@ export function Workshop({ models, items }: { models: number; items: number }) {
       <div className="home-shop__l">
         <div className="home-shop__fit">
           <ul className="home-shop__nums" data-stagger="">
-            <li data-in=""><b className="D"><span data-count={String(models)}>{models}</span></b>{plural(models, ["модель", "модели", "моделей"])} с готовым комплектом</li>
-            <li data-in=""><b className="D"><span data-count={String(items)}>{items}</span></b>{plural(items, ["позиция", "позиции", "позиций"])} в каталоге</li>
-            <li data-in=""><b className="D"><span data-count="2.5">2,5</span><small> ч</small></b>установка у нас</li>
+            <li data-in=""><b className="D"><span data-count={String(models)}>{models}</span></b><span>{plural(models, ["модель", "модели", "моделей"])} с готовым комплектом</span></li>
+            <li data-in=""><b className="D"><span data-count={String(items)}>{items}</span></b><span>{plural(items, ["позиция", "позиции", "позиций"])} в каталоге</span></li>
+            <li data-in=""><b className="D"><span data-count="2.5">2,5</span><small> ч</small></b><span>установка у нас</span></li>
           </ul>
           <div className="home-shop__pics" data-in="">
             <Illustration src={photo("shop-weld")} alt="Мастер сваривает трубу защиты" ratio="auto" sizes="(max-width: 767px) 100vw, 40vw" dark className="home-shop__wide" />
