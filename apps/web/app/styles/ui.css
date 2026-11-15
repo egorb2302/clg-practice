@@ -137,13 +137,16 @@
 .btn[aria-busy="true"] { opacity: 1; cursor: progress; }
 
 .lift { display: inline-flex; transition: filter .2s ease; }
-.lift > * { flex: 1; transition: transform .2s ease; }
+.lift > * { flex: 1; transition: transform .18s steps(3, end); }
 .lift:hover, .lift:has(> :focus-visible) { filter: drop-shadow(6px 6px 0 var(--lift, var(--t-1))); }
 .lift:hover > *, .lift:has(> :focus-visible) > * { transform: translate(-3px, -3px); }
 .lift:has(> :disabled):hover { filter: none; }
 .lift:has(> :disabled):hover > * { transform: none; }
 .lift--ink, .light .lift, .white .lift, .on-light .lift { --lift: var(--ink); }
 .lift--block { display: flex; width: 100%; }
+.lift > .btn--line { transition: --fill 0s linear .2s, --lc .2s ease, color .2s ease, transform .18s steps(3, end); }
+.lift:hover > .btn--line, .lift:has(> :focus-visible) > .btn--line { --fill: var(--k-4); transition: --fill 0s, --lc .2s ease, color .2s ease, transform .18s steps(3, end); }
+.light .lift:hover > .btn--line, .white .lift:hover > .btn--line, .on-light .lift:hover > .btn--line, .light .lift:has(> :focus-visible) > .btn--line, .white .lift:has(> :focus-visible) > .btn--line, .on-light .lift:has(> :focus-visible) > .btn--line { --fill: var(--p-1); }
 
 .busy { display: inline-block; flex-shrink: 0; width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .8s linear infinite; }
 .busy i { display: none; }
@@ -495,3 +498,4 @@ select.in {
 .lf__done p { color: var(--t-2); line-height: 1.6; }
 .lf__done .small { color: var(--g-3); }
 .lf__done:focus-visible { outline-offset: -7px; }
+:root :is(.home-qopt, a.cnt-it, .faq-way, .abt-map, .home-quiz__map, .fab__btn) { transition-timing-function: steps(3, end); }

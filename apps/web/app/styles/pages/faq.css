@@ -40,7 +40,7 @@
 .faq-grp__h small { font: 400 var(--fs-s)/1 var(--f-t); text-transform: none; color: var(--g-2); }
 .faq-list { display: flex; flex-direction: column; gap: 12px; }
 
-.faq-w { transition: transform .2s ease, filter .2s ease; }
+.faq-w { transition: transform .18s steps(3, end), filter .2s ease; }
 .faq-w:hover { transform: translate(-3px, -3px); filter: drop-shadow(6px 6px 0 var(--ink)); }
 .faq-w:has(:focus-visible) { transform: translate(-3px, -3px); filter: drop-shadow(6px 6px 0 var(--ink)); }
 .faq-q { --c: var(--c-m); --lc: var(--p-2); --fill: #fff; color: var(--ink); }

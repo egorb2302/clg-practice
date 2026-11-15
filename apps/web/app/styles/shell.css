@@ -205,6 +205,8 @@
 .dr-sg { --c: 10px; --lc: #2e2e2c; --fill: #181818; display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; gap: 16px; align-items: center; padding: 12px 14px 12px 12px; }
 .dr-sg:hover { --lc: var(--g-1); }
 .dr-sg .ill { --r: 1; }
+.dr-it__img:not(.ill--ph), .dr-sg .ill:not(.ill--ph) { background: linear-gradient(180deg, #bfbebc, #d3d2d0); }
+.dr-it__img img, .dr-sg .ill img { object-fit: contain; padding: 6%; }
 .dr-sg__t { display: block; font-size: 15px; line-height: 1.3; color: var(--t-1); }
 .dr-sg__s { display: block; margin-top: 3px; font-size: var(--fs-xs); color: var(--g-3); }
 .dr-sg .btn { min-height: 40px; padding: 0 14px; font-size: 13px; --c: var(--c-s); }

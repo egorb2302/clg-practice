@@ -8,6 +8,7 @@ import { NotFound } from "./components/catalog/NotFound";
 import { SPRITE } from "./components/sprite";
 import { api, PUBLIC_CACHE, siteOrigin } from "./lib/api.server";
 import { initMotion } from "./lib/motion";
+import { useSmoothAnchors } from "./lib/anchors";
 import { useTypography } from "./lib/typo";
 import { FALLBACK_META } from "./lib/site";
 import tokens from "./styles/tokens.css?url";
@@ -110,6 +111,7 @@ export default function App() {
   const { pathname, search } = useLocation();
   useEffect(() => initMotion(), [pathname, search]);
   useTypography();
+  useSmoothAnchors();
   return <Outlet />;
 }
 

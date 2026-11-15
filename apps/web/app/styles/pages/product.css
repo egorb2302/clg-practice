@@ -44,7 +44,7 @@
 .prd-proof b { font: 500 clamp(16px, 14px + .3vw, 20px)/1.15 var(--f-d); text-transform: uppercase; }
 .prd-proof span { font-size: var(--fs-s); color: var(--ink-3); line-height: 1.4; }
 
-.prd-buy { position: sticky; top: calc(var(--hd-h) + 24px); display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.prd-buy { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
 .prd-buy__meta { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px; }
 .prd-buy__code { font-size: var(--fs-xs); letter-spacing: .18em; text-transform: uppercase; color: var(--g-2); }
 .prd-buy__t { font-size: clamp(30px, 18px + 1.9vw, 56px); line-height: 1.02; overflow-wrap: anywhere; }
@@ -86,9 +86,12 @@
 .prd-acts { display: flex; flex-direction: column; gap: 12px; margin-top: 14px; }
 .prd-acts .btn--line { min-height: 60px; }
 .prd-next { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px 20px; padding: 14px 0 2px; font-size: 15px; color: var(--ink-2); }
-.prd-break { margin-top: 8px; border-top: 1px solid var(--p-3); border-bottom: 1px solid var(--p-3); }
+.prd-break { position: relative; margin-top: 8px; border-top: 1px solid var(--p-3); border-bottom: 1px solid var(--p-3); }
+.prd-break__pop { --c: var(--c-m); --lc: var(--ink); --fill: #fff; position: absolute; left: 0; right: 0; top: calc(100% + 8px); z-index: 20; padding: 8px 22px; box-shadow: 0 18px 40px rgb(0 0 0 / .14); }
+.prd-break__pop[hidden] { display: none; }
+.prd-break.is-up .prd-break__pop { top: auto; bottom: calc(100% + 8px); }
 .prd-break__b { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 52px; padding: 0; border: 0; background: none; color: var(--ink); font-size: 16px; text-align: left; }
-.prd-break__dl { margin: 0; padding: 0 0 16px; }
+.prd-break__dl { margin: 0; padding: 0; }
 .prd-break__dl div { display: flex; justify-content: space-between; gap: 20px; padding: 8px 0; font-size: 15px; }
 .prd-break__dl dt { color: var(--ink-3); }
 .prd-break__dl dd { margin: 0; text-align: right; }
@@ -107,7 +110,7 @@
 .prd-h2 { font-size: clamp(30px, 20px + 1.6vw, 56px); line-height: 1.02; }
 
 .prd-tabs__bar { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 12px 32px; border-bottom: 1px solid var(--p-3); }
-.prd-tabs__list { display: flex; gap: clamp(20px, 2.6vw, 48px); overflow-x: auto; scrollbar-width: none; }
+.prd-tabs__list { display: flex; gap: clamp(20px, 2vw, 48px); overflow-x: auto; scrollbar-width: none; }
 .prd-tabs__list::-webkit-scrollbar { display: none; }
 .prd-tab {
   position: relative;
@@ -115,7 +118,7 @@
   border: 0;
   background: none;
   color: var(--p-4);
-  font: 500 clamp(22px, 14px + 1.4vw, 44px)/1 var(--f-d);
+  font: 500 clamp(22px, 6px + 1.6vw, 44px)/1 var(--f-d);
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -124,14 +127,17 @@
 .prd-tab[aria-selected="true"] { color: var(--ink); }
 .prd-tab[aria-selected="true"]::after { transform: scaleX(1); }
 .prd-tab:focus-visible { outline-offset: 2px; }
-.prd-tabs__sub { padding-bottom: 20px; font-size: 15px; color: var(--ink-3); }
-.prd-tabs__panels { display: grid; padding: 28px 0 32px; }
+.prd-tabs__sub { flex: 0 1 26ch; min-width: 14ch; padding-bottom: 20px; font-size: 15px; line-height: 1.4; text-align: right; color: var(--ink-3); }
+@media (min-width: 1100px) { .prd-tabs__bar { flex-wrap: nowrap; } .prd-tabs__list { flex-shrink: 0; } }
+.prd-tabs__panels { display: grid; padding: 0 0 32px; }
 .prd-panel { grid-area: 1 / 1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 clamp(32px, 4.2vw, 80px); align-content: start; }
 .prd-panel:not(.is-on) { visibility: hidden; }
 .prd-spec { margin: 0; align-self: start; }
 .prd-spec__r { display: grid; grid-template-columns: minmax(120px, 210px) minmax(0, 1fr); gap: 20px; align-items: center; min-height: 64px; padding: 12px 0; border-top: 1px solid var(--p-3); }
 .prd-spec__r dt { font-size: 16px; color: var(--ink-3); }
 .prd-spec__r dd { margin: 0; font-size: 17px; line-height: 1.45; color: var(--ink); }
+.prd-panel > .prd-spec:first-child > .prd-spec__r:first-child { border-top: 0; }
+@media (min-width: 1100px) { .prd-panel > .prd-spec > .prd-spec__r:first-child { border-top: 0; } }
 .prd-spec--num .prd-spec__r { grid-template-columns: 56px minmax(0, 1fr); }
 .prd-spec--num dt { font: 500 20px/1 var(--f-d); color: var(--ink); }
 

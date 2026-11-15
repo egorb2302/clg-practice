@@ -18,6 +18,9 @@
   padding: 2px 6px 2px 2px;
   margin: -2px -6px -2px -2px;
 }
+@media (min-width: 1024px) {
+  .cat-side { position: sticky; top: calc(var(--hd-h) + 20px); max-height: calc(100svh - var(--hd-h) - 40px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+}
 .cat-form { display: flex; flex-direction: column; gap: 14px; }
 .cat-fhead { display: flex; align-items: center; gap: 16px; min-height: 44px; }
 .cat-fhead__t { font-size: clamp(24px, 18px + .7vw, 32px); }

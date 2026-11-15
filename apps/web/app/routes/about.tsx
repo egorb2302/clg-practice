@@ -19,7 +19,7 @@ const NUMS: { pre?: string; n: string; shown: string; post?: string; label: stri
   { n: "304", shown: "304", label: "марка нержавеющей стали" },
   { n: "2.5", shown: "2,5", post: "ч", label: "на установку у нас" },
   { n: "0", shown: "0", label: "отверстий в кузове" },
-  { pre: "от", n: "4", shown: "4", post: "нед", label: "на изготовление под вашу модель" },
+  { pre: "от", n: "4", shown: "4", post: "недель", label: "на изготовление под вашу модель" },
 ];
 
 const RULES = [

@@ -8,6 +8,7 @@ import { Gallery, type Shot } from "../components/catalog/Gallery";
 import { LeadPanel } from "../components/catalog/LeadPanel";
 import { cardKey, kitDiscounts, parseQuery, swatchOf } from "../components/catalog/model";
 import { NotFound } from "../components/catalog/NotFound";
+import { PriceBreak } from "../components/catalog/PriceBreak";
 import { ProductFaq } from "../components/catalog/ProductFaq";
 import { type SpecTab, SpecTabs } from "../components/catalog/SpecTabs";
 import { Collapse, Crumbs, Icon, ProductCard } from "../components/site";
@@ -95,7 +96,6 @@ function ProductView({ d }: { d: ViewData }) {
   const sel = useSelection();
   const [tab, setTab] = useState("spec");
   const [leadOpen, setLeadOpen] = useState(false);
-  const [breakOpen, setBreakOpen] = useState(false);
   const tabsRef = useRef<HTMLElement>(null);
 
   const cheapest = [...p.options].filter((o) => o.available).sort((a, b) => (a.priceFrom ?? Number.MAX_SAFE_INTEGER) - (b.priceFrom ?? Number.MAX_SAFE_INTEGER))[0] ?? p.options[0];
@@ -307,16 +307,7 @@ function ProductView({ d }: { d: ViewData }) {
                   <Link className="lnk lnk--sm" to="/selection"><span className="lnk__t">Оформить подборку</span><span className="ar ol" aria-hidden="true"><Icon name="arrow" /></span></Link>
                 </div>
               </Collapse>
-              <div className={`prd-break${breakOpen ? " is-open" : ""}`}>
-                <button type="button" className="prd-break__b" aria-expanded={breakOpen} aria-controls="prd-break" onClick={() => setBreakOpen((v) => !v)}>
-                  Из чего складывается цена<i className="prd-faq__pm" aria-hidden="true" />
-                </button>
-                <Collapse open={breakOpen} id="prd-break">
-                  <dl className="prd-break__dl">
-                    {breakRows.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}
-                  </dl>
-                </Collapse>
-              </div>
+              <PriceBreak rows={breakRows} />
             </div>
           </div>
         </div>
