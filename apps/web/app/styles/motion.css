@@ -1,19 +1,20 @@
 :root { --ease-out: cubic-bezier(.2, .7, .2, 1); --ease-io: cubic-bezier(.65, 0, .35, 1); }
 
 @media (prefers-reduced-motion: no-preference) {
-  html.mo [data-in] { transition: opacity .7s var(--ease-out), translate .7s var(--ease-out); transition-delay: var(--d, 0s); }
-  html.mo [data-in]:not(.is-in) { opacity: 0; translate: 0 22px; }
+  html.mo [data-in][data-shown="run"] { transition: opacity .7s var(--ease-out) var(--d, 0s), translate .7s var(--ease-out) var(--d, 0s); }
+  html.mo [data-in]:not([data-shown]) { opacity: 0; translate: 0 22px; }
   html.mo [data-stagger] > [data-in]:nth-child(2) { --d: .09s; }
   html.mo [data-stagger] > [data-in]:nth-child(3) { --d: .18s; }
   html.mo [data-stagger] > [data-in]:nth-child(4) { --d: .27s; }
   html.mo [data-stagger] > [data-in]:nth-child(5) { --d: .36s; }
   html.mo [data-stagger] > [data-in]:nth-child(n + 6) { --d: .42s; }
 
-  html.mo .home-proc__link[data-in] { transform-origin: 0 0; transition: opacity .7s var(--ease-out), transform 1.3s var(--ease-io) .25s; }
-  html.mo .home-proc__link[data-in]:not(.is-in) { translate: none; transform: scaleX(0); }
+  html.mo .home-proc__link[data-in] { transform-origin: 0 0; }
+  html.mo .home-proc__link[data-in][data-shown="run"] { transition: opacity .7s var(--ease-out), transform 1.3s var(--ease-io) .25s; }
+  html.mo .home-proc__link[data-in]:not([data-shown]) { translate: none; transform: scaleX(0); }
 
   :root .hd__nav a { border-bottom: 0; background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat; transition: background-size .35s var(--ease-out), color .2s ease; }
-  :root .hd__nav a:hover, :root .hd__nav a[aria-current="page"] { background-size: 100% 1px; }
+  :root .hd__nav a:hover, :root .hd__nav a:focus-visible, :root .hd__nav a[aria-current="page"] { background-size: 100% 1px; }
 
   :root :is(.btn .ico--go, .home-cta__a .ico, .home-works__go .ar .ico, .home-works__soc .ar .ico) { transition: transform .3s var(--ease-out); }
   :root :is(.btn:hover .ico--go, .btn:focus-visible .ico--go, .home-cta:hover .home-cta__a .ico, .home-works__soc a:hover .ar .ico, .home-works__plate--r .home-works__go:hover .ar .ico) { transform: translateX(4px); }
@@ -48,7 +49,7 @@
 }
 
 @media (prefers-reduced-motion: no-preference) and (max-width: 1099px) {
-  html.mo .home-proc__link[data-in]:not(.is-in) { transform: scaleY(0); }
+  html.mo .home-proc__link[data-in]:not([data-shown]) { transform: scaleY(0); }
 }
 
 @keyframes pane-in { from { opacity: 0; translate: 0 14px; } }

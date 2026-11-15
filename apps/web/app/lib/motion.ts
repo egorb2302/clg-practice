@@ -2,16 +2,21 @@ let booted = false;
 
 const fmt = (v: number, dec: number) => v.toLocaleString("ru-RU", { minimumFractionDigits: dec, maximumFractionDigits: dec });
 
+const target = (el: HTMLElement) => {
+  const raw = el.dataset.count ?? "0", v = parseFloat(raw);
+  return { end: Number.isFinite(v) ? v : 0, dec: (raw.split(".")[1] ?? "").length };
+};
+
 function countUp(el: HTMLElement, animate: boolean) {
-  const raw = el.dataset.count ?? "0", parsed = parseFloat(raw), end = Number.isFinite(parsed) ? parsed : 0, dec = (raw.split(".")[1] ?? "").length;
-  if (!animate || end === 0) { el.textContent = fmt(end, dec); return; }
+  const first = target(el);
+  if (!animate || first.end === 0) { el.textContent = fmt(first.end, first.dec); return; }
   const t0 = performance.now(), dur = 1100;
   const step = (t: number) => {
-    const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+    const { end, dec } = target(el), k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3);
     el.textContent = fmt(k < 1 ? Math.round(end * e * 10 ** dec) / 10 ** dec : end, dec);
     if (k < 1) requestAnimationFrame(step);
   };
-  el.textContent = fmt(0, dec);
+  el.textContent = fmt(0, first.dec);
   requestAnimationFrame(step);
 }
 
@@ -27,18 +32,21 @@ export function initMotion(): () => void {
   const show = (el: HTMLElement) => {
     pending.delete(el);
     if (el.hasAttribute("data-count")) countUp(el, true);
-    else el.classList.add("is-in");
+    else {
+      el.dataset.shown = "run";
+      window.setTimeout(() => { if (el.dataset.shown === "run") el.dataset.shown = ""; }, 1700);
+    }
   };
   const check = () => {
     tick = false;
-    const edge = window.innerHeight * .92;
-    pending.forEach((el) => { if (el.getBoundingClientRect().top < edge) show(el); });
+    const edge = window.innerHeight * .92, end = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2;
+    pending.forEach((el) => { if (end || el.getBoundingClientRect().top < edge) show(el); });
   };
   const req = () => { if (!tick && pending.size) { tick = true; requestAnimationFrame(check); } };
 
   const settle = (first = false) => {
-    document.querySelectorAll<HTMLElement>("[data-in]:not(.is-in):not([data-io])").forEach((el) => {
-      if (!on || (first && inView(el))) { el.classList.add("is-in"); return; }
+    document.querySelectorAll<HTMLElement>("[data-in]:not([data-shown]):not([data-io])").forEach((el) => {
+      if (!on || (first && inView(el))) { el.dataset.shown = ""; return; }
       el.dataset.io = "";
       pending.add(el);
     });
