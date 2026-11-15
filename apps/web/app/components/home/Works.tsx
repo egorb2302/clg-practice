@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Icon, Illustration, VkMark } from "../site";
 import { telegramLink } from "../../lib/format";
 import { useSite, vkLink } from "../../lib/site";
@@ -31,6 +31,7 @@ export function Works({ car, onQuiz }: { car: Vehicle; onQuiz: () => void }) {
   const [cur, setCur] = useState(0);
   const [dir, setDir] = useState<"next" | "back">("next");
   const [was, setWas] = useState(-1);
+  useEffect(() => { setWas(-1); }, [car?.label]);
   const at = Math.min(cur, n - 1);
   const go = (to: number) => { setDir(to < at ? "back" : "next"); setWas(at); setCur(((to % n) + n) % n); };
 
@@ -66,7 +67,7 @@ export function Works({ car, onQuiz }: { car: Vehicle; onQuiz: () => void }) {
                 const src = workPhoto(x.car);
                 if (!src) return null;
                 const on = i === at;
-                return <img key={x.car} className={`home-works__photo${on ? " is-on" : i === was ? " is-prev" : ""}`} src={src} srcSet={`${src.replace(/\.webp$/, "-800.webp")} 800w, ${src} 1600w`} sizes="(max-width: 767px) 100vw, 60vw" alt={on ? `${x.car}: ${x.what.toLowerCase()}` : ""} aria-hidden={on ? undefined : true} loading="lazy" decoding="async" />;
+                return <img key={`${i}-${x.car}`} className={`home-works__photo${on ? " is-on" : i === was ? " is-prev" : ""}`} src={src} srcSet={`${src.replace(/\.webp$/, "-800.webp")} 800w, ${src} 1600w`} sizes="(max-width: 767px) 100vw, 60vw" alt={on ? `${x.car}: ${x.what.toLowerCase()}` : ""} aria-hidden={on ? undefined : true} loading="lazy" decoding="async" />;
               })}
             </div>
           ) : (
