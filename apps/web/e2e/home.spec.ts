@@ -27,14 +27,35 @@ test("hero CTA with a full selection opens the quiz with that selection", async 
 
   await page.locator(".home-hero__cta a").click();
   const quiz = page.locator("#quiz");
-  await expect(quiz.getByRole("button", { name: "Отправить подборку (1)" })).toBeVisible();
+  await expect(quiz.getByRole("heading", { name: "Как с вами связаться?" })).toBeVisible();
+  await expect(quiz.locator(".home-quiz__step")).toHaveText("Контакты");
   const form = await fillContact(page, quiz.locator("form.lf"));
   await form.locator("label.rdo", { hasText: "Самовывоз" }).click();
-  await form.getByRole("button", { name: "Отправить подборку (1)" }).click();
+  await form.getByRole("button", { name: "Проверить заявку" }).click();
+  await expect(quiz.getByRole("heading", { name: "Проверьте заявку" })).toBeVisible();
+  await expect(quiz.locator(".lf__sum")).toContainText("Связь");
+  expect(sent).toHaveLength(0);
+  await quiz.getByRole("button", { name: "Жду звонка" }).click();
   await expect(quiz.getByRole("heading", { name: "Заявка AX-E2E001 принята" })).toBeVisible();
   expect((sent[0]!.body as { deliveryMethod: string }).deliveryMethod).toBe("pickup");
   const body = sent[0]!.body as { items: { variantId: string }[] };
   expect(body.items.map((i) => i.variantId)).toEqual([item!.variantId]);
+});
+
+test("quiz review step: a server failure keeps the answers and offers a retry", async ({ page }) => {
+  await mockLeads(page, () => ({ status: 503, json: {} }));
+  await open(page, "/");
+  await page.locator("#kits").getByRole("button", { name: "В подборку" }).first().click();
+  await page.locator(".home-hero__cta a").click();
+  const quiz = page.locator("#quiz");
+  const form = await fillContact(page, quiz.locator("form.lf"));
+  await form.locator("label.rdo", { hasText: "Самовывоз" }).click();
+  await form.getByRole("button", { name: "Проверить заявку" }).click();
+  await quiz.getByRole("button", { name: "Жду звонка" }).click();
+  await expect(quiz.getByRole("alert")).toContainText("Не получилось отправить");
+  await expect(quiz.getByRole("button", { name: "Отправить еще раз" })).toBeVisible();
+  await quiz.getByRole("button", { name: "Назад" }).click();
+  await expect(quiz.getByRole("heading", { name: "Как с вами связаться?" })).toBeVisible();
 });
 
 test("quiz without a selection starts from the chosen car", async ({ page }) => {

@@ -34,7 +34,7 @@ test("429: «too many attempts», the button waits", async ({ page }) => {
   const form = await toSelectionPage(page);
   await fillContact(page, form);
   await form.locator("button[type=submit]").click();
-  await expect(form.locator("button[type=submit]")).toHaveText(/Подождите 1 минуту/);
+  await expect(form.locator("button[type=submit]")).toHaveText(/Подождите\s1\sминуту/);
   await expect(form.locator(".lf__msg")).toContainText(/попыт/i);
 });
 
@@ -79,6 +79,6 @@ test("409 catalog changed: the change is shown per item, nothing is cleared", as
   await form.locator("button[type=submit]").click();
   const change = page.locator("p", { hasText: "Цена изменилась" }).first();
   await expect(change).toBeVisible();
-  await expect(change).toContainText(/от 99\s900\s₽/);
+  await expect(change).toContainText(/от\s99\s900\s₽/);
   expect((await selectionItems(page)).map((i) => i.variantId)).toEqual([variant]);
 });

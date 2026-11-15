@@ -5,8 +5,9 @@ import { CONTACT_FIELDS, contact as saved, useContact } from "../../lib/contact"
 import { maskPhone, phoneE164, plural } from "../../lib/format";
 import { postLead, uuid, waitFill } from "../../lib/leads";
 import { setDelivery, useDelivery } from "../../lib/selection";
-import { useSite } from "../../lib/site";
+import { telHref, useSite } from "../../lib/site";
 import { ui } from "../../lib/ui";
+import { Icon } from "./Icon";
 import { useVehicle } from "../../lib/vehicle";
 
 export type LeadItem = { variantId: string; quantity: number; seenPriceFrom: number | null };
@@ -20,8 +21,9 @@ type Props = {
   message?: string;
   submitLabel?: string;
   successText?: string;
-  onSuccess?: (r: LeadCreatedResponse, sent: LeadItem[]) => void;
+  onSuccess?: (r: LeadCreatedResponse, sent: LeadItem[], via: "phone" | "email") => void;
   onCatalogChanged?: (changes: CatalogChange[]) => void;
+  review?: { rows: [string, string][]; onBack?: () => void; onStage?: (s: "form" | "confirm") => void };
   className?: string;
 };
 
@@ -62,6 +64,12 @@ export function LeadForm(props: Props) {
   const [changed, setChanged] = useState(false);
   const [limitMin, setLimitMin] = useState(0);
   const [result, setResult] = useState<{ ref: string; mail: "sent" | "failed" | null; pending: boolean; authed: boolean } | null>(null);
+  const [stage, setStageRaw] = useState<"form" | "confirm">("form");
+  const [srvBad, setSrvBad] = useState(false);
+  const review = props.review;
+  const onStage = useRef(review?.onStage);
+  onStage.current = review?.onStage;
+  const setStage = (s: "form" | "confirm") => { setStageRaw(s); onStage.current?.(s); };
   const key = useRef<string | null>(null);
   const started = useRef<number | null>(null);
   const mounted = useRef(Date.now());
@@ -106,6 +114,7 @@ export function LeadForm(props: Props) {
     key.current = null;
     setFailed(false);
     if (k in err) setErr((e) => { const n = { ...e }; delete n[k as Field]; return n; });
+    setSrvBad(false);
     if (state !== "limited") setMsg("");
   };
 
@@ -153,10 +162,12 @@ export function LeadForm(props: Props) {
     const v = validate();
     if (type === "catalog" && !items.length) { setMsg("Подборка пуста: добавьте позиции из каталога"); return; }
     if (Object.keys(v).length) { focusBad.current = true; setErr(v); setMsg("Проверьте отмеченные поля"); return; }
+    if (review && stage === "form") { setMsg(""); setStage("confirm"); return; }
     key.current ??= uuid();
     setState("sending");
     setMsg("");
     setChanged(false);
+    setFailed(false);
     const sent = items;
     const k = key.current;
     await waitFill(started.current ?? mounted.current);
@@ -167,7 +178,7 @@ export function LeadForm(props: Props) {
       setState("done");
       setFailed(false);
       key.current = null;
-      onSuccess?.(r.data, sent);
+      onSuccess?.(r.data, sent, f.pref);
       return;
     }
     setState("idle");
@@ -182,7 +193,8 @@ export function LeadForm(props: Props) {
       }
       focusBad.current = true;
       setErr(fe);
-      setMsg(other || "Проверьте отмеченные поля");
+      setMsg(other || (review ? "" : "Проверьте отмеченные поля"));
+      if (review) { setSrvBad(true); setStage("form"); }
     } else if (r.kind === "changed") {
       key.current = null;
       setChanged(true);
@@ -240,10 +252,68 @@ export function LeadForm(props: Props) {
     "aria-invalid": err[k] ? (true as const) : undefined,
     "aria-describedby": err[k] ? fid(`${k}-e`) : undefined,
   });
-  const btnLabel = busy ? "Отправляем" : state === "limited" ? `Подождите ${limitMin} ${plural(limitMin, ["минуту", "минуты", "минут"])}` : failed ? "Повторить" : submitLabel;
+  const wait = `Подождите ${limitMin} ${plural(limitMin, ["минуту", "минуты", "минут"])}`;
+  const btnLabel = busy ? "Отправляем" : state === "limited" ? wait : failed ? (review ? "Отправить еще раз" : "Повторить") : review ? (f.pref === "phone" ? "Жду звонка" : "Жду письма") : submitLabel;
+  const tel = telHref(meta.contacts.phone);
+  const call = tel ? <> или позвоните <a href={tel}>{meta.contacts.phone}</a></> : null;
+  const honeypot = <input className="hp" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" value={f.website} onChange={(e) => setF((o) => ({ ...o, website: e.target.value }))} />;
+  const sendBtn = (label: ReactNode, block: boolean) => (
+    <span className={`lift${block ? " lift--block" : ""}`}>
+      <button type="submit" className={`btn ${block ? "btn--white btn--lg btn--block" : "btn--light lf__go"}`} aria-busy={busy} aria-disabled={busy || state === "limited" || undefined}>
+        {busy ? <span className="busy" aria-hidden="true"><i /><i /><i /></span> : null}
+        {label}
+        {!block && !busy && state !== "limited" ? <Icon name="arrow" className="ico--go" /> : null}
+      </button>
+    </span>
+  );
+
+  if (review && stage === "confirm") {
+    return (
+      <form ref={form} className={`lf lf--review ${className}`} noValidate onSubmit={submit} aria-busy={busy}>
+        <dl className="lf__sum ol">
+          {[...review.rows, ["Связь", f.pref === "phone" ? "звонок" : "email"] as [string, string]].map(([k, v]) => (
+            <div key={k}><dt>{k}</dt><dd>{v}</dd></div>
+          ))}
+        </dl>
+        {honeypot}
+        {changed ? (
+          <div className="lf__chg ol" role="alert">
+            <b>Пока вы смотрели, каталог изменился</b>
+            <span>Проверьте отмеченные позиции и отправьте заявку еще раз</span>
+          </div>
+        ) : null}
+        {failed ? (
+          <div className="lf__chg ol" role="alert">
+            <b>Не получилось отправить</b>
+            <span>Ответы сохранены, ничего вводить заново не нужно. Попробуйте еще раз{call}</span>
+          </div>
+        ) : null}
+        {state === "limited" ? (
+          <div className="lf__chg ol" role="alert">
+            <b>Слишком много попыток подряд</b>
+            <span>{wait} и отправьте снова{call}</span>
+          </div>
+        ) : null}
+        <div className="lf__msg" aria-live="polite">{msg && !failed && state !== "limited" ? <span className="ferr">{msg}</span> : null}</div>
+        <p className="lf__pd">
+          Отправляя, вы соглашаетесь с <button type="button" className="flink" onClick={() => ui.openLegal("pd")}>обработкой данных</button> и <button type="button" className="flink" onClick={() => ui.openLegal("policy")}>политикой</button>. Неверно? Нажмите «Назад»
+        </p>
+        <div className="lf__nav">
+          <button type="button" className="btn btn--line ol lf__back" disabled={busy} onClick={() => { setFailed(false); setChanged(false); setMsg(""); setStage("form"); }}><Icon name="back" />Назад</button>
+          {sendBtn(btnLabel, false)}
+        </div>
+      </form>
+    );
+  }
 
   return (
     <form ref={form} className={`lf ${className}`} noValidate onSubmit={submit} onFocus={touch} aria-busy={busy}>
+      {review && srvBad ? (
+        <div className="lf__chg ol" role="alert">
+          <b>Проверьте контакты</b>
+          <span>Сервер не принял контакты. Поправьте отмеченное поле и проверьте заявку еще раз</span>
+        </div>
+      ) : null}
       {field("name", "Имя", <input {...inProps("name")} className="in" autoComplete="name" value={f.name} onChange={(e) => set("name", e.target.value)} />)}
 
       <div className="fld" role="radiogroup" aria-labelledby={fid("pref")}>
@@ -315,9 +385,9 @@ export function LeadForm(props: Props) {
         </div>
       ) : null}
 
-      <input className="hp" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" value={f.website} onChange={(e) => setF((o) => ({ ...o, website: e.target.value }))} />
+      {honeypot}
 
-      {changed ? (
+      {changed && !review ? (
         <div className="lf__chg ol" role="alert">
           <b>Пока вы смотрели, каталог изменился</b>
           <span>Проверьте отмеченные позиции и отправьте заявку еще раз</span>
@@ -326,15 +396,19 @@ export function LeadForm(props: Props) {
 
       <div className="lf__msg" aria-live="polite">{msg ? <span className="ferr">{msg}</span> : null}</div>
 
-      <span className="lift lift--block">
-        <button type="submit" className="btn btn--white btn--lg btn--block" aria-busy={busy} aria-disabled={busy || state === "limited" || undefined}>
-          {busy ? <span className="busy" aria-hidden="true"><i /><i /><i /></span> : null}
-          {btnLabel}
-        </button>
-      </span>
-      <p className="lf__pd">
-        Отправляя заявку, вы соглашаетесь с <button type="button" className="flink" onClick={() => ui.openLegal("pd")}>обработкой данных</button> и <button type="button" className="flink" onClick={() => ui.openLegal("policy")}>политикой конфиденциальности</button>
-      </p>
+      {review ? (
+        <div className="lf__nav">
+          {review.onBack ? <button type="button" className="btn btn--line ol lf__back" onClick={review.onBack}><Icon name="back" />Назад</button> : <span />}
+          {sendBtn("Проверить заявку", false)}
+        </div>
+      ) : (
+        <>
+          {sendBtn(btnLabel, true)}
+          <p className="lf__pd">
+            Отправляя заявку, вы соглашаетесь с <button type="button" className="flink" onClick={() => ui.openLegal("pd")}>обработкой данных</button> и <button type="button" className="flink" onClick={() => ui.openLegal("policy")}>политикой конфиденциальности</button>
+          </p>
+        </>
+      )}
     </form>
   );
 }

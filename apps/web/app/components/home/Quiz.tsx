@@ -2,7 +2,7 @@ import type { CatalogChange, LeadCreatedResponse, ProductCard as Card } from "@a
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { Icon, Illustration, LeadForm, type LeadItem } from "../site";
-import { plural, POSITION_LABEL, priceFrom, rubles } from "../../lib/format";
+import { POSITION_LABEL, priceFrom, rubles } from "../../lib/format";
 import { selection, useDelivery, useSelection } from "../../lib/selection";
 import { telHref, useSite } from "../../lib/site";
 import type { Vehicle } from "../../lib/vehicle";
@@ -48,7 +48,8 @@ export function Quiz({ kits, car, req }: { kits: Kit[]; car: Vehicle; req: numbe
   const [ans, setAns] = useState<Ans>({});
   const [other, setOther] = useState("");
   const [seen, setSeen] = useState<Record<string, number | null>>({});
-  const [done, setDone] = useState<{ ref: string; count: number } | null>(null);
+  const [done, setDone] = useState<{ ref: string; count: number; via: "phone" | "email" } | null>(null);
+  const [confirm, setConfirm] = useState(false);
   const stage = useRef<HTMLDivElement>(null);
   const selMode = sel.length > 0 && !free && !done;
   const sent = !!done;
@@ -87,8 +88,9 @@ export function Quiz({ kits, car, req }: { kits: Kit[]; car: Vehicle; req: numbe
     if (!moved.current) return;
     moved.current = false;
     stage.current?.querySelector<HTMLElement>("h3")?.focus();
-  }, [step, selMode]);
-  const goStep = (s: number) => { moved.current = true; setStep(s); };
+  }, [step, selMode, confirm]);
+  const goStep = (s: number) => { moved.current = true; setConfirm(false); setStep(s); };
+  const onStage = (s: "form" | "confirm") => { moved.current = true; setConfirm(s === "confirm"); };
 
   const kit = ans.car?.kind === "kit" ? kits.find((k) => k.vehicle.slug === (ans.car as { slug: string }).slug) : undefined;
   const carLabel = ans.car ? (ans.car.kind === "other" ? other.trim() : ans.car.label) : "";
@@ -117,19 +119,25 @@ export function Quiz({ kits, car, req }: { kits: Kit[]; car: Vehicle; req: numbe
       ]
     : CUSTOM_WHAT;
   const posProducts = kit && ans.what && ans.what !== "unknown" ? priced(kit.products.filter((p) => p.position === ans.what)) : [];
+  const codeOf = (p: Card) => p.coating?.code ?? "none";
   const coatOpts: Opt[] = posProducts.length
     ? [
-        ...[...new Set(posProducts.map((p) => p.coating?.code ?? "none"))].map((code) => ({
+        ...COATS.slice(0, 2).map((c) => {
+          const hit = posProducts.find((p) => codeOf(p) === c.key);
+          return { ...c, sub: hit ? priceFrom(hit.priceFrom) : "сделаем под заказ" };
+        }),
+        ...[...new Set(posProducts.map(codeOf))].filter((code) => code !== "aisi304" && code !== "powder").map((code) => ({
           key: code,
           label: coatShort(code === "none" ? undefined : code),
-          sub: priceFrom(posProducts.find((p) => (p.coating?.code ?? "none") === code)?.priceFrom),
+          sub: priceFrom(posProducts.find((p) => codeOf(p) === code)?.priceFrom),
         })),
-        { key: "unknown", label: "Не знаю", sub: "посоветуем под машину" },
+        COATS[2]!,
+        COATS[3]!,
       ]
     : COATS;
 
   const product = posProducts.length
-    ? (ans.coat && ans.coat !== "unknown" ? posProducts.find((p) => (p.coating?.code ?? "none") === ans.coat) : undefined) ?? posProducts[0]
+    ? ans.coat && ans.coat !== "unknown" && ans.coat !== "both" ? posProducts.find((p) => codeOf(p) === ans.coat) : posProducts[0]
     : undefined;
   const option = product ? cheapestOption(product) : undefined;
   const whatLabel = whatOpts.find((o) => o.key === ans.what)?.label ?? "";
@@ -154,14 +162,16 @@ export function Quiz({ kits, car, req }: { kits: Kit[]; car: Vehicle; req: numbe
     }
     setSeen((o) => ({ ...o, ...Object.fromEntries(changes.map((c) => [c.variantId, c.priceFrom])) }));
   };
-  const onSuccess = (r: LeadCreatedResponse, items: LeadItem[]) => {
+  const onSuccess = (r: LeadCreatedResponse, items: LeadItem[], via: "phone" | "email") => {
     if (selMode) selection.removeSubmitted(items);
     moved.current = true;
-    setDone({ ref: r.reference, count: selMode ? items.length : 0 });
+    setConfirm(false);
+    setDone({ ref: r.reference, count: selMode ? items.length : 0, via });
   };
   const restart = () => {
     const c = carOfVehicle(car);
     setDone(null);
+    setConfirm(false);
     setFree(false);
     setAns(c ? { car: c } : {});
     setOther("");
@@ -171,10 +181,10 @@ export function Quiz({ kits, car, req }: { kits: Kit[]; car: Vehicle; req: numbe
 
   const head = selMode ? ["Почти готово,", "контакты и проверка"] : ["Подберем защиту", "за 4 вопроса"];
   const lead = selMode
-    ? "Подборка и покрытие уже в заявке, скажите, куда ответить, и проверьте справа перед отправкой"
+    ? "Подборка и покрытие уже в заявке, скажите, куда ответить, и проверьте перед отправкой"
     : "Ответьте, и менеджер перезвонит с ценой под вашу машину, это бесплатно";
   const bars = selMode ? 1 : 4;
-  const label = selMode ? "Контакты и проверка" : `Шаг ${Math.min(step, 3) + 1} из 4`;
+  const label = confirm ? "Проверка и отправка" : selMode ? "Контакты" : `Шаг ${Math.min(step, 3) + 1} из 4`;
 
   const total = sel.reduce((t, i) => t + (i.snapshot.priceFrom ?? 0) * i.quantity, 0);
   const noPrice = sel.some((i) => i.snapshot.priceFrom == null);
@@ -191,6 +201,7 @@ export function Quiz({ kits, car, req }: { kits: Kit[]; car: Vehicle; req: numbe
         ...(product ? [["Позиция", `${product.title}, ${priceFrom(option?.priceFrom ?? product.priceFrom)}`] as [string, string]] : []),
       ];
   const tel = telHref(meta.contacts.phone);
+  const review = { rows, onBack: selMode ? undefined : () => goStep(2), onStage };
 
   return (
     <section id="quiz" className="home-quiz dark" aria-labelledby="home-quiz-t">
@@ -211,24 +222,24 @@ export function Quiz({ kits, car, req }: { kits: Kit[]; car: Vehicle; req: numbe
           <div className="home-quiz__pane home-quiz__done" key="done" role="status">
             <span className="home-quiz__ok cut" aria-hidden="true"><Icon name="check" size={30} /></span>
             <h3 tabIndex={-1}>Заявка {done.ref} принята</h3>
-            <p>Менеджер свяжется с вами в рабочее время{meta.contacts.hours ? ` (${meta.contacts.hours})` : ""}{done.count ? `, подборка (${done.count}) ушла вместе с заявкой` : ", цену назовем под вашу машину"}</p>
+            <p>{done.via === "email" ? "Менеджер ответит на email" : "Менеджер перезвонит"} в рабочее время{meta.contacts.hours ? ` (${meta.contacts.hours})` : ""}{done.count ? `, подборка (${done.count}) ушла вместе с заявкой` : ", цену назовем под вашу машину"}</p>
             <ol className="home-quiz__next">
-              <li><span className="D num">01</span>Звонок менеджера: уточним комплектацию и цену</li>
+              <li><span className="D num">01</span>{done.via === "email" ? "Письмо" : "Звонок"} менеджера: уточним комплектацию и цену</li>
               <li><span className="D num">02</span>{ans.car?.kind === "kit" || done.count ? "Подтверждение заказа, на сайте ничего не платите" : "Фото машины, эскиз и согласование"}</li>
               <li><span className="D num">03</span>Установка у нас или доставка по России</li>
             </ol>
             <p className="home-quiz__ref">Назовите номер {done.ref} менеджеру, если позвоните сами</p>
-            <button type="button" className="lnk" onClick={restart}><span className="ar ol" aria-hidden="true"><Icon name="back" /></span><span className="lnk__t">Отправить еще одну заявку</span></button>
+            <button type="button" className="lnk" onClick={restart}><span className="ar ol" aria-hidden="true"><Icon name="back" /></span><span className="lnk__t">Изменить ответы</span></button>
           </div>
         ) : selMode || cur === "contact" ? (
           <div className="home-quiz__pane" key={selMode ? "sel" : "contact"}>
-            <h3 tabIndex={-1}>Как с вами связаться?</h3>
+            <h3 tabIndex={-1}>{confirm ? "Проверьте заявку" : "Как с вами связаться?"}</h3>
             {selMode ? (
               <LeadForm
                 key="sel"
                 type="catalog"
                 items={selItems}
-                submitLabel={`Отправить подборку (${sel.length})`}
+                review={review}
                 onSuccess={onSuccess}
                 onCatalogChanged={onChanged}
               />
@@ -237,7 +248,7 @@ export function Quiz({ kits, car, req }: { kits: Kit[]; car: Vehicle; req: numbe
                 key={`one-${option.id}`}
                 type="catalog"
                 items={oneItem}
-                submitLabel="Отправить заявку"
+                review={review}
                 onSuccess={onSuccess}
                 onCatalogChanged={onChanged}
               />
@@ -247,15 +258,10 @@ export function Quiz({ kits, car, req }: { kits: Kit[]; car: Vehicle; req: numbe
                 type="custom"
                 vehicle={vehicleFields}
                 request={request}
-                submitLabel="Отправить заявку"
+                review={review}
                 onSuccess={onSuccess}
               />
             )}
-            {!selMode && !sent ? (
-              <div className="home-quiz__nav">
-                <button type="button" className="btn btn--line ol home-quiz__back" onClick={() => goStep(2)}><Icon name="back" />Назад</button>
-              </div>
-            ) : null}
           </div>
         ) : (
           <div className="home-quiz__pane" key={cur}>
@@ -292,7 +298,7 @@ export function Quiz({ kits, car, req }: { kits: Kit[]; car: Vehicle; req: numbe
               <button type="button" className="btn btn--line ol home-quiz__back" disabled={step === 0} onClick={() => goStep(step - 1)}><Icon name="back" />Назад</button>
               <span className="lift">
                 <button type="button" className="btn btn--light" aria-disabled={!canNext || undefined} onClick={() => { if (canNext) goStep(step + 1); }}>
-                  {step === 2 ? "К контактам" : "Далее"}<Icon name="arrow" className="ico--go" />
+                  Далее<Icon name="arrow" className="ico--go" />
                 </button>
               </span>
             </div>
@@ -303,14 +309,6 @@ export function Quiz({ kits, car, req }: { kits: Kit[]; car: Vehicle; req: numbe
       <div className="home-quiz__r">
         <Illustration src={photo("quiz-master")} alt="Мастер снимает размеры бампера на машине клиента" ratio="auto" sizes="(max-width: 1023px) 100vw, 50vw" dark className="home-quiz__img" />
         <div className="home-quiz__plates">
-          <div className="home-quiz__sum">
-            <p className="home-quiz__sumt D">Ваша заявка{selMode ? <span> · {sel.length} {plural(sel.length, ["позиция", "позиции", "позиций"])}</span> : null}</p>
-            <dl>
-              {rows.map(([k, v]) => (
-                <div key={`${k}-${v}`} className={/^не выбран/.test(v) ? "is-empty" : ""}><dt>{k}</dt><dd>{v}</dd></div>
-              ))}
-            </dl>
-          </div>
           {tel && meta.contacts.phone ? (
             <a className="home-quiz__call ol" href={tel}>
               <small>Или позвоните сами{meta.contacts.hours ? `, ${meta.contacts.hours}` : ""}</small>
@@ -319,6 +317,7 @@ export function Quiz({ kits, car, req }: { kits: Kit[]; car: Vehicle; req: numbe
           ) : null}
           {meta.contacts.address ? (
             <Link className="home-quiz__map ol" to="/contacts">
+              <span className="home-quiz__pin cut" aria-hidden="true"><Icon name="pin" /></span>
               <span><b className="D">Как добраться<br />до мастерской</b><small>{meta.contacts.address}, карта и маршрут</small></span>
               <span className="home-quiz__arr cut" aria-hidden="true"><Icon name="arrow" /></span>
             </Link>

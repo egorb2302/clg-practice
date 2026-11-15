@@ -75,6 +75,6 @@ test("header shows «Кабинет», «Акции», «Новости» by /me
 test("prices: «от … ₽» or «Уточнить цену», never «0 ₽»", async ({ page }) => {
   await open(page, "/catalog");
   const text = await page.locator("main").innerText();
-  expect(text).toMatch(/от \d[\d\s]* ₽/);
-  expect(text).not.toMatch(/(^|[^\d\s])0 ₽/m);
+  expect(text).toMatch(/от\s\d[\d\s]*\s₽/);
+  expect(text).not.toMatch(/(^|[^\d\s])0\s₽/m);
 });

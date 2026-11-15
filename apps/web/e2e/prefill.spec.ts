@@ -8,13 +8,15 @@ test("car chosen in the hero is already in the quiz when the visitor scrolls dow
   const quiz = page.locator("#quiz");
   await quiz.scrollIntoViewIfNeeded();
   await expect(quiz.getByRole("heading", { name: "Что защищаем?" })).toBeVisible();
-  await expect(quiz.locator(".home-quiz__sum")).toContainText("JAC T9");
-  await expect(quiz.locator(".home-quiz__step")).toHaveText("Шаг 2 из 4");
+  await expect(quiz.locator(".home-quiz__step")).toHaveText(/Шаг\s2\sиз\s4/);
+  await quiz.getByRole("button", { name: "Назад" }).click();
+  await expect(quiz.getByRole("radio", { name: /JAC T9/ })).toHaveAttribute("aria-checked", "true");
 
   await page.locator("#home-brand").selectOption("Haval");
   await page.locator("#home-model").selectOption("H3");
   await expect(quiz.getByRole("heading", { name: "Что защищаем?" })).toBeVisible();
-  await expect(quiz.locator(".home-quiz__sum")).toContainText("Haval H3");
+  await quiz.getByRole("button", { name: "Назад" }).click();
+  await expect(quiz.getByRole("radio", { name: /Haval H3/ })).toHaveAttribute("aria-checked", "true");
 });
 
 test("a custom car from the hero fills make and model in the order form", async ({ page }) => {
@@ -27,7 +29,7 @@ test("a custom car from the hero fills make and model in the order form", async 
   await quiz.getByRole("radio", { name: /Передняя защита/ }).click();
   await quiz.getByRole("button", { name: "Далее" }).click();
   await quiz.getByRole("radio", { name: /Черная порошковая/ }).click();
-  await quiz.getByRole("button", { name: "К контактам" }).click();
+  await quiz.getByRole("button", { name: "Далее" }).click();
   const form = quiz.locator("form.lf");
   await expect(form.getByLabel("Марка")).toHaveValue("Tank");
   await expect(form.getByLabel("Модель")).toHaveValue("300");
@@ -60,7 +62,8 @@ test("contacts typed once are filled in every later form", async ({ page }) => {
   await expect(qform.getByLabel("Имя")).toHaveValue("Тест Тестов");
   await expect(qform.getByLabel("Телефон")).toHaveValue("+7 (900) 123-45-67");
   await qform.locator("label.rdo", { hasText: "Самовывоз" }).click();
-  await qform.locator("button[type=submit]").click();
+  await qform.getByRole("button", { name: "Проверить заявку" }).click();
+  await quiz.getByRole("button", { name: "Жду звонка" }).click();
   await expect(quiz.getByRole("heading", { name: "Заявка AX-E2E001 принята" })).toBeVisible();
   const body = sent[0]!.body as { name: string; contact: { phone: string } };
   expect(body.name).toBe("Тест Тестов");

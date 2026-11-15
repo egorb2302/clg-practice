@@ -54,6 +54,12 @@ export function phoneE164(masked: string): string {
   return d.length === 11 ? "+" + d : masked.trim();
 }
 
+const LEAD_WORDS = /(?<=^|[\s(«])(если|когда|чтобы|пока|после|перед|через|между|около|также|только|потом|затем|тогда|почти|даже|сразу)\s+/gi;
+
 export function nb(s: string): string {
+  return nbShort(s).replace(LEAD_WORDS, "$1\u00a0");
+}
+
+function nbShort(s: string): string {
   return s.replace(/\b(JAC|Haval|AISI|Tank) (T9|H3|304|300)\b/g, "$1\u00a0$2").replace(/(?<=^|[\s(«])([А-Яа-яЁёA-Za-z\d]{1,3})\s+/g, "$1\u00a0").replace(/(\d)\s+(мм|ч|₽|кг|дн)/g, "$1\u00a0$2");
 }

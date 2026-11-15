@@ -482,6 +482,14 @@ select.in {
 .lf__pd { font-size: var(--fs-xs); line-height: 1.45; color: var(--g-2); }
 .lf__chg { --c: var(--c-m); --w: 1.5px; --lc: var(--t-1); --fill: var(--k-5); display: flex; flex-direction: column; gap: 6px; padding: 18px 22px; font-size: 15px; line-height: 1.5; color: var(--t-1); }
 .lf__chg b { font: 500 17px/1.2 var(--f-d); text-transform: uppercase; color: #fff; }
+.lf__nav { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-top: 8px; }
+.lf__back.btn { min-height: 56px; padding: 0 26px; color: var(--t-1); text-transform: none; letter-spacing: 0; font: 400 15px/1 var(--f-t); }
+.lf__back:disabled { opacity: .35; }
+.lf__go.btn { min-height: 56px; }
+.lf__sum { --c: 14px; --lc: var(--ln-2); --fill: var(--k-1); margin: 0; padding: 8px 28px; display: flex; flex-direction: column; }
+.lf__sum > div { display: flex; justify-content: space-between; gap: 24px; padding: 14px 0; border-bottom: 1px solid var(--ln-0); font-size: 17px; line-height: 1.4; }
+.lf__sum dt { color: var(--g-3); flex-shrink: 0; }
+.lf__sum dd { margin: 0; text-align: right; color: var(--t-1); }
 .lf__done { --c: var(--c-l); --lc: var(--ln-2); --fill: var(--k-1); display: flex; flex-direction: column; gap: 12px; padding: clamp(24px, 3vw, 40px); color: var(--t-1); }
 .lf__done h3 { font-size: var(--fs-h3); color: #fff; }
 .lf__done p { color: var(--t-2); line-height: 1.6; }
