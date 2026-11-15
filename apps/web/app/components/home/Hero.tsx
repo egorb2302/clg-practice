@@ -84,7 +84,7 @@ export function Hero({ kits, onQuiz }: { kits: Kit[]; onQuiz: () => void }) {
             </figure>
           ) : (
             <figure className="home-sil home-sil--photo home-sil--draw">
-              <img src="/photo/hero-draw.webp" srcSet="/photo/hero-draw-800.webp 800w, /photo/hero-draw.webp 1600w" sizes="(max-width: 1099px) 90vw, 50vw" alt="Чертеж защиты бампера под вашу модель" decoding="async" />
+              <img src="/photo/hero-draw.webp" srcSet="/photo/hero-draw-800.webp 800w, /photo/hero-draw.webp 1557w" sizes="(max-width: 1099px) 90vw, 50vw" alt="Чертеж защиты бампера под вашу модель" decoding="async" />
               <figcaption>{car?.mode === "custom" ? `${bodyOf(car.label)}, защиту сделаем по месту` : "Выберите марку и модель"}</figcaption>
             </figure>
           )}

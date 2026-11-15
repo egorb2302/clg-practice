@@ -191,6 +191,10 @@
   .home-pick .in { height: clamp(52px, 6svh, 62px); font-size: 16px; }
   .home-hero__help { min-height: 0; }
 }
+@media (min-width: 1440px) {
+  .home-hero__cta { max-width: clamp(300px, calc(54vw - 450px), 640px); }
+  .home-hero__cta .home-cta__t { white-space: normal; padding-block: 8px; line-height: 1.35; }
+}
 @media (min-width: 1100px) and (max-width: 1439px) {
   .home-hero__facts { flex-direction: column; gap: 8px; border-left: 2px solid var(--ink); padding-left: 14px; }
   .home-hero__facts li, .home-hero__facts li:first-child { padding: 0; border: 0; }
@@ -399,12 +403,12 @@
 .home-works__photo { display: block; height: calc(var(--sw) * .44); width: auto; max-width: 100%; margin-inline: auto; object-fit: contain; }
 .home-works__cap { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; font: 400 var(--fs-xs)/1.4 var(--f-t); color: var(--g-3); }
 .home-works__cap em { font-style: normal; color: var(--t-1); }
-.home-works__plate { position: absolute; top: calc(7% + 80px + var(--sw) / 4 - clamp(90px, 7.8vw, 150px)); z-index: 2; width: clamp(240px, 24.5vw, 470px); height: clamp(180px, 15.6vw, 300px); display: flex; align-items: center; gap: 24px; background: #262626; }
+.home-works__plate { position: absolute; top: calc(7% + 80px + var(--sw) / 4 - clamp(90px, 7.8vw, 150px)); z-index: 2; width: clamp(240px, 24.5vw, 470px); height: clamp(180px, 15.6vw, 300px); display: flex; align-items: center; gap: clamp(10px, 4.5vw - 40px, 24px); background: #262626; }
 .home-works__plate--l { left: 0; padding-left: clamp(20px, 2.9vw, 56px); clip-path: polygon(0 0, calc(100% - 64px) 0, 100% 64px, 100% calc(100% - 64px), calc(100% - 64px) 100%, 0 100%); }
 .home-works__plate--r { right: 0; padding-right: clamp(20px, 2.9vw, 56px); clip-path: polygon(64px 0, 100% 0, 100% 100%, 64px 100%, 0 calc(100% - 64px), 0 64px); }
 .home-works__thumb { --c: 16px; position: relative; margin-inline: auto; width: clamp(110px, 9.4vw, 180px); flex-shrink: 0; }
 .home-works__thumb.ill--ph.ill--dark { background: #3a3a3a; }
-.home-works__mini { display: block; width: clamp(100px, calc(24.5vw - 228px), 230px); height: auto; flex-shrink: 0; margin-inline: auto; object-fit: contain; }
+.home-works__mini { display: block; width: clamp(86px, calc(24.5vw - 228px), 230px); height: auto; flex-shrink: 0; margin-inline: auto; object-fit: contain; }
 .home-works__go { display: inline-flex; flex-shrink: 0; align-items: center; gap: 12px; border: 0; background: none; color: var(--t-1); font: 500 16px/1 var(--f-d); }
 .home-works__go:hover .ar { --fill: var(--t-1); --lc: var(--t-1); color: #111; }
 .home-works__t { position: absolute; left: var(--gut); bottom: clamp(48px, 9svh, 96px); max-width: min(46%, 760px); font-size: clamp(36px, 3.4vw, 64px); letter-spacing: .02em; line-height: 1.05; }
