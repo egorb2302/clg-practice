@@ -33,10 +33,24 @@
 
   :root .tabs__panel.is-swap { animation: pane-in .4s var(--ease-out) both; }
 
-  :root .home-works__photo { animation: car-in .6s var(--ease-out) both; }
-  :root .home-works[data-dir="back"] .home-works__photo { animation-name: car-in-back; }
-  :root .home-works__cap { animation: pane-in .5s var(--ease-out) both; }
-  :root .home-works__mini { animation: fade-in .5s ease both; }
+  :root .home-works__photo { --off: 70px; transition: opacity .9s var(--ease-out), translate 1.2s var(--ease-out), scale 1.2s var(--ease-out); }
+  :root .home-works[data-dir="back"] .home-works__photo { --off: -70px; }
+  :root .home-works__photo:not(.is-on) { translate: var(--off) 0; scale: .96; }
+  :root .home-works__photo.is-prev { translate: calc(var(--off) * -1) 0; transition-duration: .6s, 1.2s, 1.2s; }
+  :root .home-works__cap { animation: pane-in .7s var(--ease-out) .15s both; }
+  :root .home-works__mini { animation: fade-in .8s ease both; }
+
+  :root .home-show__bgs { isolation: isolate; }
+  :root .home-show__bgs::after { z-index: 2; }
+  :root .home-show__bgs .ill.is-on { z-index: 1; transition: opacity 1.1s var(--ease-io), scale 1.8s var(--ease-out); }
+  :root .home-show__bgs .ill:not(.is-on) { scale: 1.06; transition: opacity 0s linear 1.1s, scale 0s linear 1.1s; }
+  :root .home-show__card > * { animation: pane-in .6s var(--ease-out) both; }
+  :root .home-show__card > :nth-child(2) { animation-delay: .05s; }
+  :root .home-show__card > :nth-child(3) { animation-delay: .1s; }
+  :root .home-show__card > :nth-child(n + 4) { animation-delay: .15s; }
+  :root .home-show__stats > li { animation: pane-in .6s var(--ease-out) both; }
+  :root .home-show__stats > li:nth-child(2) { animation-delay: .06s; }
+  :root .home-show__stats > li:nth-child(3) { animation-delay: .12s; }
   :root .home-works__dots i { transition: width .5s var(--ease-out); }
 
   :root .home-proc__ic svg { transition: transform .4s var(--ease-out); }
@@ -54,8 +68,6 @@
 
 @keyframes pane-in { from { opacity: 0; translate: 0 14px; } }
 @keyframes fade-in { from { opacity: 0; } }
-@keyframes car-in { from { opacity: 0; translate: 48px 0; } }
-@keyframes car-in-back { from { opacity: 0; translate: -48px 0; } }
 @keyframes sel-bump { 0% { scale: 1; } 35% { scale: 1.35; } 100% { scale: 1; } }
 @keyframes ok-pop { from { opacity: 0; scale: .6; } 60% { scale: 1.08; } to { opacity: 1; scale: 1; } }
 @keyframes ok-tick { from { opacity: 0; scale: .4; } }

@@ -30,8 +30,9 @@ export function Works({ car, onQuiz }: { car: Vehicle; onQuiz: () => void }) {
 
   const [cur, setCur] = useState(0);
   const [dir, setDir] = useState<"next" | "back">("next");
+  const [was, setWas] = useState(-1);
   const at = Math.min(cur, n - 1);
-  const go = (to: number) => { setDir(to < at ? "back" : "next"); setCur(((to % n) + n) % n); };
+  const go = (to: number) => { setDir(to < at ? "back" : "next"); setWas(at); setCur(((to % n) + n) % n); };
 
   const tg = meta.contacts.telegram ? telegramLink(meta.contacts.telegram) : null;
   const vk = vkLink(meta.contacts.vk);
@@ -60,7 +61,14 @@ export function Works({ car, onQuiz }: { car: Vehicle; onQuiz: () => void }) {
             {w.note ? <em>{w.note}</em> : null}
           </div>
           {shot ? (
-            <img key={shot} className="home-works__photo" src={shot} srcSet={`${shot.replace(/\.webp$/, "-800.webp")} 800w, ${shot} 1600w`} sizes="(max-width: 767px) 100vw, 60vw" alt={`${w.car}: ${w.what.toLowerCase()}`} loading="lazy" decoding="async" />
+            <div className="home-works__stack">
+              {items.map((x, i) => {
+                const src = workPhoto(x.car);
+                if (!src) return null;
+                const on = i === at;
+                return <img key={x.car} className={`home-works__photo${on ? " is-on" : i === was ? " is-prev" : ""}`} src={src} srcSet={`${src.replace(/\.webp$/, "-800.webp")} 800w, ${src} 1600w`} sizes="(max-width: 767px) 100vw, 60vw" alt={on ? `${x.car}: ${x.what.toLowerCase()}` : ""} aria-hidden={on ? undefined : true} loading="lazy" decoding="async" />;
+              })}
+            </div>
           ) : (
             <Truck tone="dark" label={`${w.car}: ${w.what.toLowerCase()}`} />
           )}

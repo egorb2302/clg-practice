@@ -95,17 +95,19 @@ export function Showcase({ kits, car, onQuiz }: { kits: Kit[]; car: Vehicle; onQ
   return (
     <section id="kits" className="home-show dark" aria-label="Готовые комплекты">
       <div className="home-show__bgs">
-        <Illustration key={s.photo} src={s.photo} alt={s.alt} dark />
+        {[...new Set(slides.map((x) => x.photo))].map((ph) => (
+          <Illustration key={ph} src={ph} alt={ph === s.photo ? s.alt : ""} dark className={ph === s.photo ? "is-on" : undefined} />
+        ))}
       </div>
 
-      <ul className="home-show__stats">
+      <ul className="home-show__stats" key={`st-${s.key}`}>
         {s.stats.map(([v, u, k]) => (
           <li key={k}><b className="D">{v}<small>{u}</small></b><span>{k}</span></li>
         ))}
       </ul>
 
       <div className="home-show__col">
-        <div className="home-show__card" id="home-show-panel" role="tabpanel" aria-labelledby={`home-show-tab-${at}`}>
+        <div className="home-show__card" key={`c-${s.key}`} id="home-show-panel" role="tabpanel" aria-labelledby={`home-show-tab-${at}`}>
           <span className="home-show__car">{s.car}</span>
           <h3 className="home-show__t">{s.title}</h3>
           <span className="home-show__dash" aria-hidden="true" />
