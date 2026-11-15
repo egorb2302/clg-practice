@@ -2,6 +2,7 @@ import type { ProductCard as Card } from "@armorix/contracts";
 import { Link } from "react-router";
 import { addCard, Icon, Illustration, Logo } from "../site";
 import { priceFrom } from "../../lib/format";
+import { photo } from "../../lib/photos";
 import { useSelection } from "../../lib/selection";
 import { ui } from "../../lib/ui";
 import type { Vehicle } from "../../lib/vehicle";
@@ -43,7 +44,7 @@ export function Steel({ car, product, onQuiz }: { car: Vehicle; product: Card | 
             {custom ? (
               <div className="home-plate__draw"><Sketch small /></div>
             ) : (
-              <Illustration src={product?.image?.url ?? "/img/x.webp"} alt={product?.image?.alt ?? ""} caption={`передняя защита ${product ? product.vehicle.label : "на машину"}, вырезанная, стоит вертикально и выходит за пластину сверху`} ratio="380 / 520" dark />
+              <Illustration src={photo("steel-bar")} alt="Передняя защита из полированной нержавеющей стали" ratio="380 / 520" sizes="(max-width: 767px) 80vw, 380px" dark />
             )}
           </div>
           <div className="home-plate__buy">

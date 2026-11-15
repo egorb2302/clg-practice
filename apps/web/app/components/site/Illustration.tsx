@@ -12,6 +12,7 @@ const W: Record<string, [number, number]> = {
 const STORED = /-(\d+)\.webp$/;
 
 function srcSet(src: string): string | undefined {
+  if (/^\/photo\/[a-z0-9-]+\.webp$/.test(src)) return `${src.replace(/\.webp$/, "-800.webp")} 800w, ${src} 1600w`;
   const own = /^\/img\/([a-z-]+)\.webp$/.exec(src);
   if (own) {
     const w = W[own[1]!];
@@ -25,6 +26,7 @@ function srcSet(src: string): string | undefined {
 }
 
 export function thumbOf(src: string): string {
+  if (/^\/photo\/[a-z0-9-]+\.webp$/.test(src)) return src.replace(/\.webp$/, "-800.webp");
   if (/^\/img\/[a-z-]+\.webp$/.test(src)) return src.replace(/\.webp$/, "-s.webp");
   const m = STORED.exec(src);
   return m && Number(m[1]) > 480 ? src.replace(STORED, "-480.webp") : src;

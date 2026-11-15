@@ -1,11 +1,12 @@
 import { Icon, Illustration } from "../site";
 import type { Vehicle } from "../../lib/vehicle";
+import { photo } from "../../lib/photos";
 import { Glyph, PATH } from "./data";
 
 export function Road({ car }: { car: Vehicle }) {
   return (
     <section className="home-road dark" aria-labelledby="home-road-t">
-      <Illustration src="/img/x.webp" alt="" caption={`на всю ширину: ${car ? `${car.label} на тяжелой дороге` : "машина на тяжелой дороге"}, лес и колея, слева`} className="home-road__img" dark />
+      <Illustration src={photo("road")} alt="Пикап со стальной защитой бампера едет по лесной колее" className="home-road__img" dark />
       <div className="home-road__copy" data-stagger="">
         <h2 id="home-road-t" data-in="">Пластик для города,<br />сталь для вашей дороги</h2>
         <p data-in="">Лес, съезд к воде и колея после дождя<br />{car ? `бампер вашего ${car.label} встречает первым` : "бампер встречает первым"}</p>

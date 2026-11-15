@@ -4,6 +4,7 @@ import { Glyph } from "../components/pages/glyphs";
 import { Crumbs, Icon, Illustration } from "../components/site";
 import { PUBLIC_CACHE } from "../lib/api.server";
 import { nb, telegramLink } from "../lib/format";
+import { photo } from "../lib/photos";
 import { rootOrigin, seo } from "../lib/seo";
 import { telHref, useSite } from "../lib/site";
 import css from "../styles/pages/about.css?url";
@@ -35,6 +36,8 @@ const STEPS = [
   ["Покрытие", "Зеркальная полировка нержавейки или порошковая окраска", "полировка или камера окраски"],
   ["Примерка", "Ставим на машину до выдачи, если не встает, исправляем", "защита на машине клиента"],
 ];
+
+const STEP_PHOTOS = ["step-measure", "step-drawing", "step-bend", "weld-seam", "step-coat", "bar-close"];
 
 const MATS = [
   { cls: "pol", sw: "Образец: полировка", t: "Нержавеющая сталь AISI 304, зеркальная полировка", rows: [["Коррозия", "Не ржавеет, красить не нужно"], ["Уход", "Мойка высоким давлением и реагенты не страшны"], ["Вид", "Зеркальный блеск, как у хромированных деталей"], ["Цена", "Выше черной, разница по каждому комплекту в каталоге"]] },
@@ -77,9 +80,9 @@ export default function About() {
       <section className="light sec abt-story">
         <div className="wrap abt-story__grid">
           <div className="abt-mosaic" data-stagger="">
-            <div className="abt-mosaic__a" data-in=""><Illustration src="" alt="" caption="мастерская снаружи, вывеска, вертикальный кадр" className="abt-fill" /></div>
-            <div data-in=""><Illustration src="" alt="" caption="готовые дуги на стеллаже" className="abt-fill" /></div>
-            <div data-in=""><Illustration src="" alt="" caption="мастер за сваркой" className="abt-fill" /></div>
+            <div className="abt-mosaic__a" data-in=""><Illustration src={photo("shop-out")} alt="Мастерская снаружи" sizes="(max-width: 767px) 100vw, 25vw" className="abt-fill" /></div>
+            <div data-in=""><Illustration src={photo("bars-rack")} alt="Готовые защиты на стеллаже" sizes="(max-width: 767px) 100vw, 25vw" className="abt-fill" /></div>
+            <div data-in=""><Illustration src={photo("shop-weld")} alt="Мастер за сваркой" sizes="(max-width: 767px) 100vw, 25vw" className="abt-fill" /></div>
           </div>
           <div className="abt-story__t" data-in="">
             <h2 className="h2">Как мы<br />работаем</h2>
@@ -104,7 +107,7 @@ export default function About() {
             {STEPS.map(([t, d, img], i) => (
               <li key={t} data-in="">
                 <article className="abt-step ol">
-                  <Illustration src="" alt="" caption={img!} dark ratio="16 / 10" />
+                  <Illustration src={photo(STEP_PHOTOS[i]!)} alt={img!} caption={img!} sizes="(max-width: 767px) 100vw, 33vw" dark ratio="16 / 10" />
                   <div className="abt-step__b">
                     <small className="D num">0{i + 1}</small>
                     <h3>{t}</h3>

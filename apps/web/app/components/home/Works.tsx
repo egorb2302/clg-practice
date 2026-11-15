@@ -5,6 +5,7 @@ import { useSite, vkLink } from "../../lib/site";
 import type { Vehicle } from "../../lib/vehicle";
 import { bodyOf, WORKS } from "./data";
 import { Truck } from "./Truck";
+import { workPhoto } from "../../lib/photos";
 
 type Work = { car: string; what: string; note?: string };
 
@@ -31,6 +32,7 @@ export function Works({ car, onQuiz }: { car: Vehicle; onQuiz: () => void }) {
   const w = items[at]!;
   const prev = items[(at - 1 + n) % n]!;
   const next = items[(at + 1) % n]!;
+  const shot = workPhoto(w.car);
 
   return (
     <section id="works" className="home-works" aria-labelledby="home-works-t">
@@ -46,11 +48,15 @@ export function Works({ car, onQuiz }: { car: Vehicle; onQuiz: () => void }) {
       >
         <figure className="home-works__slide" aria-live="polite">
           <div className="home-works__cap">
-            <span>[РЕАЛЬНАЯ РАБОТА: {w.car}, вырезанная машина]</span>
+            <span>{w.car}</span>
             <span>{w.what}</span>
             {w.note ? <em>{w.note}</em> : null}
           </div>
-          <Truck tone="dark" label={`${w.car}: ${w.what.toLowerCase()}`} />
+          {shot ? (
+            <img key={shot} className="home-works__photo" src={shot} srcSet={`${shot.replace(/\.webp$/, "-800.webp")} 800w, ${shot} 1600w`} sizes="(max-width: 767px) 100vw, 60vw" alt={`${w.car}: ${w.what.toLowerCase()}`} loading="lazy" decoding="async" />
+          ) : (
+            <Truck tone="dark" label={`${w.car}: ${w.what.toLowerCase()}`} />
+          )}
         </figure>
       </div>
 
@@ -58,10 +64,10 @@ export function Works({ car, onQuiz }: { car: Vehicle; onQuiz: () => void }) {
         <button type="button" className="home-works__go" onClick={() => go(at - 1)} aria-label={`Назад: ${prev.car}`}>
           <span className="ar ol" aria-hidden="true"><Icon name="back" /></span>Назад
         </button>
-        <Illustration src="/img/x.webp" alt="" caption={prev.car} ratio="1 / 1" dark className="home-works__thumb cut" />
+        <Illustration src={workPhoto(prev.car) ?? ""} alt={prev.car} caption={prev.car} ratio="1 / 1" sizes="180px" dark className="home-works__thumb cut" />
       </div>
       <div className="home-works__plate home-works__plate--r">
-        <Illustration src="/img/x.webp" alt="" caption={next.car} ratio="1 / 1" dark className="home-works__thumb cut" />
+        <Illustration src={workPhoto(next.car) ?? ""} alt={next.car} caption={next.car} ratio="1 / 1" sizes="180px" dark className="home-works__thumb cut" />
         <button type="button" className="home-works__go" onClick={() => go(at + 1)} aria-label={`Вперед: ${next.car}`}>
           Вперед<span className="ar ol" aria-hidden="true"><Icon name="arrow" /></span>
         </button>

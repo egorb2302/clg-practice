@@ -6,6 +6,7 @@ import { POSITION_LABEL, priceFrom } from "../../lib/format";
 import { useSelection } from "../../lib/selection";
 import { ui } from "../../lib/ui";
 import type { Vehicle } from "../../lib/vehicle";
+import { carTrail, photo } from "../../lib/photos";
 import { type Kit, leadProduct, priced } from "./data";
 
 type Slide = {
@@ -15,6 +16,7 @@ type Slide = {
   title: string;
   text: string;
   photo: string;
+  alt: string;
   stats: [string, string, string][];
   product?: Card;
 };
@@ -28,7 +30,8 @@ function kitSlide(p: Card, tab: string): Slide {
     car: p.vehicle.label,
     title: POSITION_LABEL[p.position],
     text: p.title,
-    photo: `на весь экран: ${p.vehicle.label} с защитой едет по камням, машина слева`,
+    photo: carTrail(p.vehicle.slug),
+    alt: `${p.vehicle.label} со стальной защитой едет по камням`,
     stats: [["2,5", " ч", "установка"], ["0", "", "отверстий в кузове"], p.coating?.code === "aisi304" ? ["304", "", "марка стали AISI"] : ["РФ", "", "доставка по России"]],
     product: p,
   };
@@ -43,7 +46,8 @@ function customSlide(label: string | null, tab: string): Slide {
     text: label
       ? "Готового комплекта еще нет: снимем размеры, покажем эскиз на согласование, сварим и поставим"
       : "Снимем размеры по фото, покажем эскиз до изготовления, сделаем по месту и поставим",
-    photo: label ? "на весь экран: работа под похожую модель на камнях, подпись «так мы сделали под похожую машину»" : "на весь экран: реальная работа под другую модель на камнях",
+    photo: photo("show-haval"),
+    alt: "Внедорожник со стальной защитой, сделанной под модель, едет по камням",
     stats: [["0", " ₽", "до согласования"], ["2", " материала", "на выбор"], ["от 4", " нед", "изготовление"]],
   };
 }
@@ -91,7 +95,7 @@ export function Showcase({ kits, car, onQuiz }: { kits: Kit[]; car: Vehicle; onQ
   return (
     <section id="kits" className="home-show dark" aria-label="Готовые комплекты">
       <div className="home-show__bgs">
-        <Illustration src="/img/x.webp" alt="" caption={s.photo} dark />
+        <Illustration key={s.photo} src={s.photo} alt={s.alt} dark />
       </div>
 
       <ul className="home-show__stats">
@@ -122,7 +126,7 @@ export function Showcase({ kits, car, onQuiz }: { kits: Kit[]; car: Vehicle; onQ
           </div>
         </div>
         <div className="home-show__pic">
-          <Illustration src="/img/x.webp" alt="" caption="защита крупно на машине" ratio="auto" className="home-show__thumb" />
+          <Illustration src={photo("bar-close")} alt="Труба и кронштейн защиты на бампере крупно" ratio="auto" sizes="240px" className="home-show__thumb" />
         </div>
         <div className="home-show__tabs" role="tablist" aria-label="Комплекты" onKeyDown={onKey}>
           {slides.map((x, i) => (

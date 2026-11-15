@@ -1,6 +1,6 @@
 # ARMORIX — release status
 
-Updated 2026-11-14.
+Updated 2026-11-15.
 
 ## What `main` contains
 
@@ -65,6 +65,12 @@ In production the API refuses to start with log/local adapters (`NODE_ENV=produc
 - Browser tests: `pnpm --filter @armorix/web e2e` (Playwright, Edge) with the local `api-r2` and `web` dev servers running; 28/28 pass. They mock only `POST /api/v1/leads`. Covered: add to selection, open it and submit from home, catalog and product; the hero button and the quiz take the selection; the car is chosen only in the picker and stays between pages; «Перезвоните мне» sends the car and the selection; the selection survives a reload, removal can be undone; dialog focus, Esc and scroll lock; lead answers 422, 429, a network retry with the same key, 409 catalog changed; type rules on 11 routes; the phone bottom bar; header links by flags; price format.
 - Mock data by design (the task giver supplied none): production contacts hold a stub phone `+7 (900) 000-00-00`, `hello@armorix.test` and a sample address; `/contacts` shows the frontender's placeholder reviews; the numbers and promises on the site are not confirmed by a client.
 - Home flow: the quiz follows the car picked in the first screen as soon as it is picked; name, contact choice, phone and email typed once (or taken from the cabinet profile) fill every later form for the session and are cleared on logout or another account's sign-in. Prefilled forms wait until 3.2 s have passed since they appeared before sending, so the server's 3 s bot check does not drop them. Checked on production: the quiz opens at «Что защищаем?» after picking JAC T9, the call link is `tel:+79000000000`, three review cards, no console errors.
+
+## Site photos (2026-11-15)
+
+- Every grey photo placeholder on the site now shows a generated photo: first screen cars, road, steel, workshop, kit showcase, works carousel, quiz, catalog «similar works», about (mosaic and six production steps), contacts (entrance, workshop). Files in `apps/web/public/photo/` (1600 px and 800 px WebP), mapped in `apps/web/app/lib/photos.ts`.
+- They are AI generated (Codex image model) from the wireframe's scene captions, with no brand badges, plates or text. They are not photos of a real workshop or real installs; replace them when the company sends its own.
+- Production catalog: the six products got generated product shots through the admin media upload, the old illustration media were removed.
 
 ## Deliberate deferrals
 

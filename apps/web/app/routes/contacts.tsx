@@ -4,6 +4,7 @@ import type { Route } from "./+types/contacts";
 import { Crumbs, Icon, Illustration, LeadForm, Tabs, VkMark } from "../components/site";
 import { PUBLIC_CACHE } from "../lib/api.server";
 import { nb, telegramLink } from "../lib/format";
+import { photo } from "../lib/photos";
 import { rootOrigin, seo } from "../lib/seo";
 import { telHref, useSite, vkLink } from "../lib/site";
 import css from "../styles/pages/contacts.css?url";
@@ -100,7 +101,7 @@ export default function Contacts() {
               </div>
             </div>
           ) : (
-            <div className="cnt-art" data-in=""><Illustration src="" alt="" caption="въезд и вывеска" className="cnt-fill" /></div>
+            <div className="cnt-art" data-in=""><Illustration src={photo("shop-out")} alt="Въезд в мастерскую" sizes="(max-width: 767px) 100vw, 50vw" className="cnt-fill" /></div>
           )}
         </div>
       </section>
@@ -112,9 +113,9 @@ export default function Contacts() {
             <p className="txt">Можно приехать посмотреть готовые комплекты и образцы покрытия до заказа, установка по записи</p>
           </div>
           <div className="cnt-photos" data-stagger="">
-            <div data-in=""><Illustration src="" alt="" caption="мастерская изнутри, подъемник с машиной" className="cnt-fill" /></div>
-            <div data-in=""><Illustration src="" alt="" caption="образцы покрытия" className="cnt-fill" /></div>
-            <div data-in=""><Illustration src="" alt="" caption="мастер за сваркой" className="cnt-fill" /></div>
+            <div data-in=""><Illustration src={photo("shop-in")} alt="Мастерская изнутри, машина на подъемнике" sizes="(max-width: 767px) 100vw, 33vw" className="cnt-fill" /></div>
+            <div data-in=""><Illustration src={photo("coat-samples")} alt="Образцы покрытия: полированная нержавейка и черная порошковая краска" sizes="(max-width: 767px) 100vw, 33vw" className="cnt-fill" /></div>
+            <div data-in=""><Illustration src={photo("shop-weld")} alt="Мастер за сваркой" sizes="(max-width: 767px) 100vw, 33vw" className="cnt-fill" /></div>
           </div>
           <div className="cnt-sh cnt-sh--rev">
             <h2 className="h2">Отзывы</h2>

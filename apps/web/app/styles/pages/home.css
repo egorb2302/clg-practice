@@ -68,6 +68,8 @@
 
 .home-sil { margin: 0; position: relative; }
 .home-sil svg { display: block; width: 100%; height: auto; }
+.home-hero__stage:has(.home-sil--photo) .home-hero__floor { display: none; }
+.home-sil--photo img { display: block; width: 100%; aspect-ratio: 1000 / 520; object-fit: contain; object-position: 50% 100%; }
 .home-sil figcaption { position: absolute; left: 0; right: 0; top: 4%; padding: 0 8%; text-align: center; font: 400 var(--fs-xs)/1.4 var(--f-t); color: #5e5e5b; }
 
 .home-hero__tab {
@@ -338,6 +340,7 @@
 .home-works__stage:focus-visible { outline: 2px dashed var(--t-1); outline-offset: -8px; }
 .home-works__slide { margin: 0; width: var(--sw); display: flex; flex-direction: column; justify-content: flex-end; gap: 14px; padding: 0 1.5%; }
 .home-works__slide svg { display: block; width: 100%; height: auto; }
+.home-works__photo { display: block; height: calc(var(--sw) * .44); width: auto; max-width: 100%; margin-inline: auto; object-fit: contain; }
 .home-works__cap { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; font: 400 var(--fs-xs)/1.4 var(--f-t); color: var(--g-3); }
 .home-works__cap em { font-style: normal; color: var(--t-1); }
 .home-works__plate { position: absolute; top: calc(7% + 80px + var(--sw) / 4 - clamp(90px, 7.8vw, 150px)); z-index: 2; width: clamp(240px, 24.5vw, 470px); height: clamp(180px, 15.6vw, 300px); display: flex; align-items: center; gap: 24px; background: #262626; }

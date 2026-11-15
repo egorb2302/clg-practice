@@ -7,6 +7,7 @@ import { useVehicle, vehicle, type Vehicle } from "../../lib/vehicle";
 import { BRANDS, MODELS } from "../../lib/vehicles-catalog";
 import { bodyOf, isCalm, type Kit, minPrice, splitCar } from "./data";
 import { Outline, Truck } from "./Truck";
+import { carStudio } from "../../lib/photos";
 
 type Slide = { key: string; name: string; sub: string; kit?: Kit };
 
@@ -26,6 +27,7 @@ export function Hero({ kits, onQuiz }: { kits: Kit[]; onQuiz: () => void }) {
   const [all, setAll] = useState(false);
   const idx = ((browse ?? (own >= 0 ? own : auto)) % n + n) % n;
   const slide = slides[idx]!;
+  const studio = carStudio(slide.key);
 
   const root = useRef<HTMLElement>(null);
   const hold = useRef({ hover: false, until: 0, seen: true });
@@ -72,10 +74,13 @@ export function Hero({ kits, onQuiz }: { kits: Kit[]; onQuiz: () => void }) {
         </div>
         <div className="home-hero__floor" aria-hidden="true" />
         <div className="home-hero__car" key={`c-${slide.key}-${idx}`}>
-          {slide.kit ? (
+          {slide.kit && studio ? (
+            <figure className="home-sil home-sil--photo">
+              <img src={studio} srcSet={`${studio.replace(/\.webp$/, "-800.webp")} 800w, ${studio} 1600w`} sizes="(max-width: 767px) 100vw, 76vw" alt={`${slide.name} со стальной защитой бампера`} fetchPriority={idx === 0 ? "high" : undefined} decoding="async" />
+            </figure>
+          ) : slide.kit ? (
             <figure className="home-sil">
               <Truck label={`${slide.name} со стальной защитой бампера`} />
-              <figcaption>[ФОТО: {slide.name} с защитой, студия, белый фон, три четверти спереди]</figcaption>
             </figure>
           ) : (
             <figure className="home-sil">

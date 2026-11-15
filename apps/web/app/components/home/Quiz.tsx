@@ -6,6 +6,7 @@ import { plural, POSITION_LABEL, priceFrom, rubles } from "../../lib/format";
 import { selection, useDelivery, useSelection } from "../../lib/selection";
 import { telHref, useSite } from "../../lib/site";
 import type { Vehicle } from "../../lib/vehicle";
+import { photo } from "../../lib/photos";
 import { coatShort, type Kit, priced, splitCar } from "./data";
 
 type CarAns =
@@ -300,7 +301,7 @@ export function Quiz({ kits, car, req }: { kits: Kit[]; car: Vehicle; req: numbe
       </div>
 
       <div className="home-quiz__r">
-        <Illustration src="/img/x.webp" alt="" caption="мастер у машины клиента" ratio="auto" dark className="home-quiz__img" />
+        <Illustration src={photo("quiz-master")} alt="Мастер снимает размеры бампера на машине клиента" ratio="auto" sizes="(max-width: 1023px) 100vw, 50vw" dark className="home-quiz__img" />
         <div className="home-quiz__plates">
           <div className="home-quiz__sum">
             <p className="home-quiz__sumt D">Ваша заявка{selMode ? <span> · {sel.length} {plural(sel.length, ["позиция", "позиции", "позиций"])}</span> : null}</p>

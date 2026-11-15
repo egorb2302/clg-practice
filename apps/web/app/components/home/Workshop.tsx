@@ -1,6 +1,7 @@
 import { Link } from "react-router";
 import { Icon, Illustration } from "../site";
 import { plural } from "../../lib/format";
+import { photo } from "../../lib/photos";
 
 export function Workshop({ models, items }: { models: number; items: number }) {
   return (
@@ -13,8 +14,8 @@ export function Workshop({ models, items }: { models: number; items: number }) {
             <li data-in=""><b className="D"><span data-count="2.5">2,5</span><small> ч</small></b>установка у нас</li>
           </ul>
           <div className="home-shop__pics" data-in="">
-            <Illustration src="/img/x.webp" alt="" caption="мастер за сваркой, узкий кадр" ratio="auto" dark className="home-shop__wide" />
-            <Illustration src="/img/x.webp" alt="" caption="шов крупно" ratio="1 / 1" dark className="home-shop__sq" />
+            <Illustration src={photo("shop-weld")} alt="Мастер сваривает трубу защиты" ratio="auto" sizes="(max-width: 767px) 100vw, 40vw" dark className="home-shop__wide" />
+            <Illustration src={photo("weld-seam")} alt="Сварной шов на нержавеющей трубе крупно" ratio="1 / 1" sizes="170px" dark className="home-shop__sq" />
           </div>
         </div>
       </div>
