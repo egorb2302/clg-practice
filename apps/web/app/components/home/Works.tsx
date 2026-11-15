@@ -11,6 +11,12 @@ type Work = { car: string; what: string; note?: string };
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
+function Mini({ car }: { car: string }) {
+  const src = workPhoto(car);
+  if (!src) return <Illustration src="" alt="" caption="" ratio="1 / 1" sizes="180px" dark className="home-works__thumb cut" />;
+  return <img className="home-works__mini" src={src.replace(/\.webp$/, "-800.webp")} alt="" loading="lazy" decoding="async" />;
+}
+
 export function Works({ car, onQuiz }: { car: Vehicle; onQuiz: () => void }) {
   const { meta } = useSite();
   let items: Work[];
@@ -64,10 +70,10 @@ export function Works({ car, onQuiz }: { car: Vehicle; onQuiz: () => void }) {
         <button type="button" className="home-works__go" onClick={() => go(at - 1)} aria-label={`Назад: ${prev.car}`}>
           <span className="ar ol" aria-hidden="true"><Icon name="back" /></span>Назад
         </button>
-        <Illustration src={workPhoto(prev.car) ?? ""} alt="" caption="" ratio="1 / 1" sizes="180px" dark className="home-works__thumb cut" />
+        <Mini car={prev.car} />
       </div>
       <div className="home-works__plate home-works__plate--r">
-        <Illustration src={workPhoto(next.car) ?? ""} alt="" caption="" ratio="1 / 1" sizes="180px" dark className="home-works__thumb cut" />
+        <Mini car={next.car} />
         <button type="button" className="home-works__go" onClick={() => go(at + 1)} aria-label={`Вперед: ${next.car}`}>
           Вперед<span className="ar ol" aria-hidden="true"><Icon name="arrow" /></span>
         </button>

@@ -23,7 +23,8 @@ type Props = {
   successText?: string;
   onSuccess?: (r: LeadCreatedResponse, sent: LeadItem[], via: "phone" | "email") => void;
   onCatalogChanged?: (changes: CatalogChange[]) => void;
-  review?: { rows: [string, string][]; onBack?: () => void; onStage?: (s: "form" | "confirm") => void };
+  review?: { rows: [string, string][]; onBack?: () => void; onStage?: (s: "form" | "confirm", focus: boolean) => void };
+  note?: string;
   className?: string;
 };
 
@@ -69,7 +70,8 @@ export function LeadForm(props: Props) {
   const review = props.review;
   const onStage = useRef(review?.onStage);
   onStage.current = review?.onStage;
-  const setStage = (s: "form" | "confirm") => { setStageRaw(s); onStage.current?.(s); };
+  const setStage = (s: "form" | "confirm", focus = true) => { setStageRaw(s); onStage.current?.(s, focus); };
+  useEffect(() => () => onStage.current?.("form", false), []);
   const key = useRef<string | null>(null);
   const started = useRef<number | null>(null);
   const mounted = useRef(Date.now());
@@ -139,7 +141,7 @@ export function LeadForm(props: Props) {
       ? { preferred: "phone" as const, phone: phoneE164(f.phone) }
       : { preferred: "email" as const, email: f.email.trim() };
     const base = { name: f.name.trim(), contact, website: f.website, fillMs: Date.now() - (started.current ?? mounted.current) };
-    const comment = f.comment.trim() || undefined;
+    const comment = [props.note, f.comment.trim()].filter(Boolean).join("\n") || undefined;
     if (type === "catalog") return { type, ...base, items, deliveryMethod: dm, comment };
     if (type === "custom") {
       return { type, ...base, vehicle: { make: f.make.trim(), model: f.model.trim(), year: f.year.trim() ? Number(f.year) : undefined }, request: f.request.trim(), comment };
@@ -194,7 +196,7 @@ export function LeadForm(props: Props) {
       focusBad.current = true;
       setErr(fe);
       setMsg(other || (review ? "" : "Проверьте отмеченные поля"));
-      if (review) { setSrvBad(true); setStage("form"); }
+      if (review) { setSrvBad(true); setStage("form", false); }
     } else if (r.kind === "changed") {
       key.current = null;
       setChanged(true);

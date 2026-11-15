@@ -79,6 +79,18 @@ test("contacts page shows the reviews block", async ({ page }) => {
 const seed = (page: Page, v: Record<string, unknown>) =>
   page.addInitScript((s) => { sessionStorage.setItem("armorix.contact.v1", s); }, JSON.stringify(v));
 
+test("typography binds short words without hydration errors", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+  for (const path of ["/", "/about", "/catalog", "/contacts", "/news", "/offers"]) {
+    await open(page, path);
+    await page.waitForTimeout(1500);
+  }
+  await open(page, "/about");
+  await expect.poll(() => page.locator(".abt-story__t p").first().evaluate((p) => p.textContent?.includes(" ") ?? false)).toBe(true);
+  expect(errors.filter((e) => /hydrat|did not match/i.test(e))).toEqual([]);
+});
+
 test("a saved contact fills the form after hydration without errors", async ({ page }) => {
   const errors: string[] = [];
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });

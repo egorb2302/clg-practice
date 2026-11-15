@@ -14,8 +14,8 @@ const WORK: Record<string, string> = {
   "Geely Monjaro": "work-monjaro",
   "Great Wall Poer": "work-poer",
   "Haval H5": "work-h5",
-  "JAC T9": "work-jac",
-  "Haval H3": "work-haval",
+  "JAC T9": "hero-jac",
+  "Haval H3": "hero-haval",
 };
 
 export const workPhoto = (car: string) => (WORK[car] ? photo(WORK[car]) : null);

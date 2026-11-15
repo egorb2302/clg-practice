@@ -6,7 +6,7 @@ const CYR = /[А-Яа-яЁё]/;
 
 function fixText(n: Node) {
   const p = n.parentElement;
-  if (!p || SKIP.has(p.tagName) || p.closest("svg,[contenteditable]")) return;
+  if (!p || SKIP.has(p.tagName) || p.closest("svg,[contenteditable],[data-count]")) return;
   const v = n.nodeValue;
   if (!v || !CYR.test(v)) return;
   const t = nb(v);
@@ -22,14 +22,22 @@ function fixTree(root: Node) {
 
 export function useTypography() {
   useEffect(() => {
-    fixTree(document.body);
-    const mo = new MutationObserver((list) => {
-      for (const m of list) {
-        if (m.type === "characterData") fixText(m.target);
-        else m.addedNodes.forEach(fixTree);
-      }
-    });
-    mo.observe(document.body, { subtree: true, childList: true, characterData: true });
-    return () => mo.disconnect();
+    let mo: MutationObserver | null = null;
+    const start = () => {
+      fixTree(document.body);
+      mo = new MutationObserver((list) => {
+        for (const m of list) {
+          if (m.type === "characterData") fixText(m.target);
+          else m.addedNodes.forEach(fixTree);
+        }
+      });
+      mo.observe(document.body, { subtree: true, childList: true, characterData: true });
+    };
+    const idle = window.requestIdleCallback ? window.requestIdleCallback(start, { timeout: 1200 }) : window.setTimeout(start, 300);
+    return () => {
+      if (window.cancelIdleCallback) window.cancelIdleCallback(idle);
+      else window.clearTimeout(idle);
+      mo?.disconnect();
+    };
   }, []);
 }

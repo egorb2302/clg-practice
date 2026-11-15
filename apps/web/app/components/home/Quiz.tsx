@@ -90,7 +90,7 @@ export function Quiz({ kits, car, req }: { kits: Kit[]; car: Vehicle; req: numbe
     stage.current?.querySelector<HTMLElement>("h3")?.focus();
   }, [step, selMode, confirm]);
   const goStep = (s: number) => { moved.current = true; setConfirm(false); setStep(s); };
-  const onStage = (s: "form" | "confirm") => { moved.current = true; setConfirm(s === "confirm"); };
+  const onStage = (s: "form" | "confirm", focus: boolean) => { if (focus) moved.current = true; setConfirm(s === "confirm"); };
 
   const kit = ans.car?.kind === "kit" ? kits.find((k) => k.vehicle.slug === (ans.car as { slug: string }).slug) : undefined;
   const carLabel = ans.car ? (ans.car.kind === "other" ? other.trim() : ans.car.label) : "";
@@ -248,6 +248,7 @@ export function Quiz({ kits, car, req }: { kits: Kit[]; car: Vehicle; req: numbe
                 key={`one-${option.id}`}
                 type="catalog"
                 items={oneItem}
+                note={ans.coat === "unknown" || ans.coat === "both" ? `Покрытие: ${coatLabel.toLowerCase()}` : undefined}
                 review={review}
                 onSuccess={onSuccess}
                 onCatalogChanged={onChanged}
