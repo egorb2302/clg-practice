@@ -146,7 +146,7 @@
 .lift--block { display: flex; width: 100%; }
 .lift > .btn--line { transition: --fill 0s linear .2s, --lc .2s ease, color .2s ease, transform .18s steps(3, end); }
 .lift:hover > .btn--line, .lift:has(> :focus-visible) > .btn--line { --fill: var(--k-4); transition: --fill 0s, --lc .2s ease, color .2s ease, transform .18s steps(3, end); }
-.light .lift:hover > .btn--line, .white .lift:hover > .btn--line, .on-light .lift:hover > .btn--line, .light .lift:has(> :focus-visible) > .btn--line, .white .lift:has(> :focus-visible) > .btn--line, .on-light .lift:has(> :focus-visible) > .btn--line { --fill: var(--p-1); }
+.lift--ink:hover > .btn--line, .lift--ink:has(> :focus-visible) > .btn--line, .light .lift:hover > .btn--line, .white .lift:hover > .btn--line, .on-light .lift:hover > .btn--line, .light .lift:has(> :focus-visible) > .btn--line, .white .lift:has(> :focus-visible) > .btn--line, .on-light .lift:has(> :focus-visible) > .btn--line { --fill: var(--p-1); }
 
 .busy { display: inline-block; flex-shrink: 0; width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .8s linear infinite; }
 .busy i { display: none; }

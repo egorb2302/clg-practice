@@ -39,35 +39,3 @@ export function Truck({ tone = "grey", label }: { tone?: "grey" | "dark"; label?
     </svg>
   );
 }
-
-export function Outline({ label }: { label?: string }) {
-  const line = { stroke: "#1C1C1C", strokeWidth: 1.4, strokeDasharray: "6 5", fill: "#FFFFFF" };
-  const thin = { stroke: "#1C1C1C", strokeWidth: 1, strokeDasharray: "4 4", fill: "none" };
-  return (
-    <svg viewBox="0 0 1000 440" role="img" aria-label={label ?? "Силуэт по типу кузова с защитой"}>
-      <ellipse cx="826" cy="346" rx="22" ry="28" fill="#FFFFFF" stroke="#1C1C1C" strokeWidth="1.4" />
-      <path d="M70 196 L305 196 L590 186 L690 188 L695 355 L72 330 Z" {...line} />
-      <ellipse cx="205" cy="326" rx="64" ry="60" fill="#F2F2F0" />
-      <ellipse cx="575" cy="334" rx="70" ry="66" fill="#F2F2F0" />
-      <path d="M305 196 L312 100 L500 94 L590 186 Z" {...line} />
-      <path d="M322 112 L398 108 L398 182 L322 186 Z" {...thin} />
-      <path d="M410 108 L490 104 L560 180 L410 182 Z" {...thin} />
-      <path d="M500 94 L640 104 L735 192 L590 186 Z" {...line} />
-      <path d="M590 186 L735 192 L850 196 L690 188 Z" {...line} />
-      <path d="M690 188 L850 196 L852 338 L695 355 Z" {...line} />
-      <path d="M712 222 L830 226 L831 284 L713 292 Z" {...thin} />
-      <path d="M694 196 L728 198 L728 216 L694 216 Z M814 202 L848 204 L848 220 L814 219 Z" {...thin} />
-      <path d="M576 168 L600 166 L600 182 L578 184 Z" fill="#FFFFFF" stroke="#1C1C1C" strokeWidth="1.4" strokeDasharray="6 5" />
-      <path d="M305 198 L306 330 M405 188 L406 322 M560 188 L562 330" fill="none" stroke="#1C1C1C" strokeWidth="1.2" />
-      <path d="M70 202 L84 202 L84 244 L71 244 Z" fill="#1C1C1C" />
-      <ellipse cx="205" cy="338" rx="52" ry="58" fill="#FFFFFF" stroke="#1C1C1C" strokeWidth="1.4" />
-      <ellipse cx="205" cy="338" rx="22" ry="25" fill="none" stroke="#1C1C1C" strokeWidth="1" />
-      <ellipse cx="575" cy="346" rx="58" ry="64" fill="#FFFFFF" stroke="#1C1C1C" strokeWidth="1.4" />
-      <ellipse cx="575" cy="346" rx="25" ry="28" fill="none" stroke="#1C1C1C" strokeWidth="1" />
-      <path d="M680 292 L870 284 L871 297 L681 306 Z" fill="#1C1C1C" />
-      <path d="M740 222 L740 300 M806 224 L806 296" stroke="#1C1C1C" strokeWidth="6" />
-      <path d="M704 340 L862 328 L864 341 L706 354 Z" fill="#1C1C1C" />
-      <path d="M70 196 L305 196" stroke="#B0B0AC" strokeWidth="2" />
-    </svg>
-  );
-}

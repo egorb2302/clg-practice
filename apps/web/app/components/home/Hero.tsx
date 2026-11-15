@@ -6,7 +6,7 @@ import { useUi } from "../../lib/ui";
 import { useVehicle, vehicle, type Vehicle } from "../../lib/vehicle";
 import { BRANDS, MODELS } from "../../lib/vehicles-catalog";
 import { bodyOf, isCalm, type Kit, minPrice, splitCar } from "./data";
-import { Outline, Truck } from "./Truck";
+import { Truck } from "./Truck";
 import { carStudio } from "../../lib/photos";
 
 type Slide = { key: string; name: string; sub: string; kit?: Kit };
@@ -83,8 +83,8 @@ export function Hero({ kits, onQuiz }: { kits: Kit[]; onQuiz: () => void }) {
               <Truck label={`${slide.name} со стальной защитой бампера`} />
             </figure>
           ) : (
-            <figure className="home-sil">
-              <Outline />
+            <figure className="home-sil home-sil--photo home-sil--draw">
+              <img src="/photo/hero-draw.webp" srcSet="/photo/hero-draw-800.webp 800w, /photo/hero-draw.webp 1600w" sizes="(max-width: 1099px) 90vw, 50vw" alt="Чертеж защиты бампера под вашу модель" decoding="async" />
               <figcaption>{car?.mode === "custom" ? `${bodyOf(car.label)}, защиту сделаем по месту` : "Выберите марку и модель"}</figcaption>
             </figure>
           )}
