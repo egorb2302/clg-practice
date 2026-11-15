@@ -307,7 +307,7 @@ function ProductView({ d }: { d: ViewData }) {
                   <Link className="lnk lnk--sm" to="/selection"><span className="lnk__t">Оформить подборку</span><span className="ar ol" aria-hidden="true"><Icon name="arrow" /></span></Link>
                 </div>
               </Collapse>
-              <PriceBreak rows={breakRows} />
+              <PriceBreak key={p.slug} rows={breakRows} />
             </div>
           </div>
         </div>

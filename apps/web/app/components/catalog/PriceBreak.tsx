@@ -12,10 +12,16 @@ export function PriceBreak({ rows }: { rows: [string, string][] }) {
     const h = pop.current?.offsetHeight ?? 0;
     if (r) setUp(window.innerHeight - r.bottom < h + 16 && r.top > h + 16);
     const away = (e: PointerEvent) => { if (!box.current?.contains(e.target as Node)) setOpen(false); };
-    const key = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    const key = (e: KeyboardEvent) => { if (e.key === "Escape") { setOpen(false); box.current?.querySelector("button")?.focus(); } };
+    const flip = () => {
+      const b = box.current?.getBoundingClientRect();
+      const ph = pop.current?.offsetHeight ?? 0;
+      if (b) setUp(window.innerHeight - b.bottom < ph + 16 && b.top > ph + 16);
+    };
     document.addEventListener("pointerdown", away);
     document.addEventListener("keydown", key);
-    return () => { document.removeEventListener("pointerdown", away); document.removeEventListener("keydown", key); };
+    window.addEventListener("resize", flip);
+    return () => { document.removeEventListener("pointerdown", away); document.removeEventListener("keydown", key); window.removeEventListener("resize", flip); };
   }, [open]);
 
   return (
