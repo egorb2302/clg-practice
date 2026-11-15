@@ -54,7 +54,7 @@ export function SimilarWorks({ car }: { car: string }) {
       <ul className="cat-works__g" data-stagger="">
         {list.map((w) => (
           <li key={w.car} data-in="">
-            <Illustration className="cat-works__img" src={workPhoto(w.car) ?? ""} alt={`${w.car}: ${w.what.toLowerCase()}`} caption={`работа на ${w.car}`} sizes="(max-width: 767px) 100vw, 33vw" dark />
+            <Illustration className="cat-works__img" src={workPhoto(w.car) ?? ""} alt="" caption="" sizes="(max-width: 767px) 100vw, 33vw" dark />
             <b>{w.car}</b>
             <span>{w.what}{w.body === body ? ", похожий кузов" : ""}</span>
           </li>

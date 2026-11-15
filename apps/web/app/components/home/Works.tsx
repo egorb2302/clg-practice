@@ -64,10 +64,10 @@ export function Works({ car, onQuiz }: { car: Vehicle; onQuiz: () => void }) {
         <button type="button" className="home-works__go" onClick={() => go(at - 1)} aria-label={`Назад: ${prev.car}`}>
           <span className="ar ol" aria-hidden="true"><Icon name="back" /></span>Назад
         </button>
-        <Illustration src={workPhoto(prev.car) ?? ""} alt={prev.car} caption={prev.car} ratio="1 / 1" sizes="180px" dark className="home-works__thumb cut" />
+        <Illustration src={workPhoto(prev.car) ?? ""} alt="" caption="" ratio="1 / 1" sizes="180px" dark className="home-works__thumb cut" />
       </div>
       <div className="home-works__plate home-works__plate--r">
-        <Illustration src={workPhoto(next.car) ?? ""} alt={next.car} caption={next.car} ratio="1 / 1" sizes="180px" dark className="home-works__thumb cut" />
+        <Illustration src={workPhoto(next.car) ?? ""} alt="" caption="" ratio="1 / 1" sizes="180px" dark className="home-works__thumb cut" />
         <button type="button" className="home-works__go" onClick={() => go(at + 1)} aria-label={`Вперед: ${next.car}`}>
           Вперед<span className="ar ol" aria-hidden="true"><Icon name="arrow" /></span>
         </button>
