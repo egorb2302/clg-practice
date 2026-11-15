@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { CAR_KEY, fillContact, mockLeads, open, selectionItems, stored } from "./helpers";
+import { CAR_KEY, drawer, fillContact, mockLeads, open, selectionItems, stored } from "./helpers";
 
 test("hero arrows only browse: no car is chosen until the picker", async ({ page }) => {
   await open(page, "/");
@@ -82,8 +82,20 @@ test("the quiz always opens on the car question, even with a saved car and selec
   await page.waitForSelector("html.is-ready");
   const quiz = page.locator("#quiz");
   await quiz.scrollIntoViewIfNeeded();
+  await expect(quiz.getByRole("button", { name: /Оформить подборку \(1\)/ })).toBeVisible();
+  await expect(quiz.getByRole("radio", { name: /Haval H3/ })).toHaveAttribute("aria-checked", "true");
   await expect(quiz.getByRole("heading", { name: "Какая у вас машина?" })).toBeVisible();
   await expect(quiz.locator(".home-quiz__step")).toHaveText(/Шаг\s1\sиз\s4/);
+
+  await quiz.getByRole("button", { name: /Оформить подборку/ }).click();
+  await expect(quiz.getByRole("heading", { name: "Как с вами связаться?" })).toBeVisible();
+  await page.locator(".hd__sel").click();
+  await drawer(page).getByRole("button", { name: /Удалить/ }).first().click();
+  await page.keyboard.press("Escape");
+  await expect.poll(async () => (await selectionItems(page)).length).toBe(0);
+  await page.locator("#kits").getByRole("button", { name: "В подборку" }).first().click();
+  await quiz.scrollIntoViewIfNeeded();
+  await expect(quiz.getByRole("heading", { name: "Какая у вас машина?" })).toBeVisible();
 });
 
 test("«Перезвоните мне» sends one lead with the car and the selection", async ({ page }) => {

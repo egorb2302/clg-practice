@@ -60,9 +60,15 @@ export function Quiz({ kits, car, req }: { kits: Kit[]; car: Vehicle; req: numbe
     setDone(null);
     setConfirm(false);
     const c = carOfVehicle(car);
-    setAns(c ? { car: c } : {});
+    if (c) { setAns({ car: c }); setOther(""); }
     setStep(0);
   }, [req]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (sel.length) return;
+    setWithSel(false);
+    setConfirm(false);
+  }, [sel.length]);
 
   const followKey = carKey(carOfVehicle(car));
   const doneNow = useRef(done);
@@ -79,6 +85,7 @@ export function Quiz({ kits, car, req }: { kits: Kit[]; car: Vehicle; req: numbe
     const c = carOfVehicle(car);
     setOther("");
     setAns(c ? { car: c } : {});
+    setConfirm(false);
     setStep(0);
   }, [followKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
