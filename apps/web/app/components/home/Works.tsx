@@ -14,7 +14,7 @@ const pad = (n: number) => String(n).padStart(2, "0");
 function Mini({ car }: { car: string }) {
   const src = workPhoto(car);
   if (!src) return <Illustration src="" alt="" caption="" ratio="1 / 1" sizes="180px" dark className="home-works__thumb cut" />;
-  return <img className="home-works__mini" src={src.replace(/\.webp$/, "-800.webp")} alt="" loading="lazy" decoding="async" />;
+  return <img key={src} className="home-works__mini" src={src.replace(/\.webp$/, "-800.webp")} alt="" loading="lazy" decoding="async" />;
 }
 
 export function Works({ car, onQuiz }: { car: Vehicle; onQuiz: () => void }) {
@@ -29,8 +29,9 @@ export function Works({ car, onQuiz }: { car: Vehicle; onQuiz: () => void }) {
   const n = items.length;
 
   const [cur, setCur] = useState(0);
+  const [dir, setDir] = useState<"next" | "back">("next");
   const at = Math.min(cur, n - 1);
-  const go = (to: number) => setCur(((to % n) + n) % n);
+  const go = (to: number) => { setDir(to < at ? "back" : "next"); setCur(((to % n) + n) % n); };
 
   const tg = meta.contacts.telegram ? telegramLink(meta.contacts.telegram) : null;
   const vk = vkLink(meta.contacts.vk);
@@ -41,7 +42,7 @@ export function Works({ car, onQuiz }: { car: Vehicle; onQuiz: () => void }) {
   const shot = workPhoto(w.car);
 
   return (
-    <section id="works" className="home-works" aria-labelledby="home-works-t">
+    <section id="works" className="home-works" data-dir={dir} aria-labelledby="home-works-t">
       <div
         className="home-works__stage"
         role="group"
@@ -53,7 +54,7 @@ export function Works({ car, onQuiz }: { car: Vehicle; onQuiz: () => void }) {
         }}
       >
         <figure className="home-works__slide" aria-live="polite">
-          <div className="home-works__cap">
+          <div className="home-works__cap" key={w.car}>
             <span>{w.car}</span>
             <span>{w.what}</span>
             {w.note ? <em>{w.note}</em> : null}

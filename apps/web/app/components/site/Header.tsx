@@ -23,7 +23,7 @@ export function useNavLinks() {
 export function SelCount({ className = "" }: { className?: string }) {
   const items = useSelection();
   const n = items.length;
-  return n ? <b className={className}>{n}</b> : null;
+  return n ? <b key={n} className={className}>{n}</b> : null;
 }
 
 export function Header() {

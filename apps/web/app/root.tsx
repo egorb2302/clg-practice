@@ -15,6 +15,7 @@ import tokens from "./styles/tokens.css?url";
 import base from "./styles/base.css?url";
 import ui from "./styles/ui.css?url";
 import shell from "./styles/shell.css?url";
+import motion from "./styles/motion.css?url";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preload", href: "/fonts/tektur-cyrillic-500-normal.woff2", as: "font", type: "font/woff2", crossOrigin: "anonymous" },
@@ -23,6 +24,7 @@ export const links: Route.LinksFunction = () => [
   { rel: "stylesheet", href: base },
   { rel: "stylesheet", href: ui },
   { rel: "stylesheet", href: shell },
+  { rel: "stylesheet", href: motion },
   { rel: "icon", href: "/logo/favicon.svg", type: "image/svg+xml" },
   { rel: "apple-touch-icon", href: "/logo/apple-touch-icon.png", sizes: "180x180" },
 ];
