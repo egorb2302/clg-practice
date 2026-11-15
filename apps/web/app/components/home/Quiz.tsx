@@ -43,7 +43,7 @@ export function Quiz({ kits, car, req }: { kits: Kit[]; car: Vehicle; req: numbe
   const { meta } = useSite();
   const sel = useSelection();
   const dlv = useDelivery();
-  const [free, setFree] = useState(false);
+  const [withSel, setWithSel] = useState(false);
   const [step, setStep] = useState(0);
   const [ans, setAns] = useState<Ans>({});
   const [other, setOther] = useState("");
@@ -51,18 +51,17 @@ export function Quiz({ kits, car, req }: { kits: Kit[]; car: Vehicle; req: numbe
   const [done, setDone] = useState<{ ref: string; count: number; via: "phone" | "email" } | null>(null);
   const [confirm, setConfirm] = useState(false);
   const stage = useRef<HTMLDivElement>(null);
-  const selMode = sel.length > 0 && !free && !done;
+  const selMode = withSel && sel.length > 0 && !done;
   const sent = !!done;
-  const selNow = useRef(sel);
-  selNow.current = sel;
 
   useEffect(() => {
     if (!req) return;
-    setFree(false);
+    setWithSel(false);
     setDone(null);
-    if (selNow.current.length) return;
+    setConfirm(false);
     const c = carOfVehicle(car);
-    if (c) { setAns({ car: c }); setStep(1); } else setStep(0);
+    setAns(c ? { car: c } : {});
+    setStep(0);
   }, [req]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const followKey = carKey(carOfVehicle(car));
@@ -80,7 +79,7 @@ export function Quiz({ kits, car, req }: { kits: Kit[]; car: Vehicle; req: numbe
     const c = carOfVehicle(car);
     setOther("");
     setAns(c ? { car: c } : {});
-    setStep(c ? 1 : 0);
+    setStep(0);
   }, [followKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const moved = useRef(false);
@@ -172,11 +171,11 @@ export function Quiz({ kits, car, req }: { kits: Kit[]; car: Vehicle; req: numbe
     const c = carOfVehicle(car);
     setDone(null);
     setConfirm(false);
-    setFree(false);
+    setWithSel(false);
     setAns(c ? { car: c } : {});
     setOther("");
     moved.current = true;
-    setStep(c ? 1 : 0);
+    setStep(0);
   };
 
   const head = selMode ? ["Почти готово,", "контакты и проверка"] : ["Подберем защиту", "за 4 вопроса"];
@@ -213,7 +212,9 @@ export function Quiz({ kits, car, req }: { kits: Kit[]; car: Vehicle; req: numbe
         </div>
         <p className="home-quiz__step D" aria-live="polite">{sent ? "Готово" : label}</p>
         {selMode ? (
-          <button type="button" className="flink home-quiz__nosel" onClick={() => { setFree(true); moved.current = true; setStep(0); }}>Оформить без подборки</button>
+          <button type="button" className="flink home-quiz__nosel" onClick={() => { setWithSel(false); setConfirm(false); moved.current = true; setStep(0); }}>Оформить без подборки</button>
+        ) : sel.length > 0 && !sent ? (
+          <button type="button" className="flink home-quiz__nosel" onClick={() => { setWithSel(true); setConfirm(false); moved.current = true; }}>Оформить подборку ({sel.length})</button>
         ) : null}
       </div>
 

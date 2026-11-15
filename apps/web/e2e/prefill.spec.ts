@@ -7,15 +7,12 @@ test("car chosen in the hero is already in the quiz when the visitor scrolls dow
   await page.locator("#home-model").selectOption("T9");
   const quiz = page.locator("#quiz");
   await quiz.scrollIntoViewIfNeeded();
-  await expect(quiz.getByRole("heading", { name: "Что защищаем?" })).toBeVisible();
-  await expect(quiz.locator(".home-quiz__step")).toHaveText(/Шаг\s2\sиз\s4/);
-  await quiz.getByRole("button", { name: "Назад" }).click();
+  await expect(quiz.getByRole("heading", { name: "Какая у вас машина?" })).toBeVisible();
+  await expect(quiz.locator(".home-quiz__step")).toHaveText(/Шаг\s1\sиз\s4/);
   await expect(quiz.getByRole("radio", { name: /JAC T9/ })).toHaveAttribute("aria-checked", "true");
 
   await page.locator("#home-brand").selectOption("Haval");
   await page.locator("#home-model").selectOption("H3");
-  await expect(quiz.getByRole("heading", { name: "Что защищаем?" })).toBeVisible();
-  await quiz.getByRole("button", { name: "Назад" }).click();
   await expect(quiz.getByRole("radio", { name: /Haval H3/ })).toHaveAttribute("aria-checked", "true");
 });
 
@@ -25,7 +22,8 @@ test("a custom car from the hero fills make and model in the order form", async 
   await page.locator("#home-model").selectOption("300");
   const quiz = page.locator("#quiz");
   await quiz.scrollIntoViewIfNeeded();
-  await expect(quiz.getByRole("heading", { name: "Что защищаем?" })).toBeVisible();
+  await expect(quiz.getByRole("heading", { name: "Какая у вас машина?" })).toBeVisible();
+  await quiz.getByRole("button", { name: "Далее" }).click();
   await quiz.getByRole("radio", { name: /Передняя защита/ }).click();
   await quiz.getByRole("button", { name: "Далее" }).click();
   await quiz.getByRole("radio", { name: /Черная порошковая/ }).click();
@@ -58,6 +56,8 @@ test("contacts typed once are filled in every later form", async ({ page }) => {
   await open(page, "/");
   const quiz = page.locator("#quiz");
   await quiz.scrollIntoViewIfNeeded();
+  await expect(quiz.getByRole("heading", { name: "Какая у вас машина?" })).toBeVisible();
+  await quiz.getByRole("button", { name: /Оформить подборку/ }).click();
   const qform = quiz.locator("form.lf");
   await expect(qform.getByLabel("Имя")).toHaveValue("Тест Тестов");
   await expect(qform.getByLabel("Телефон")).toHaveValue("+7 (900) 123-45-67");
@@ -156,13 +156,15 @@ test("changing the car resets the later quiz answers; clearing it starts over", 
   await page.locator("#home-model").selectOption("T9");
   const quiz = page.locator("#quiz");
   await quiz.scrollIntoViewIfNeeded();
+  await quiz.getByRole("button", { name: "Далее" }).click();
   await quiz.getByRole("radio").first().click();
   await quiz.getByRole("button", { name: "Далее" }).click();
   await expect(quiz.getByRole("heading", { name: "Какое покрытие?" })).toBeVisible();
 
   await page.locator("#home-brand").selectOption("Haval");
   await page.locator("#home-model").selectOption("H3");
-  await expect(quiz.getByRole("heading", { name: "Что защищаем?" })).toBeVisible();
+  await expect(quiz.getByRole("heading", { name: "Какая у вас машина?" })).toBeVisible();
+  await quiz.getByRole("button", { name: "Далее" }).click();
   await expect(quiz.getByRole("radio", { checked: true })).toHaveCount(0);
 
   await page.getByRole("button", { name: "Сбросить выбор" }).click();

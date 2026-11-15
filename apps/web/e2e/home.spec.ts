@@ -27,6 +27,8 @@ test("hero CTA with a full selection opens the quiz with that selection", async 
 
   await page.locator(".home-hero__cta a").click();
   const quiz = page.locator("#quiz");
+  await expect(quiz.getByRole("heading", { name: "Какая у вас машина?" })).toBeVisible();
+  await quiz.getByRole("button", { name: /Оформить подборку/ }).click();
   await expect(quiz.getByRole("heading", { name: "Как с вами связаться?" })).toBeVisible();
   await expect(quiz.locator(".home-quiz__step")).toHaveText("Контакты");
   const form = await fillContact(page, quiz.locator("form.lf"));
@@ -48,6 +50,7 @@ test("quiz review step: a server failure keeps the answers and offers a retry", 
   await page.locator("#kits").getByRole("button", { name: "В подборку" }).first().click();
   await page.locator(".home-hero__cta a").click();
   const quiz = page.locator("#quiz");
+  await quiz.getByRole("button", { name: /Оформить подборку/ }).click();
   const form = await fillContact(page, quiz.locator("form.lf"));
   await form.locator("label.rdo", { hasText: "Самовывоз" }).click();
   await form.getByRole("button", { name: "Проверить заявку" }).click();
@@ -63,7 +66,24 @@ test("quiz without a selection starts from the chosen car", async ({ page }) => 
   await page.locator("#home-brand").selectOption("JAC");
   await page.locator("#home-model").selectOption("T9");
   await page.locator(".home-hero__cta a").click();
-  await expect(page.locator("#quiz").getByRole("heading", { name: "Что защищаем?" })).toBeVisible();
+  const quiz = page.locator("#quiz");
+  await expect(quiz.getByRole("heading", { name: "Какая у вас машина?" })).toBeVisible();
+  await expect(quiz.getByRole("radio", { name: /JAC T9/ })).toHaveAttribute("aria-checked", "true");
+  await quiz.getByRole("button", { name: "Далее" }).click();
+  await expect(quiz.getByRole("heading", { name: "Что защищаем?" })).toBeVisible();
+});
+
+test("the quiz always opens on the car question, even with a saved car and selection", async ({ page }) => {
+  await open(page, "/");
+  await page.locator("#kits").getByRole("button", { name: "В подборку" }).first().click();
+  await page.locator("#home-brand").selectOption("Haval");
+  await page.locator("#home-model").selectOption("H3");
+  await page.reload();
+  await page.waitForSelector("html.is-ready");
+  const quiz = page.locator("#quiz");
+  await quiz.scrollIntoViewIfNeeded();
+  await expect(quiz.getByRole("heading", { name: "Какая у вас машина?" })).toBeVisible();
+  await expect(quiz.locator(".home-quiz__step")).toHaveText(/Шаг\s1\sиз\s4/);
 });
 
 test("«Перезвоните мне» sends one lead with the car and the selection", async ({ page }) => {
