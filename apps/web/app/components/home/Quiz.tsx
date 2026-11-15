@@ -65,10 +65,10 @@ export function Quiz({ kits, car, req }: { kits: Kit[]; car: Vehicle; req: numbe
   }, [req]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (sel.length) return;
+    if (sel.length || !withSel) return;
     setWithSel(false);
     setConfirm(false);
-  }, [sel.length]);
+  }, [sel.length, withSel]);
 
   const followKey = carKey(carOfVehicle(car));
   const doneNow = useRef(done);
