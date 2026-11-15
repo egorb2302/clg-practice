@@ -375,7 +375,7 @@ export function LeadForm(props: Props) {
 
       {type === "general"
         ? field("message", "Сообщение", <textarea {...inProps("message")} className="in" value={f.message} onChange={(e) => set("message", e.target.value)} />)
-        : field("comment", <>Комментарий <em>необязательно</em></>, <textarea {...inProps("comment")} className="in" placeholder={type === "custom" ? "Удобное время для звонка, ссылка на фото машины" : "Год выпуска, комплектация, стоит ли лебедка или фаркоп"} value={f.comment} onChange={(e) => set("comment", e.target.value)} />)}
+        : field("comment", <>Комментарий <em>необязательно</em></>, <textarea {...inProps("comment")} className="in" maxLength={1000 - (props.note ? props.note.length + 1 : 0)} placeholder={type === "custom" ? "Удобное время для звонка, ссылка на фото машины" : "Год выпуска, комплектация, стоит ли лебедка или фаркоп"} value={f.comment} onChange={(e) => set("comment", e.target.value)} />)}
 
       {f.pref === "email" && meta.features.campaigns ? (
         <div className="lf__mail">

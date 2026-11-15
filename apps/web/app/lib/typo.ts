@@ -33,7 +33,7 @@ export function useTypography() {
       });
       mo.observe(document.body, { subtree: true, childList: true, characterData: true });
     };
-    const idle = window.requestIdleCallback ? window.requestIdleCallback(start, { timeout: 1200 }) : window.setTimeout(start, 300);
+    const idle = window.requestIdleCallback ? window.requestIdleCallback(start, { timeout: 1200 }) : window.setTimeout(start, 1000);
     return () => {
       if (window.cancelIdleCallback) window.cancelIdleCallback(idle);
       else window.clearTimeout(idle);
